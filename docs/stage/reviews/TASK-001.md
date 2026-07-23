@@ -1,5 +1,10 @@
 # TASK-001 review pack
 
+## Revision - Collapsed FAQ default
+
+- All FAQ answers now begin collapsed; each one can still be opened independently.
+- Test coverage verifies that no FAQ `<details>` element is open on first render.
+
 ## Goal
 
 Deliver a clinician-led survey-consent and demo-login flow that can safely start a field-screening encounter.

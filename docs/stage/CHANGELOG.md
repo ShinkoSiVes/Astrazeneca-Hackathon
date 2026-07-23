@@ -1,5 +1,10 @@
 # Stage changelog
 
+## TASK-001 revision - Collapsed FAQ default
+
+- Status: awaiting owner review with TASK-001
+- Removed the default-open FAQ state so every answer starts collapsed and independently expandable.
+
 ## TASK-002 revision - Aesthetic page handoff
 
 - Status: awaiting owner review with TASK-002

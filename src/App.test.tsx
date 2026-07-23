@@ -14,6 +14,12 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByText(/no screening record was created/i)).toBeInTheDocument();
   });
 
+  it("starts the FAQ with every answer collapsed", () => {
+    const { container } = render(<App />);
+
+    expect(container.querySelectorAll("details[open]")).toHaveLength(0);
+  });
+
   it("requires consent and a passcode before entering the workspace", async () => {
     const user = userEvent.setup();
     render(<App />);

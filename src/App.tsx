@@ -262,7 +262,7 @@ export default function App() {
               <p>Quick answers for explaining the demo and recording consent with confidence.</p>
             </div>
             <div className="faq-grid">
-              <details className="faq-item" open>
+              <details className="faq-item">
                 <summary>Does Aeris AI diagnose lung cancer?</summary>
                 <p>No. Aeris AI is a clinician-led screening and population-insight demo. It does not replace diagnosis, imaging interpretation, or clinical judgment.</p>
               </details>
