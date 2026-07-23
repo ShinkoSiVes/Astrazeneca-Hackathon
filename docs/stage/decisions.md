@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Real landscape imagery for the front page
+
+- The front-page background may use real, licensed landscape imagery when it supports place, trust, and geographic-equity framing without distracting from consent.
+- Avoid patient, clinician, and clinical-facility photography in the active screening flow unless explicit consent and usage authority are established.
+- The first chosen image is locally cached so the demo does not rely on an external image host at runtime.
+
 ## Accepted - Persistent home navigation
 
 - The Aeris AI wordmark is always a return-to-front-page control.

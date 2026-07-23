@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Grounded front-page background
+
+- Status: awaiting owner review with TASK-002
+- Replaced the abstract-only hero treatment with a locally cached Sagada Rice Terraces photograph and high-contrast overlay.
+- The photo has no identifiable patient or clinician and is optimized to a 455 KB local asset for the offline demo.
+
 ## TASK-002 revision - Home navigation
 
 - Status: awaiting owner review with TASK-002
