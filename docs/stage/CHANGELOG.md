@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-003 revision - Local imaging file drop zone
+
+- Status: awaiting owner review with TASK-003
+- Added a CT/CXR/DICOM drop zone and file chooser to Imaging Metadata, with selected file name, type, and size shown as a local demo reference.
+- No file bytes are uploaded, parsed, stored, or interpreted; only the selected-file metadata joins the temporary local record.
+
 ## TASK-004 revision - Layered clinical backdrops
 
 - Status: awaiting owner review with TASK-004

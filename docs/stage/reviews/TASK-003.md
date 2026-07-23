@@ -13,6 +13,29 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 - A complete CT metadata set is marked ready for a later clinician nodule-review task; it does not trigger AI.
 - The study-date calendar opens from its calendar control and lets the clinician choose a month, year, and day before the temporary record is saved.
 
+## TASK-003 revision - Local imaging file drop zone
+
+### User-visible effect
+
+- Imaging Metadata now has a drag-and-drop area plus a **Choose local file** control for CT, CXR, and DICOM files.
+- The selected file name, MIME type, and size appear locally and can be removed before the temporary record is saved.
+- Only this file metadata is persisted with the local temporary record. The actual file is not uploaded, read, parsed, or interpreted.
+
+### Visual evidence
+
+- [Imaging file drop zone](assets/task-003-imaging-file-dropzone.png)
+
+### Verification
+
+- `npm.cmd test -- --run` passed: 12 tests, including local-file metadata coverage.
+- `npm.cmd run build` passed.
+- Visual review passed: the drop zone remains readable on the Imaging Metadata screen and does not present itself as an AI analysis control.
+
+### Revision limitations
+
+- The browser selection is intentionally not retained as file bytes. Returning later shows only the metadata saved in the temporary record.
+- No model, image preview, CT/CXR parsing, or diagnostic result is connected.
+
 ## Demo path
 
 1. Complete consent, demo login, and the three screening steps.
@@ -48,4 +71,5 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 - Status: **awaiting owner approval**
 - Proposed promotion: `264454d` — `feat(task-003): add AI consent temporary record path`.
 - Proposed TASK-003 revision: `f818f6e` — `feat(task-003): add study date calendar`.
+- Proposed TASK-003 revision: `ef45a61` — `feat(task-003): add local imaging file drop zone`.
 - Approval command: `Approve TASK-003 for main`.
