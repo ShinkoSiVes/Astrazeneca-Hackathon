@@ -34,7 +34,7 @@ export default function App() {
   };
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell view-${view}`}>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Project iDEA home">
           <span className="brand-mark" aria-hidden="true">i</span>

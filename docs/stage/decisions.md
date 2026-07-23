@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - TASK-001 motion revision
+
+- Motion serves orientation and confirmation only: it must not imply clinical progress, hide information, or delay a clinician action.
+- The UI uses short entrance and confirmation transitions, with no looping attention-grabbing element beyond a very slow background drift.
+- `prefers-reduced-motion` is mandatory and disables the added animation.
+
 ## Accepted direction
 
 - Use `stage` for all implementation and review evidence; promote only explicit user-approved tasks to `main`.

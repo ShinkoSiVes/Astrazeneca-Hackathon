@@ -10,4 +10,4 @@ Each item is one stage task. Start the next item only after the owner approves o
 6. `TASK-006` - 18-region population dashboard.
 7. `TASK-007` - Optional local AI-service contract.
 8. `TASK-008` - Optional CT/CXR adapter spike.
-9. `TASK-009` - Motion, accessibility, and final QA.
+9. `TASK-009` - Final motion, accessibility, and QA sweep. Core TASK-001 orientation motion was added as an owner-requested revision and remains subject to TASK-001 approval.

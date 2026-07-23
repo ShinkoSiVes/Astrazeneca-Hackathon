@@ -28,6 +28,7 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(enterButton);
 
     expect(screen.getByRole("heading", { name: /you’re signed in as bhw-024/i })).toBeInTheDocument();
+    expect(screen.getByRole("main")).toHaveClass("view-ready");
     expect(sessionStorage.getItem("idea-demo-clinician")).toBe("BHW-024");
   });
 });
