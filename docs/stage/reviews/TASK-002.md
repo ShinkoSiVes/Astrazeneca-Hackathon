@@ -10,12 +10,14 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - The wizard covers profile/location, exposure/history, and symptoms/notes.
 - The clinician can save and restore a draft on the current browser/device.
 - The form discourages direct identifiers and labels every state as local/demo-only.
+- The Aeris AI wordmark returns the user to the front page without deleting a saved local draft.
 
 ## Changed files
 
 - `src/App.tsx` — wizard state, local draft save/restore, and workspace handoff.
 - `src/styles.css` — responsive wizard, progress, and form styling.
 - `src/App.test.tsx` — local draft save coverage.
+- `src/App.tsx` and `src/App.test.tsx` — persistent home navigation and direct coverage.
 - Stage backlog, decisions, and changelog.
 
 ## Verification

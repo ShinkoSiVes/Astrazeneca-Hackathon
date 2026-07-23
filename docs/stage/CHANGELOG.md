@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Home navigation
+
+- Status: awaiting owner review with TASK-002
+- Made the Aeris AI wordmark return to the front/consent page from any current view.
+- Returning home does not erase the saved local screening draft.
+
 ## TASK-002 - Screening wizard with local draft save
 
 - Status: awaiting owner review

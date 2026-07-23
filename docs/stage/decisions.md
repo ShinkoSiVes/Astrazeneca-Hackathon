@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Persistent home navigation
+
+- The Aeris AI wordmark is always a return-to-front-page control.
+- It changes the visible view only; saved local draft data is preserved until a later explicit data-management feature is approved.
+
 ## Accepted - TASK-002 local screening draft
 
 - The wizard is clinician-led and intentionally avoids collecting a patient name; a local field reference is used instead.

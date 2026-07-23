@@ -46,6 +46,16 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
   });
 
+  it("returns to the front page from the Aeris AI wordmark", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /about/i }));
+    await user.click(screen.getByRole("link", { name: /aeris ai home/i }));
+
+    expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
+  });
+
   it("shows the heatmap status without presenting live data", async () => {
     const user = userEvent.setup();
     render(<App />);
