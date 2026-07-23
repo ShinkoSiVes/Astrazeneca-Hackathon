@@ -1,0 +1,9 @@
+#!/bin/sh
+
+branch="$(git symbolic-ref --short HEAD 2>/dev/null)"
+
+if [ "$branch" = "main" ] && [ "$IDEA_MAIN_PROMOTION_APPROVED" != "1" ]; then
+  echo "Blocked: main accepts only a user-approved TASK-### promotion."
+  echo "Set IDEA_MAIN_PROMOTION_APPROVED=1 only for the reviewed, approved promotion commit."
+  exit 1
+fi
