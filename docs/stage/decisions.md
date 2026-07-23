@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Multiple local image references with per-file dates
+
+- Imaging Metadata may collect multiple CT, CXR, or DICOM file references for one encounter.
+- Every file may have an optional acquisition date; only file name, MIME type, size, and that date are retained in the demo's local temporary-record metadata.
+- The browser must not retain file bytes in local storage, parse images, render image previews, or present an inference result.
+
 ## Accepted - Clear-to-subtle clinical backdrop hierarchy
 
 - A single locally cached landscape may continue from screening through AI consent, imaging metadata, temporary-record, screening-complete, and clinician-review pages.

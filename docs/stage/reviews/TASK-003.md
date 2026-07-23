@@ -36,6 +36,27 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 - The browser selection is intentionally not retained as file bytes. Returning later shows only the metadata saved in the temporary record.
 - No model, image preview, CT/CXR parsing, or diagnostic result is connected.
 
+## TASK-003 revision - Multiple imaging files and per-file dates
+
+### User-visible effect
+
+- The drop zone and file chooser accept multiple CT, CXR, or DICOM files in one action and allow more files to be added later.
+- Each selected file has a separate optional **Acquisition date** field for when that CT/CXR/DICOM file was taken.
+- The clinician-review packet lists local file names and any recorded acquisition dates as metadata only.
+
+### Visual evidence
+
+- [Multiple-file drop zone](assets/task-003-multifile-imaging.png)
+
+### Verification
+
+- `npm.cmd test -- --run` passed: 12 tests, including two selected files and a persisted per-file acquisition date.
+- `npm.cmd run build` passed.
+
+### Revision limitations
+
+- No image files, previews, or DICOM tags are stored. Only selected-file metadata and optional acquisition dates remain in the local temporary record.
+
 ## Demo path
 
 1. Complete consent, demo login, and the three screening steps.
@@ -72,4 +93,5 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 - Proposed promotion: `264454d` — `feat(task-003): add AI consent temporary record path`.
 - Proposed TASK-003 revision: `f818f6e` — `feat(task-003): add study date calendar`.
 - Proposed TASK-003 revision: `ef45a61` — `feat(task-003): add local imaging file drop zone`.
+- Proposed TASK-003 revision: `a42d3b0` — `feat(task-003): support multiple imaging files`.
 - Approval command: `Approve TASK-003 for main`.

@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-003 revision - Multiple imaging files and per-file dates
+
+- Status: awaiting owner review with TASK-003
+- The local imaging selector now accepts multiple CT/CXR/DICOM files through drag-and-drop or the file chooser.
+- Each selected file has its own optional acquisition date, which is retained with file metadata in the temporary local record and visible at clinician review.
+- File bytes remain outside the app state and local storage; no files are uploaded, read, parsed, or interpreted.
+
 ## TASK-003 revision - Local imaging file drop zone
 
 - Status: awaiting owner review with TASK-003
