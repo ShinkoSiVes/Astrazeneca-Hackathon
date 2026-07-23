@@ -36,10 +36,8 @@ button:disabled { cursor: not-allowed; }
 .brand strong { font-size: 20px; line-height: 1; letter-spacing: -0.03em; }
 .brand small { margin-top: 4px; color: #527078; font-size: 12px; font-weight: 650; }
 .topbar-actions { display: flex; align-items: center; gap: 14px; color: #45636a; font-size: 14px; font-weight: 650; }
-.network-status, .role-label, .motion-toggle { display: inline-flex; align-items: center; gap: 7px; }
+.network-status, .role-label { display: inline-flex; align-items: center; gap: 7px; }
 .network-status { border: 1px solid #c7ddda; border-radius: 999px; padding: 8px 12px; color: #0d625f; background: #e9f4f1; font-size: 13px; font-weight: 750; transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease; }
-.motion-toggle { min-height: 34px; border: 1px solid #a9cfca; border-radius: 999px; padding: 0 11px; color: #0d625f; background: rgb(250 255 253 / 80%); font-size: 12px; font-weight: 800; transition: background-color 160ms ease, border-color 160ms ease; }
-.motion-toggle[aria-pressed="true"] { border-color: #0d8179; color: #fff; background: #0d8179; }
 .nav-link, .back-link { display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 8px 4px; color: #315b62; background: transparent; font-weight: 750; transition: color 160ms ease, transform 160ms ease; }
 .nav-link:hover, .back-link:hover { color: #0a6d68; transform: translateY(-1px); }
 

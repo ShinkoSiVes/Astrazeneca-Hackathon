@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Continuous owner-demo motion
+
+- Status: awaiting owner review with TASK-002
+- Removed the Play/Pause motion control at the owner's request.
+- The public-flow landscape rotation and ripple transition now remain continuously enabled in the stage demo.
+
 ## TASK-001 revision - Collapsed FAQ default
 
 - Status: awaiting owner review with TASK-001

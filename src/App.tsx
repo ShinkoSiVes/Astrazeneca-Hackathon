@@ -74,29 +74,16 @@ export default function App() {
   const [screeningStep, setScreeningStep] = useState(1);
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
   const [activeBackdrop, setActiveBackdrop] = useState(0);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [motionPreview, setMotionPreview] = useState(true);
   const [isLeavingView, setIsLeavingView] = useState(false);
   const navigationTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
-    const reducedMotionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    const syncMotionPreference = () => setPrefersReducedMotion(reducedMotionQuery?.matches ?? false);
-    syncMotionPreference();
-    reducedMotionQuery?.addEventListener?.("change", syncMotionPreference);
-
-    return () => reducedMotionQuery?.removeEventListener?.("change", syncMotionPreference);
-  }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion && !motionPreview) return undefined;
-
     const rotation = window.setInterval(() => {
       setActiveBackdrop((current) => (current + 1) % landscapeSlides.length);
     }, 7200);
 
     return () => window.clearInterval(rotation);
-  }, [motionPreview, prefersReducedMotion]);
+  }, []);
 
   useEffect(() => () => {
     if (navigationTimer.current !== undefined) window.clearTimeout(navigationTimer.current);
@@ -157,7 +144,7 @@ export default function App() {
   };
 
   return (
-    <main className={`app-shell view-${view} ${motionPreview ? "motion-preview" : ""}`}>
+    <main className={`app-shell view-${view} motion-preview`}>
       <div className="landscape-rotator" aria-hidden="true">
         {landscapeSlides.map((slide, index) => (
           <span className={`landscape-slide ${slide} ${index === activeBackdrop ? "is-active" : ""}`} key={slide} />
@@ -176,11 +163,6 @@ export default function App() {
           {view === "consent" && (
             <button className="nav-link" type="button" onClick={() => navigateTo("about")}>
               <Info size={16} /> About
-            </button>
-          )}
-          {prefersReducedMotion && (
-            <button className="motion-toggle" type="button" aria-pressed={motionPreview} onClick={() => setMotionPreview((current) => !current)}>
-              {motionPreview ? "Pause motion" : "Play motion"}
             </button>
           )}
           <button

@@ -1,5 +1,9 @@
 # Stage decisions
 
+## Accepted - Continuous stage-demo landscape motion
+
+- The owner requested removal of the motion control. The public-flow rotation and ripple remain continuously enabled in the stage demo.
+
 ## Accepted - Two-part page handoff
 
 - A page change uses a short exit transition followed by the existing keyed entry transition; it is not presented as loading, synchronizing, or clinical processing.
