@@ -6,7 +6,7 @@ Each item is one stage task. Start the next item only after the owner approves o
 2. `TASK-002` - Screening wizard with local draft save. **Awaiting owner review.**
 3. `TASK-003` - AI consent, imaging metadata, and temporary-record path. **Awaiting owner review.**
 4. `TASK-004` - Clinician nodule-review screen and decision branches. **Awaiting owner review.**
-5. `TASK-005` - De-identification and aggregation.
+5. `TASK-005` - De-identification and aggregation. **Awaiting owner review.**
 6. `TASK-006` - 18-region population dashboard.
 7. `TASK-007` - Optional local AI-service contract.
 8. `TASK-008` - Optional CT/CXR adapter spike.

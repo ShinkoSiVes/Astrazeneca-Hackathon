@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-005 - Local de-identification and aggregation gate
+
+- Status: awaiting owner review
+- Added a clinician-approved de-identification preview that explicitly lists the screening and imaging details removed before aggregation.
+- The local aggregation fixture retains only grouped population signals and creates no model output, external transfer, or public dashboard data.
+- The forced-continuation review branch remains blocked from aggregation.
+
 ## TASK-003 revision - Multiple imaging files and per-file dates
 
 - Status: awaiting owner review with TASK-003

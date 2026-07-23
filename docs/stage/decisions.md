@@ -1,5 +1,12 @@
 # Stage decisions
 
+## Accepted - Clinician-approved local de-identification gate
+
+- Only the accepted clinician-review branch can open TASK-005 aggregation. Forced continuation remains a local workflow exception and cannot be aggregated.
+- Before aggregation, the UI must name the removed classes of data: field reference, barangay, clinician notes, facility, study reference and dates, and local image-file metadata.
+- The local population fixture may retain only province-level geography, age band, exposure categories, symptom signal count, and clinician-reviewed workflow status.
+- TASK-005 must not create a risk result, external transfer, regional dashboard update, or live health-network sharing.
+
 ## Accepted - Multiple local image references with per-file dates
 
 - Imaging Metadata may collect multiple CT, CXR, or DICOM file references for one encounter.

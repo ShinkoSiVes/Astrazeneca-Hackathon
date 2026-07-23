@@ -20,6 +20,14 @@ No model or model fixture is used in this feature.
 - Limitation: the clinician review screen records a workflow decision, not a clinical interpretation or risk prediction.
 - Clinician review: this task is the review gate; future model outputs must still carry their own source, version, and validation evidence.
 
+## TASK-005
+
+- Modality: no model, image, or inference input is used.
+- Source/version: local de-identification and aggregation fixture only.
+- Status: browser-local population-data fixture; not a regional dashboard or external data feed.
+- Limitation: no risk score, prediction, or public-health estimate is produced.
+- Clinician review: only accepted clinician-reviewed workflow records may enter the fixture.
+
 ## Future adapter boundary
 
 - CT candidate detection: optional local MONAI adapter; candidate boxes and nodule-detection signals only.
