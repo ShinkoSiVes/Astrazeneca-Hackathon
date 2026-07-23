@@ -10,6 +10,7 @@ import {
   Stethoscope,
   WifiOff,
 } from "lucide-react";
+import hingaMark from "./assets/hinga-mark.svg";
 
 type View = "consent" | "login" | "ready";
 
@@ -36,11 +37,11 @@ export default function App() {
   return (
     <main className={`app-shell view-${view}`}>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Project iDEA home">
-          <span className="brand-mark" aria-hidden="true">i</span>
+        <a className="brand" href="#top" aria-label="Hinga home">
+          <img className="brand-mark" src={hingaMark} alt="" aria-hidden="true" />
           <span>
-            <strong>iDEA</strong>
-            <small>Field screening</small>
+            <strong>Hinga</strong>
+            <small>Lung screening</small>
           </span>
         </a>
         <div className="topbar-actions">
@@ -63,7 +64,7 @@ export default function App() {
             <p className="eyebrow"><MapPinned size={16} /> Community profiling mission</p>
             <h1>Start every screening with a clear patient choice.</h1>
             <p className="intro-copy">
-              iDEA helps field teams gather structured lung-cancer screening information
+              Hinga helps field teams gather structured lung-cancer screening information
               and prepare reviewed, de-identified population insights.
             </p>
             <div className="principle-list" aria-label="Data handling principles">

@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-001 revision - Temporary product identity
+
+- Status: pending owner review with TASK-001
+- Replaced the placeholder letter mark with an original local vector mark and the temporary product name `Hinga`.
+- `Hinga` is used with the clear descriptor `Lung screening`; it is not a clinical claim or final brand decision.
+
 ## TASK-001 revision - Accessible motion
 
 - Status: pending owner review with TASK-001

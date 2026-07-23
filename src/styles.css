@@ -16,7 +16,7 @@ button:disabled { cursor: not-allowed; }
 .app-shell::before { position: absolute; z-index: -1; inset: -28%; content: ""; pointer-events: none; background: radial-gradient(circle at 70% 32%, rgb(171 231 220 / 31%), transparent 27%), radial-gradient(circle at 27% 70%, rgb(211 240 232 / 42%), transparent 25%); animation: ambient-drift 18s ease-in-out infinite alternate; }
 .topbar { width: min(1440px, calc(100% - 48px)); margin: 0 auto; min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 24px; animation: soft-enter 420ms both; }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-.brand-mark { display: grid; place-items: center; width: 39px; height: 39px; border-radius: 12px; background: #0d4c5c; color: #ffffff; font-size: 28px; font-weight: 800; line-height: 1; }
+.brand-mark { display: block; width: 42px; height: 42px; flex: 0 0 auto; }
 .brand strong, .brand small { display: block; }
 .brand strong { font-size: 20px; line-height: 1; letter-spacing: -0.03em; }
 .brand small { margin-top: 4px; color: #527078; font-size: 12px; font-weight: 650; }
