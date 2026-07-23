@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-001 revision - Heatmap status
+
+- Status: pending owner review with TASK-001
+- Added a front-page Heatmap status entry point and a static demo-readiness view.
+- The status screen explicitly distinguishes planned regional coverage from a live map and confirms that no live patient data is displayed or shared.
+
 ## TASK-001 revision - Distinctive working name
 
 - Status: pending owner review with TASK-001

@@ -45,4 +45,15 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /back to screening/i }));
     expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
   });
+
+  it("shows the heatmap status without presenting live data", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+
+    expect(screen.getByRole("heading", { name: /heatmap status: preparing/i })).toBeInTheDocument();
+    expect(screen.getByText(/no real patient records in this demo/i)).toBeInTheDocument();
+    expect(screen.getByText(/live sharing disabled/i)).toBeInTheDocument();
+  });
 });

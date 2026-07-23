@@ -12,6 +12,7 @@ Deliver a clinician-led survey-consent and demo-login flow that can safely start
 - The flow uses restrained status and transition motion without delaying clinician actions.
 - The temporary product identity is displayed as `Hinga Atlas | Lung screening` with an original vector placeholder mark.
 - The front page includes a clinician FAQ and an About view with explicit static team placeholders.
+- The front page provides a Heatmap status entry point that reports demo readiness without exposing a map or live data.
 
 ## Changed files
 
@@ -21,6 +22,7 @@ Deliver a clinician-led survey-consent and demo-login flow that can safely start
 - Revision: accessible UI motion styles and a view-state hook for motion targeting.
 - Revision: temporary name, browser title, and vector logo asset.
 - Revision: FAQ, About navigation, static project summary, and team/social placeholder cards.
+- Revision: static Heatmap status and future-dashboard safeguard messaging.
 
 ## Verification
 
@@ -31,6 +33,7 @@ Deliver a clinician-led survey-consent and demo-login flow that can safely start
 - Motion revision verification: build and interaction tests passed; the stage preview was visually checked with the consent confirmation control enabled and reset afterwards.
 - Identity is a placeholder pending owner confirmation; no trademark, logo clearance, or external brand research has been performed.
 - FAQ/About verification: build and three interaction tests pass; the About view does not introduce patient data, external accounts, or live social links.
+- Heatmap-status verification: build and four interaction tests pass; the screen is static and clearly states the no-live-data limitation.
 
 ## Known limitations
 

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import hingaMark from "./assets/hinga-mark.svg";
 
-type View = "consent" | "login" | "ready" | "about";
+type View = "consent" | "login" | "ready" | "about" | "heatmap-status";
 
 const defaultBhwId = "BHW-024";
 
@@ -91,7 +91,12 @@ export default function App() {
               <p><LockKeyhole size={20} /><span><strong>Purpose-limited</strong>Only consented screening information continues.</span></p>
               <p><CloudOff size={20} /><span><strong>Works offline</strong>Drafts stay on this device until a future sync is approved.</span></p>
             </div>
-            </div>
+            <button className="heatmap-status-link" type="button" onClick={() => setView("heatmap-status")}>
+              <span className="status-beacon" aria-hidden="true" />
+              <span><strong>Heatmap status</strong><small>View current demo readiness</small></span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </button>
+          </div>
 
             <div className="workflow-card">
             <div className="step-indicator"><span>01</span><span aria-hidden="true" /><span>Consent</span></div>
@@ -196,6 +201,37 @@ export default function App() {
                 ))}
               </div>
             </section>
+          </div>
+        </section>
+      )}
+
+      {view === "heatmap-status" && (
+        <section className="heatmap-status-layout" aria-labelledby="heatmap-status-title">
+          <div className="heatmap-status-hero">
+            <button className="back-link" type="button" onClick={() => setView("consent")}>
+              <ChevronLeft size={17} /> Back to screening
+            </button>
+            <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
+            <h1 id="heatmap-status-title">Heatmap status: preparing the regional view.</h1>
+            <p>This preview reports the dashboard's current demo readiness. It does not show live patient records, clinical risk estimates, or a live public-health map.</p>
+          </div>
+
+          <div className="heatmap-status-card">
+            <div className="heatmap-status-topline">
+              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> Demo preparation</span>
+              <span>Next planned feature: TASK-006</span>
+            </div>
+            <div className="heatmap-status-grid">
+              <article><strong>18 regions</strong><span>Planned Philippine coverage</span></article>
+              <article><strong>Synthetic only</strong><span>No real patient records in this demo</span></article>
+              <article><strong>Aggregation gated</strong><span>Requires reviewed, de-identified inputs</span></article>
+              <article><strong>Live sharing disabled</strong><span>External publishing is not enabled</span></article>
+            </div>
+            <div className="heatmap-placeholder" role="img" aria-label="Placeholder grid for the future regional heatmap">
+              <span>Regional heatmap preview</span>
+              <div className="heatmap-cells" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
+              <small>Available after the population dashboard task is approved.</small>
+            </div>
           </div>
         </section>
       )}

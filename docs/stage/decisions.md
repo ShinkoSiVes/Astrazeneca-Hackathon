@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Heatmap status before dashboard implementation
+
+- A status view may describe the readiness of the future population dashboard, but it must never resemble or claim to be a live clinical-risk heatmap.
+- The current status is static: 18-region coverage is planned, only synthetic data is allowed, aggregation is gated, and external sharing is disabled.
+- TASK-006 remains the only task permitted to implement the actual population dashboard and map.
+
 ## Accepted - Public-facing placeholder content
 
 - The front-page FAQ answers workflow and consent questions only. It explicitly states that Hinga is not diagnostic and AI cannot make the final decision.
