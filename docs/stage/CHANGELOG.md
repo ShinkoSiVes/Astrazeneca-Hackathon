@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Aesthetic page handoff
+
+- Status: awaiting owner review with TASK-002
+- Navigation now briefly fades and lifts the current page away before the keyed next page fades and rises into place.
+- The handoff lasts 220 ms and blocks duplicate navigation presses during the transition.
+
 ## TASK-002 revision - Enable owner-demo landscape motion
 
 - Status: awaiting owner review with TASK-002

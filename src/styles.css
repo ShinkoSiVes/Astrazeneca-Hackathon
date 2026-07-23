@@ -17,7 +17,8 @@ button:disabled { cursor: not-allowed; }
 .landscape-rotator { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; background: #dbece7; }
 .view-screening { background: #f7fbfa; }
 .view-screening .landscape-rotator { display: none; }
-.view-transition { animation: view-flow-in 480ms cubic-bezier(.22, .8, .24, 1) both; }
+.view-transition { animation: view-flow-in 480ms cubic-bezier(.22, .8, .24, 1) both; will-change: opacity, transform; }
+.view-transition.is-leaving { pointer-events: none; animation: view-flow-out 220ms cubic-bezier(.55, .02, .74, .32) both; }
 .landscape-rotator::after { position: absolute; z-index: 2; inset: 0; content: ""; background: linear-gradient(145deg, rgb(245 250 248 / 82%) 0%, rgb(239 248 244 / 68%) 45%, rgb(231 244 239 / 75%) 100%); }
 .landscape-slide { position: absolute; z-index: 0; inset: -3%; opacity: 0; background: center / cover no-repeat; transform: scale(1.035); transition: opacity 1500ms ease-in-out, transform 8600ms cubic-bezier(.2, .72, .24, 1); }
 .landscape-slide.is-active { opacity: 1; transform: scale(1.1); }
@@ -192,8 +193,13 @@ button:disabled { cursor: not-allowed; }
 }
 
 @keyframes view-flow-in {
-  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(.992); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes view-flow-out {
+  from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  to { opacity: 0; transform: translate3d(0, -12px, 0) scale(.992); }
 }
 
 @keyframes landscape-ripple {
@@ -283,4 +289,6 @@ button:disabled { cursor: not-allowed; }
   .motion-preview .landscape-slide.is-active { opacity: 1 !important; transform: scale(1.1) !important; }
   .motion-preview .landscape-ripple { display: block; animation: landscape-ripple 1600ms cubic-bezier(.18, .7, .28, 1) both !important; }
   .motion-preview .landscape-ripple::after { animation: landscape-ripple-follow 1420ms 150ms cubic-bezier(.18, .7, .28, 1) both !important; }
+  .motion-preview .view-transition { animation-duration: 480ms !important; }
+  .motion-preview .view-transition.is-leaving { animation: view-flow-out 220ms cubic-bezier(.55, .02, .74, .32) both !important; }
 }

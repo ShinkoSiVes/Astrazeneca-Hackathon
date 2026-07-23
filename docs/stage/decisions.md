@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Two-part page handoff
+
+- A page change uses a short exit transition followed by the existing keyed entry transition; it is not presented as loading, synchronizing, or clinical processing.
+- Inputs are temporarily non-interactive only during the 220 ms exit to prevent duplicate actions.
+
 ## Accepted - Owner-demo motion defaults on
 
 - The owner explicitly requested visible background cycling, and the local preview reports reduced motion regardless of that request.

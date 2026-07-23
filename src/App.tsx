@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -76,6 +76,8 @@ export default function App() {
   const [activeBackdrop, setActiveBackdrop] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [motionPreview, setMotionPreview] = useState(true);
+  const [isLeavingView, setIsLeavingView] = useState(false);
+  const navigationTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const reducedMotionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
@@ -95,11 +97,25 @@ export default function App() {
 
     return () => window.clearInterval(rotation);
   }, [motionPreview, prefersReducedMotion]);
+
+  useEffect(() => () => {
+    if (navigationTimer.current !== undefined) window.clearTimeout(navigationTimer.current);
+  }, []);
   const [draftStatus, setDraftStatus] = useState("");
+
+  const navigateTo = (nextView: View) => {
+    if (nextView === view || isLeavingView) return;
+
+    setIsLeavingView(true);
+    navigationTimer.current = window.setTimeout(() => {
+      setView(nextView);
+      setIsLeavingView(false);
+    }, 220);
+  };
 
   const enterDemo = () => {
     sessionStorage.setItem("idea-demo-clinician", bhwId || defaultBhwId);
-    setView("ready");
+    navigateTo("ready");
   };
 
   const resetEncounter = () => {
@@ -137,7 +153,7 @@ export default function App() {
   const startScreening = () => {
     setScreeningStep(1);
     setDraftStatus("");
-    setView("screening");
+    navigateTo("screening");
   };
 
   return (
@@ -149,7 +165,7 @@ export default function App() {
         <span className="landscape-ripple" key={activeBackdrop} />
       </div>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Aeris AI home" onClick={() => setView("consent")}>
+        <a className="brand" href="#top" aria-label="Aeris AI home" onClick={() => navigateTo("consent")}>
           <img className="brand-mark" src={lungMark} alt="" aria-hidden="true" />
           <span>
             <strong>Aeris AI</strong>
@@ -158,7 +174,7 @@ export default function App() {
         </a>
         <div className="topbar-actions">
           {view === "consent" && (
-            <button className="nav-link" type="button" onClick={() => setView("about")}>
+            <button className="nav-link" type="button" onClick={() => navigateTo("about")}>
               <Info size={16} /> About
             </button>
           )}
@@ -180,7 +196,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="view-transition" key={view}>
+      <div className={`view-transition ${isLeavingView ? "is-leaving" : ""}`} key={view}>
       {view === "consent" && (
         <>
           <section className="hero-grid" aria-labelledby="consent-title">
@@ -196,7 +212,7 @@ export default function App() {
               <p><LockKeyhole size={20} /><span><strong>Purpose-limited</strong>Only consented screening information continues.</span></p>
               <p><CloudOff size={20} /><span><strong>Works offline</strong>Drafts stay on this device until a future sync is approved.</span></p>
             </div>
-            <button className="heatmap-status-link" type="button" onClick={() => setView("heatmap-status")}>
+            <button className="heatmap-status-link" type="button" onClick={() => navigateTo("heatmap-status")}>
               <span className="status-beacon" aria-hidden="true" />
               <span><strong>Heatmap status</strong><small>View current demo readiness</small></span>
               <ArrowRight size={18} aria-hidden="true" />
@@ -230,7 +246,7 @@ export default function App() {
                 </label>
                 <div className="button-row">
                   <button className="secondary-button" type="button" onClick={() => setDeclined(true)}>No, end encounter</button>
-                  <button className="primary-button" type="button" disabled={!hasConsent} onClick={() => setView("login")}>
+                  <button className="primary-button" type="button" disabled={!hasConsent} onClick={() => navigateTo("login")}>
                     Continue to secure login <ArrowRight size={18} />
                   </button>
                 </div>
@@ -270,7 +286,7 @@ export default function App() {
       {view === "about" && (
         <section className="about-layout" aria-labelledby="about-title">
           <div className="about-hero">
-            <button className="back-link" type="button" onClick={() => setView("consent")}>
+            <button className="back-link" type="button" onClick={() => navigateTo("consent")}>
               <ChevronLeft size={17} /> Back to screening
             </button>
             <p className="eyebrow"><UsersRound size={16} /> About the project</p>
@@ -313,7 +329,7 @@ export default function App() {
       {view === "heatmap-status" && (
         <section className="heatmap-status-layout" aria-labelledby="heatmap-status-title">
           <div className="heatmap-status-hero">
-            <button className="back-link" type="button" onClick={() => setView("consent")}>
+            <button className="back-link" type="button" onClick={() => navigateTo("consent")}>
               <ChevronLeft size={17} /> Back to screening
             </button>
             <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
@@ -344,7 +360,7 @@ export default function App() {
       {view === "screening" && (
         <section className="screening-layout" aria-labelledby="screening-title">
           <div className="screening-intro">
-            <button className="back-link" type="button" onClick={() => setView("ready")}>
+            <button className="back-link" type="button" onClick={() => navigateTo("ready")}>
               <ChevronLeft size={17} /> Back to workspace
             </button>
             <p className="eyebrow"><ShieldCheck size={16} /> Local screening draft</p>
@@ -411,7 +427,7 @@ export default function App() {
                 {screeningStep < 3 ? (
                   <button className="primary-button" type="button" onClick={() => setScreeningStep((current) => current + 1)}>Continue <ArrowRight size={18} /></button>
                 ) : (
-                  <button className="primary-button" type="button" onClick={() => { saveScreeningDraft(); setView("ready"); }}>Finish screening draft <Check size={18} /></button>
+                  <button className="primary-button" type="button" onClick={() => { saveScreeningDraft(); navigateTo("ready"); }}>Finish screening draft <Check size={18} /></button>
                 )}
               </div>
             </div>
@@ -442,7 +458,7 @@ export default function App() {
             <button className="primary-button full-width" type="submit" disabled={!bhwId || !passcode}>
               Enter screening workspace <ArrowRight size={18} />
             </button>
-            <button className="text-button" type="button" onClick={() => setView("consent")}>Back to consent</button>
+            <button className="text-button" type="button" onClick={() => navigateTo("consent")}>Back to consent</button>
           </form>
         </section>
       )}
@@ -455,7 +471,7 @@ export default function App() {
           <p>Consent is recorded for this encounter. Continue with the clinician-led screening draft.</p>
           <div className="ready-actions">
             <button className="primary-button" type="button" onClick={startScreening}>Start screening <ArrowRight size={18} /></button>
-            <button className="secondary-button" type="button" onClick={() => { sessionStorage.removeItem("idea-demo-clinician"); setView("consent"); resetEncounter(); }}>End demo session</button>
+            <button className="secondary-button" type="button" onClick={() => { sessionStorage.removeItem("idea-demo-clinician"); navigateTo("consent"); resetEncounter(); }}>End demo session</button>
           </div>
           <p className="stage-note">Stage preview · TASK-002 · Screening drafts stay local</p>
         </section>

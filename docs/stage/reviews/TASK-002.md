@@ -19,10 +19,12 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - Public-flow backgrounds now rotate across five locally cached Philippine landscapes, crossfading every 7.2 seconds; profiling remains deliberately clear.
 - Each public-background change includes a double-ripple effect. The owner stage preview starts it enabled; a Pause motion control remains available when the local viewer reports reduced motion.
 - For the owner stage preview, the requested visual motion starts enabled; the same control becomes Pause motion when the local viewer reports reduced motion.
+- View changes now have an exit-and-entry handoff: the current page fades upward before the next page rises in, preventing the abrupt content swap.
 
 ## Changed files
 
 - `src/App.tsx` and `src/styles.css` — keyed page-entry transition for smooth view changes.
+- `src/App.tsx`, `src/styles.css`, and `src/App.test.tsx` — exit-and-entry page handoff with flow tests updated for the short transition.
 
 - `src/App.tsx` — wizard state, local draft save/restore, and workspace handoff.
 - `src/App.tsx` and `src/App.test.tsx` — tobacco-use period and local-draft coverage.
@@ -40,6 +42,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - `pnpm test` passes: 8 tests, including the public-landscape rotation interval.
 - Rotation verification: the automated check advances one 7.2-second interval and confirms the next landscape becomes active.
 - Motion behavior: the ripple uses a keyed element on each active-background change, while the Play motion control is reserved for an intentional override of a system reduced-motion preference.
+- Navigation verification: consent, login, workspace, profiling, About, and Heatmap test flows wait for and complete the short exit-and-entry handoff.
 - Visual transition check passed: moving from consent to secure login applied the `view-flow-in` animation while the top bar stayed present.
 - Visual review passed: consented login led to the wizard, a non-identifying field reference was saved locally, and the local-only confirmation was visible.
 - Landscape visual review remains available in the stage preview. Automated reload was blocked by browser URL policy after the local-asset changes; build and test checks remain green.
