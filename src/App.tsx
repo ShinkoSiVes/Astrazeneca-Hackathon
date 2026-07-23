@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
 
-type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete";
+type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review";
 
 const defaultBhwId = "BHW-024";
 
@@ -73,6 +73,7 @@ const emptyScreeningDraft: ScreeningDraft = {
 
 const screeningDraftKey = "aeris-screening-draft-v1";
 const temporaryRecordKey = "aeris-temporary-ai-record-v1";
+const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "" };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -94,6 +95,7 @@ export default function App() {
   const [aiConsent, setAiConsent] = useState<boolean | null>(null);
   const [imagingMetadata, setImagingMetadata] = useState<ImagingMetadata>(emptyImagingMetadata);
   const [temporaryRecordReady, setTemporaryRecordReady] = useState(false);
+  const [reviewOutcome, setReviewOutcome] = useState<"pending" | "needs-info" | "accepted" | "forced">("pending");
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
@@ -217,6 +219,21 @@ export default function App() {
     }));
     setTemporaryRecordReady(readyForReview);
     navigateTo("temporary-record");
+  };
+
+  const saveClinicianReview = (outcome: "accepted" | "needs-info" | "forced") => {
+    localStorage.setItem(clinicianReviewKey, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      outcome,
+      reviewSource: "static metadata-only workflow fixture",
+      imaging: imagingMetadata,
+    }));
+    setReviewOutcome(outcome);
+  };
+
+  const openNoduleReview = () => {
+    setReviewOutcome("pending");
+    navigateTo("nodule-review");
   };
 
   const changeScreeningStep = (nextStep: number) => {
@@ -571,9 +588,55 @@ export default function App() {
           <p>{temporaryRecordReady ? "The consented screening draft and imaging metadata are stored only on this device. No AI result has been generated." : "This local draft is marked for follow-up. Return with an available CT study and non-identifying reference before the next review step."}</p>
           <div className="ready-actions">
             <button className="secondary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Update imaging details</button>
-            <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
+            {temporaryRecordReady ? <button className="primary-button" type="button" onClick={openNoduleReview}>Open clinician review <ArrowRight size={18} /></button> : <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>}
           </div>
           <p className="stage-note">AI is not run in TASK-003. Clinician review remains a later, separate step.</p>
+        </section>
+      )}
+
+      {view === "nodule-review" && (
+        <section className="review-layout" aria-labelledby="nodule-review-title">
+          <div className="review-context">
+            <button className="back-link" type="button" onClick={() => navigateTo("temporary-record")}><ChevronLeft size={17} /> Back to temporary record</button>
+            <p className="eyebrow"><ShieldCheck size={16} /> Clinician review gate</p>
+            <h1 id="nodule-review-title">Review the support packet before it can continue.</h1>
+            <p>Aeris AI does not diagnose cancer. This checkpoint records the clinician’s workflow decision; it does not replace imaging interpretation or clinical judgment.</p>
+          </div>
+          <div className="review-card">
+            <div className="review-card-topline"><span className="status-chip">Static workflow fixture</span><span>Local only</span></div>
+            <h2>Metadata-only review packet</h2>
+            <p className="helper-text">No CT pixels have been uploaded, parsed, or interpreted. This fixture is not a nodule finding, malignancy estimate, or diagnosis.</p>
+            <dl className="review-facts">
+              <div><dt>Modality</dt><dd>{imagingMetadata.modality || "Not recorded"}</dd></div>
+              <div><dt>Availability</dt><dd>{imagingMetadata.sourceStatus || "Not recorded"}</dd></div>
+              <div><dt>Study reference</dt><dd>{imagingMetadata.studyReference || "Not recorded"}</dd></div>
+              <div><dt>Study date</dt><dd>{imagingMetadata.studyDate || "Not recorded"}</dd></div>
+            </dl>
+
+            {reviewOutcome === "pending" && (
+              <div className="review-actions">
+                <p><strong>Clinician decision</strong> Is this record sufficiently described to move to a later, clinician-reviewed risk-data path?</p>
+                <button className="primary-button" type="button" onClick={() => saveClinicianReview("accepted")}>Accept as reviewed workflow data <Check size={18} /></button>
+                <button className="secondary-button" type="button" onClick={() => saveClinicianReview("needs-info")}>Request more information</button>
+              </div>
+            )}
+
+            {reviewOutcome === "needs-info" && (
+              <div className="review-resolution" role="status">
+                <strong>More information requested.</strong>
+                <p>The local record is marked for follow-up. Return with more clinical or imaging context, or continue only when the clinician explicitly accepts the caveat.</p>
+                <div className="draft-buttons"><button className="secondary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Update temporary record</button><button className="primary-button" type="button" onClick={() => saveClinicianReview("forced")}>Force continue with caveat</button></div>
+              </div>
+            )}
+
+            {(reviewOutcome === "accepted" || reviewOutcome === "forced") && (
+              <div className="review-resolution" role="status">
+                <strong>{reviewOutcome === "forced" ? "Forced continuation recorded." : "Clinician review recorded."}</strong>
+                <p>{reviewOutcome === "forced" ? "The local record is clearly marked as forced and remains subject to later clinician and governance review." : "The local record is marked as clinician-reviewed workflow data. It has not been aggregated or shared."}</p>
+                <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
+              </div>
+            )}
+          </div>
         </section>
       )}
 

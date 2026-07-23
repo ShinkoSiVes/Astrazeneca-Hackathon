@@ -176,6 +176,36 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("awaiting additional imaging details");
   });
 
+  it("records clinician nodule-review branches locally without presenting a diagnosis", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
+    await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
+    await user.selectOptions(await screen.findByLabelText(/imaging modality/i), "CT scan");
+    await user.selectOptions(screen.getByLabelText(/imaging availability/i), "Available locally");
+    await user.type(screen.getByLabelText(/study \/ facility reference/i), "CT-LOCAL-024");
+    await user.click(screen.getByRole("button", { name: /save temporary local record/i }));
+    await user.click(await screen.findByRole("button", { name: /open clinician review/i }));
+    await user.click(await screen.findByRole("button", { name: /request more information/i }));
+    expect(await screen.findByText(/more information requested/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /force continue with caveat/i }));
+
+    expect(await screen.findByText(/forced continuation recorded/i)).toBeInTheDocument();
+    expect(localStorage.getItem("aeris-clinician-nodule-review-v1")).toContain("forced");
+    expect(screen.getByText(/not a nodule finding, malignancy estimate, or diagnosis/i)).toBeInTheDocument();
+  });
+
   it("rotates through the public landscape scenes", () => {
     vi.useFakeTimers();
     const { container } = render(<App />);
