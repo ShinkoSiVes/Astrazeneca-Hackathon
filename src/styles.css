@@ -16,12 +16,15 @@ button:disabled { cursor: not-allowed; }
 .app-shell > :not(.landscape-rotator) { position: relative; z-index: 1; }
 .landscape-rotator { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; background: #dbece7; }
 .view-screening, .view-ai-consent, .view-imaging-metadata, .view-temporary-record, .view-screening-complete, .view-nodule-review { background: #f7fbfa; }
-.view-ai-consent .landscape-rotator, .view-imaging-metadata .landscape-rotator, .view-temporary-record .landscape-rotator, .view-screening-complete .landscape-rotator, .view-nodule-review .landscape-rotator { display: none; }
-.view-screening .landscape-rotator { display: block; }
+.view-screening .landscape-rotator, .view-ai-consent .landscape-rotator, .view-imaging-metadata .landscape-rotator, .view-temporary-record .landscape-rotator, .view-screening-complete .landscape-rotator, .view-nodule-review .landscape-rotator { display: block; }
 .view-screening .landscape-rotator::after { background: linear-gradient(145deg, rgb(248 252 250 / 92%) 0%, rgb(242 249 246 / 89%) 48%, rgb(235 246 242 / 91%) 100%); }
-.view-screening .landscape-slide { opacity: 0 !important; transform: scale(1.045) !important; transition: none; }
-.view-screening .landscape-sagada { opacity: 1 !important; }
-.view-screening .landscape-ripple { display: none; }
+.view-ai-consent .landscape-rotator::after { background: linear-gradient(145deg, rgb(248 252 250 / 90%) 0%, rgb(242 249 246 / 87%) 48%, rgb(235 246 242 / 89%) 100%); }
+.view-imaging-metadata .landscape-rotator::after { background: linear-gradient(145deg, rgb(248 252 250 / 94%) 0%, rgb(242 249 246 / 92%) 48%, rgb(235 246 242 / 93%) 100%); }
+.view-temporary-record .landscape-rotator::after, .view-screening-complete .landscape-rotator::after { background: linear-gradient(145deg, rgb(248 252 250 / 96%) 0%, rgb(242 249 246 / 94%) 48%, rgb(235 246 242 / 95%) 100%); }
+.view-nodule-review .landscape-rotator::after { background: linear-gradient(145deg, rgb(248 252 250 / 97%) 0%, rgb(242 249 246 / 95%) 48%, rgb(235 246 242 / 96%) 100%); }
+.view-screening .landscape-slide, .view-ai-consent .landscape-slide, .view-imaging-metadata .landscape-slide, .view-temporary-record .landscape-slide, .view-screening-complete .landscape-slide, .view-nodule-review .landscape-slide { opacity: 0 !important; transform: scale(1.045) !important; transition: none; }
+.view-screening .landscape-sagada, .view-ai-consent .landscape-sagada, .view-imaging-metadata .landscape-sagada, .view-temporary-record .landscape-sagada, .view-screening-complete .landscape-sagada, .view-nodule-review .landscape-sagada { opacity: 1 !important; }
+.view-screening .landscape-ripple, .view-ai-consent .landscape-ripple, .view-imaging-metadata .landscape-ripple, .view-temporary-record .landscape-ripple, .view-screening-complete .landscape-ripple, .view-nodule-review .landscape-ripple { display: none; }
 .view-transition { animation: view-flow-in 480ms cubic-bezier(.22, .8, .24, 1) both; will-change: opacity, transform; }
 .view-transition.is-leaving { pointer-events: none; animation: view-flow-out 220ms cubic-bezier(.55, .02, .74, .32) both; }
 .landscape-rotator::after { position: absolute; z-index: 2; inset: 0; content: ""; background: linear-gradient(145deg, rgb(245 250 248 / 82%) 0%, rgb(239 248 244 / 68%) 45%, rgb(231 244 239 / 75%) 100%); }
