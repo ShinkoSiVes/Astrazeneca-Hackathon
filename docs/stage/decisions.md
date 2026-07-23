@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Intentional ripple motion preview
+
+- Background changes use a double-ripple over the existing crossfade rather than a hard-looking image swap.
+- System reduced-motion preference remains respected by default. An explicit Play motion control is available only in that state for a deliberate demo preview.
+
 ## Accepted - Diverse, visible public-flow landscape rotation
 
 - The public flow uses five different, locally cached Philippine landscape scenes rather than a terrace-only sequence.

@@ -74,17 +74,27 @@ export default function App() {
   const [screeningStep, setScreeningStep] = useState(1);
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
   const [activeBackdrop, setActiveBackdrop] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [motionPreview, setMotionPreview] = useState(false);
 
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    if (prefersReducedMotion) return undefined;
+    const reducedMotionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const syncMotionPreference = () => setPrefersReducedMotion(reducedMotionQuery?.matches ?? false);
+    syncMotionPreference();
+    reducedMotionQuery?.addEventListener?.("change", syncMotionPreference);
+
+    return () => reducedMotionQuery?.removeEventListener?.("change", syncMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion && !motionPreview) return undefined;
 
     const rotation = window.setInterval(() => {
       setActiveBackdrop((current) => (current + 1) % landscapeSlides.length);
     }, 7200);
 
     return () => window.clearInterval(rotation);
-  }, []);
+  }, [motionPreview, prefersReducedMotion]);
   const [draftStatus, setDraftStatus] = useState("");
 
   const enterDemo = () => {
@@ -131,11 +141,12 @@ export default function App() {
   };
 
   return (
-    <main className={`app-shell view-${view}`}>
+    <main className={`app-shell view-${view} ${motionPreview ? "motion-preview" : ""}`}>
       <div className="landscape-rotator" aria-hidden="true">
         {landscapeSlides.map((slide, index) => (
           <span className={`landscape-slide ${slide} ${index === activeBackdrop ? "is-active" : ""}`} key={slide} />
         ))}
+        <span className="landscape-ripple" key={activeBackdrop} />
       </div>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Aeris AI home" onClick={() => setView("consent")}>
@@ -149,6 +160,11 @@ export default function App() {
           {view === "consent" && (
             <button className="nav-link" type="button" onClick={() => setView("about")}>
               <Info size={16} /> About
+            </button>
+          )}
+          {prefersReducedMotion && (
+            <button className="motion-toggle" type="button" aria-pressed={motionPreview} onClick={() => setMotionPreview((current) => !current)}>
+              {motionPreview ? "Pause motion" : "Play motion"}
             </button>
           )}
           <button

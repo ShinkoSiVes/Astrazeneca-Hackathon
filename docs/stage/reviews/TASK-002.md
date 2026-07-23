@@ -17,6 +17,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - The clinician profiling/screening workspace deliberately uses a clear, light background without the rotating landscape imagery.
 - Each route change now has a brief, unobtrusive page-entry transition; the persistent top bar remains stable for orientation.
 - Public-flow backgrounds now rotate across five locally cached Philippine landscapes, crossfading every 7.2 seconds; profiling remains deliberately clear.
+- Each public-background change includes a double-ripple effect. Devices that request reduced motion remain still unless the user explicitly presses Play motion.
 
 ## Changed files
 
@@ -37,6 +38,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - `pnpm run build` passes.
 - `pnpm test` passes: 8 tests, including the public-landscape rotation interval.
 - Rotation verification: the automated check advances one 7.2-second interval and confirms the next landscape becomes active.
+- Motion behavior: the ripple uses a keyed element on each active-background change, while the Play motion control is reserved for an intentional override of a system reduced-motion preference.
 - Visual transition check passed: moving from consent to secure login applied the `view-flow-in` animation while the top bar stayed present.
 - Visual review passed: consented login led to the wizard, a non-identifying field reference was saved locally, and the local-only confirmation was visible.
 - Landscape visual review remains available in the stage preview. Automated reload was blocked by browser URL policy after the local-asset changes; build and test checks remain green.

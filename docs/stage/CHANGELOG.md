@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Ripple landscape transitions
+
+- Status: awaiting owner review with TASK-002
+- Replaced the background's buffered-looking image switch with a double-ripple transition layered over the crossfade.
+- When a device requests reduced motion, the app remains static by default and shows an explicit Play motion control for an intentional preview.
+
 ## TASK-002 revision - Diverse animated landscape rotation
 
 - Status: awaiting owner review with TASK-002
