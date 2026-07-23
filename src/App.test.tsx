@@ -31,4 +31,18 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("main")).toHaveClass("view-ready");
     expect(sessionStorage.getItem("idea-demo-clinician")).toBe("BHW-024");
   });
+
+  it("opens the static About view and returns to the consent screen", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /about/i }));
+
+    expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
+    expect(screen.getByText(/people behind the prototype/i)).toBeInTheDocument();
+    expect(screen.getAllByText("[Name]")).toHaveLength(4);
+
+    await user.click(screen.getByRole("button", { name: /back to screening/i }));
+    expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
+  });
 });

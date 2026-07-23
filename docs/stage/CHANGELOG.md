@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-001 revision - FAQ and About
+
+- Status: pending owner review with TASK-001
+- Added a clinician-oriented FAQ to the consent screen and a static About view reachable from the front page.
+- Added four clearly labeled placeholder team cards with placeholder profile-photo, name, role, and social-link fields.
+
 ## Repository setup - GitHub branch workflow
 
 - Status: stage documentation current

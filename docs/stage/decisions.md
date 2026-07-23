@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Public-facing placeholder content
+
+- The front-page FAQ answers workflow and consent questions only. It explicitly states that Hinga is not diagnostic and AI cannot make the final decision.
+- The About view is static demo content. Team profiles use visibly bracketed placeholders until the owner supplies approved names, roles, photos, and links.
+- Placeholder social links do not leave the demo or represent real accounts.
+
 ## Pending owner confirmation - Temporary name and logo
 
 - Proposed working product name: `Hinga`, with the descriptor `Lung screening`.
