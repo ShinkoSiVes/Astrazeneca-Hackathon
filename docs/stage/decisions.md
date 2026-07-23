@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Metadata-only clinician review gate
+
+- TASK-004 may demonstrate the clinician decision workflow only after a local CT metadata record is marked ready.
+- The packet must state that it is a static workflow fixture and must never be presented as an image interpretation, nodule finding, malignancy estimate, or diagnosis.
+- Clinicians may accept the workflow record, request more information, or force continuation with a caveat. Every outcome is local-only and remains outside aggregation until TASK-005.
+
 ## Accepted - Separate AI consent and metadata-only temporary record
 
 - AI risk support has a separate patient-consent choice after screening; declining it must keep the encounter on the screening-only local path.

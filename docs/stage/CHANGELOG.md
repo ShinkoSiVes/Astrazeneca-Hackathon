@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-004 - Clinician nodule-review screen and decision branches
+
+- Status: awaiting owner review
+- Added a clinician-only review gate for a complete CT metadata record, with accept, request-more-information, and forced-continue-with-caveat branches.
+- The review source is explicitly a static metadata-only workflow fixture; no CT pixels, model output, nodule finding, malignancy estimate, or diagnosis is shown.
+
 ## TASK-002 revision - Static transparent screening backdrop
 
 - Status: awaiting owner review with TASK-002
