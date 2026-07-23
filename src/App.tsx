@@ -75,7 +75,7 @@ export default function App() {
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
   const [activeBackdrop, setActiveBackdrop] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [motionPreview, setMotionPreview] = useState(false);
+  const [motionPreview, setMotionPreview] = useState(true);
 
   useEffect(() => {
     const reducedMotionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");

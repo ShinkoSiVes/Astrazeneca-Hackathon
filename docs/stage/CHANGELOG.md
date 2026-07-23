@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Enable owner-demo landscape motion
+
+- Status: awaiting owner review with TASK-002
+- The stage demo now enables the rotating landscape motion on load, even in the local preview environment that reports reduced motion.
+- A visible Pause motion control remains available whenever that preference is reported.
+
 ## TASK-002 revision - Ripple landscape transitions
 
 - Status: awaiting owner review with TASK-002

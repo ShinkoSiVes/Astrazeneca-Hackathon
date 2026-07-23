@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Owner-demo motion defaults on
+
+- The owner explicitly requested visible background cycling, and the local preview reports reduced motion regardless of that request.
+- Therefore, stage starts landscape motion enabled and presents a Pause motion control in reduced-motion environments. This is a demo-specific choice to make the reviewable behavior visible.
+
 ## Accepted - Intentional ripple motion preview
 
 - Background changes use a double-ripple over the existing crossfade rather than a hard-looking image swap.
