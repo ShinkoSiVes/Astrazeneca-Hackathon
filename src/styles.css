@@ -166,6 +166,8 @@ button:disabled { cursor: not-allowed; }
 .screening-steps .active { color: #174d55; }
 .screening-steps .active span { border-color: #0d8179; color: #fff; background: #0d8179; }
 .screening-card { min-width: 0; border: 1px solid #d9e8e4; border-radius: 25px; padding: clamp(25px, 4vw, 42px); background: rgb(255 255 255 / 82%); box-shadow: 0 18px 48px rgb(20 64 69 / 7%); animation: screening-card-fade-in 760ms 110ms cubic-bezier(.22, .8, .24, 1) both; }
+.screening-step-panel { animation: screening-step-in 360ms cubic-bezier(.22, .8, .24, 1) both; }
+.screening-step-panel.is-leaving { pointer-events: none; animation: screening-step-out 180ms cubic-bezier(.55, .02, .74, .32) both; }
 .form-heading h2 { margin: 10px 0 10px; color: #163f49; font-size: clamp(29px, 3.1vw, 39px); line-height: 1.08; letter-spacing: -0.045em; }
 .form-heading > p:last-child { margin: 0; color: #637d83; font-size: 15px; line-height: 1.55; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 31px; }
@@ -208,6 +210,16 @@ button:disabled { cursor: not-allowed; }
 @keyframes screening-card-fade-in {
   from { opacity: 0; transform: translate3d(18px, 18px, 0) scale(.985); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes screening-step-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes screening-step-out {
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to { opacity: 0; transform: translate3d(0, -8px, 0); }
 }
 
 @keyframes landscape-ripple {
@@ -301,4 +313,6 @@ button:disabled { cursor: not-allowed; }
   .motion-preview .view-transition.is-leaving { animation: view-flow-out 220ms cubic-bezier(.55, .02, .74, .32) both !important; }
   .motion-preview .view-screening .screening-layout { animation: screening-fade-in 680ms cubic-bezier(.22, .8, .24, 1) both !important; }
   .motion-preview .view-screening .screening-card { animation: screening-card-fade-in 760ms 110ms cubic-bezier(.22, .8, .24, 1) both !important; }
+  .motion-preview .view-screening .screening-step-panel { animation: screening-step-in 360ms cubic-bezier(.22, .8, .24, 1) both !important; }
+  .motion-preview .view-screening .screening-step-panel.is-leaving { animation: screening-step-out 180ms cubic-bezier(.55, .02, .74, .32) both !important; }
 }

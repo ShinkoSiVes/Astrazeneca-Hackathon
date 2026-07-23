@@ -118,7 +118,8 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /start screening/i }));
     await screen.findByRole("button", { name: /^continue$/i });
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
-    await user.selectOptions(screen.getByLabelText(/tobacco-use frequency/i), "Per week");
+    expect(document.querySelector(".screening-step-panel")).toHaveClass("is-leaving");
+    await user.selectOptions(await screen.findByLabelText(/tobacco-use frequency/i), "Per week");
     await user.type(screen.getByLabelText(/estimated packs/i), "3");
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
 

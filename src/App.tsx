@@ -75,7 +75,9 @@ export default function App() {
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
   const [activeBackdrop, setActiveBackdrop] = useState(0);
   const [isLeavingView, setIsLeavingView] = useState(false);
+  const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
   const navigationTimer = useRef<number | undefined>(undefined);
+  const screeningStepTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const rotation = window.setInterval(() => {
@@ -87,6 +89,7 @@ export default function App() {
 
   useEffect(() => () => {
     if (navigationTimer.current !== undefined) window.clearTimeout(navigationTimer.current);
+    if (screeningStepTimer.current !== undefined) window.clearTimeout(screeningStepTimer.current);
   }, []);
   const [draftStatus, setDraftStatus] = useState("");
 
@@ -141,6 +144,16 @@ export default function App() {
     setScreeningStep(1);
     setDraftStatus("");
     navigateTo("screening");
+  };
+
+  const changeScreeningStep = (nextStep: number) => {
+    if (isSwitchingScreeningStep || nextStep === screeningStep) return;
+
+    setIsSwitchingScreeningStep(true);
+    screeningStepTimer.current = window.setTimeout(() => {
+      setScreeningStep(nextStep);
+      setIsSwitchingScreeningStep(false);
+    }, 180);
   };
 
   return (
@@ -358,8 +371,9 @@ export default function App() {
           </div>
 
           <form className="screening-card" onSubmit={(event) => event.preventDefault()}>
-            {screeningStep === 1 && (
-              <>
+            <div className={`screening-step-panel ${isSwitchingScreeningStep ? "is-leaving" : ""}`} key={screeningStep} aria-live="polite">
+              {screeningStep === 1 && (
+                <>
                 <div className="form-heading"><p className="card-kicker">Step 1 of 3</p><h2>Patient profile and place</h2><p>Use a field reference rather than a patient name.</p></div>
                 <div className="form-grid">
                   <label>Field reference<input value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. BHW-024-001" /></label>
@@ -368,11 +382,11 @@ export default function App() {
                   <label>Barangay / municipality<input value={screeningDraft.barangay} onChange={(event) => updateDraft("barangay", event.target.value)} placeholder="Local area" /></label>
                   <label className="wide-field">Province / region<input value={screeningDraft.province} onChange={(event) => updateDraft("province", event.target.value)} placeholder="Province or region" /></label>
                 </div>
-              </>
-            )}
+                </>
+              )}
 
-            {screeningStep === 2 && (
-              <>
+              {screeningStep === 2 && (
+                <>
                 <div className="form-heading"><p className="card-kicker">Step 2 of 3</p><h2>Exposure and relevant history</h2><p>Record the clinician's screening observations. All fields are optional in this demo.</p></div>
                 <div className="form-grid">
                   <label>Smoking status<select value={screeningDraft.smokingStatus} onChange={(event) => updateDraft("smokingStatus", event.target.value)}><option value="">Select option</option><option>Never smoked</option><option>Former smoker</option><option>Current smoker</option><option>Not recorded</option></select></label>
@@ -383,11 +397,11 @@ export default function App() {
                   <label>Lung or TB history<select value={screeningDraft.lungHistory} onChange={(event) => updateDraft("lungHistory", event.target.value)}><option value="">Select option</option><option>TB history</option><option>COPD / asthma</option><option>Other lung condition</option><option>None reported</option><option>Unknown</option></select></label>
                   <label>Family lung-cancer history<select value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
                 </div>
-              </>
-            )}
+                </>
+              )}
 
-            {screeningStep === 3 && (
-              <>
+              {screeningStep === 3 && (
+                <>
                 <div className="form-heading"><p className="card-kicker">Step 3 of 3</p><h2>Symptoms and clinician note</h2><p>This is not a diagnosis. Record only information relevant to the screening encounter.</p></div>
                 <div className="form-grid">
                   <label>Persistent cough<select value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
@@ -397,17 +411,18 @@ export default function App() {
                   <label>Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
                   <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
                 </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
 
             <div className="draft-actions">
               <div className="draft-status" aria-live="polite">{draftStatus || "Draft has not been saved yet."}</div>
               <div className="draft-buttons">
                 <button className="text-button" type="button" onClick={restoreScreeningDraft}>Restore local draft</button>
                 <button className="secondary-button" type="button" onClick={saveScreeningDraft}>Save local draft</button>
-                {screeningStep > 1 && <button className="secondary-button" type="button" onClick={() => setScreeningStep((current) => current - 1)}>Previous</button>}
+                {screeningStep > 1 && <button className="secondary-button" type="button" disabled={isSwitchingScreeningStep} onClick={() => changeScreeningStep(screeningStep - 1)}>Previous</button>}
                 {screeningStep < 3 ? (
-                  <button className="primary-button" type="button" onClick={() => setScreeningStep((current) => current + 1)}>Continue <ArrowRight size={18} /></button>
+                  <button className="primary-button" type="button" disabled={isSwitchingScreeningStep} onClick={() => changeScreeningStep(screeningStep + 1)}>Continue <ArrowRight size={18} /></button>
                 ) : (
                   <button className="primary-button" type="button" onClick={() => { saveScreeningDraft(); navigateTo("ready"); }}>Finish screening draft <Check size={18} /></button>
                 )}
