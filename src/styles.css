@@ -115,6 +115,22 @@ button:disabled { cursor: not-allowed; }
 .ai-choice-list { display: grid; gap: 12px; margin-top: 26px; }
 .ai-choice-list .secondary-button, .ai-choice-list .primary-button { width: 100%; }
 .imaging-form .field-note { margin: 24px 0; }
+.study-date-picker { position: relative; }
+.form-grid .study-date-picker { display: grid; gap: 8px; min-width: 0; color: #2a525b; font-size: 14px; font-weight: 800; }
+.date-picker-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 50px; border: 1px solid #b9d0ce; border-radius: 11px; padding: 0 13px; color: #173e47; background: #fcfefd; font: inherit; font-weight: 500; text-align: left; }
+.date-picker-trigger:hover, .date-picker-trigger[aria-expanded="true"] { border-color: #0e8179; box-shadow: 0 0 0 4px rgb(14 129 121 / 10%); }
+.date-picker-trigger svg { color: #0d706b; }
+.date-picker-popover { position: absolute; z-index: 4; top: calc(100% + 9px); right: 0; width: min(330px, calc(100vw - 64px)); border: 1px solid #c8dfda; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 18px 38px rgb(18 67 72 / 16%); animation: calendar-enter 180ms ease-out both; }
+.date-picker-controls { display: grid; grid-template-columns: 1fr .75fr; gap: 9px; }
+.date-picker-controls label { gap: 5px; color: #637d83; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.date-picker-controls select { min-height: 38px; border: 1px solid #c5d8d5; border-radius: 9px; padding: 0 8px; color: #173e47; background: #fbfefd; font: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 14px; text-align: center; }
+.calendar-weekdays span { color: #71898d; font-size: 11px; font-weight: 800; }
+.calendar-days { margin-top: 7px; }
+.calendar-days button, .calendar-days > span { display: grid; place-items: center; aspect-ratio: 1; min-width: 0; border-radius: 8px; }
+.calendar-days button { border: 0; color: #234a53; background: transparent; font-size: 13px; font-weight: 750; }
+.calendar-days button:hover { color: #075f5b; background: #eaf6f2; }
+.calendar-days button.selected { color: #fff; background: #0d8179; box-shadow: 0 4px 9px rgb(13 129 121 / 22%); }
 
 .faq-section { width: min(1240px, calc(100% - 48px)); margin: 0 auto 90px; padding: clamp(30px, 5vw, 58px); border: 1px solid #d8e8e4; border-radius: 28px; background: rgb(255 255 255 / 68%); box-shadow: 0 18px 48px rgb(20 64 69 / 5%); animation: content-enter 600ms 220ms both; }
 .faq-heading { max-width: 620px; }
@@ -254,6 +270,11 @@ button:disabled { cursor: not-allowed; }
 
 @keyframes card-enter {
   from { opacity: 0; transform: translateY(20px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes calendar-enter {
+  from { opacity: 0; transform: translateY(-6px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 

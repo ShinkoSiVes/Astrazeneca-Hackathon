@@ -164,6 +164,10 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByRole("heading", { name: /symptoms and clinician note/i });
     await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
     await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
+    await user.click(await screen.findByRole("button", { name: /select study date/i }));
+    await user.selectOptions(screen.getByLabelText(/study month/i), "0");
+    await user.click(screen.getByRole("button", { name: /choose january 15/i }));
+    expect(screen.getByRole("button", { name: /selected study date: jan 15/i })).toBeInTheDocument();
     await user.selectOptions(await screen.findByLabelText(/imaging modality/i), "No imaging available");
     await user.click(screen.getByRole("button", { name: /save temporary local record/i }));
 

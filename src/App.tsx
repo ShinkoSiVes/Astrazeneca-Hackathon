@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
+  CalendarDays,
   Check,
   ChevronLeft,
   CircleCheckBig,
@@ -73,6 +74,13 @@ const emptyScreeningDraft: ScreeningDraft = {
 const screeningDraftKey = "aeris-screening-draft-v1";
 const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "" };
+const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+const dateValueFor = (year: number, month: number, day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+const calendarCellsFor = (year: number, month: number) => Array.from({ length: new Date(year, month + 1, 0).getDate() + new Date(year, month, 1).getDay() }, (_, index) => {
+  const day = index - new Date(year, month, 1).getDay() + 1;
+  return day > 0 ? day : null;
+});
 
 export default function App() {
   const [view, setView] = useState<View>("consent");
@@ -86,6 +94,9 @@ export default function App() {
   const [aiConsent, setAiConsent] = useState<boolean | null>(null);
   const [imagingMetadata, setImagingMetadata] = useState<ImagingMetadata>(emptyImagingMetadata);
   const [temporaryRecordReady, setTemporaryRecordReady] = useState(false);
+  const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
+  const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
   const [activeBackdrop, setActiveBackdrop] = useState(0);
   const [isLeavingView, setIsLeavingView] = useState(false);
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
@@ -132,6 +143,20 @@ export default function App() {
 
   const updateImagingMetadata = (field: keyof ImagingMetadata, value: string) => {
     setImagingMetadata((current) => ({ ...current, [field]: value }));
+  };
+
+  const openStudyCalendar = () => {
+    if (imagingMetadata.studyDate) {
+      const [year, month] = imagingMetadata.studyDate.split("-").map(Number);
+      setCalendarYear(year);
+      setCalendarMonth(month - 1);
+    }
+    setIsStudyCalendarOpen((current) => !current);
+  };
+
+  const selectStudyDate = (day: number) => {
+    updateImagingMetadata("studyDate", dateValueFor(calendarYear, calendarMonth, day));
+    setIsStudyCalendarOpen(false);
   };
 
   const saveScreeningDraft = () => {
@@ -515,7 +540,21 @@ export default function App() {
               <label>Imaging modality<select value={imagingMetadata.modality} onChange={(event) => updateImagingMetadata("modality", event.target.value)}><option value="">Select option</option><option>CT scan</option><option>Chest X-ray</option><option>No imaging available</option></select></label>
               <label>Imaging availability<select value={imagingMetadata.sourceStatus} onChange={(event) => updateImagingMetadata("sourceStatus", event.target.value)}><option value="">Select option</option><option>Available locally</option><option>Patient will return with it</option><option>Not available</option></select></label>
               <label>Study / facility reference<input value={imagingMetadata.studyReference} onChange={(event) => updateImagingMetadata("studyReference", event.target.value)} placeholder="Non-identifying local reference" /></label>
-              <label>Study date (if known)<input type="date" value={imagingMetadata.studyDate} onChange={(event) => updateImagingMetadata("studyDate", event.target.value)} /></label>
+              <div className="study-date-picker"><span className="field-label">Study date (if known)</span>
+                <button className="date-picker-trigger" type="button" onClick={openStudyCalendar} aria-label={imagingMetadata.studyDate ? `Selected study date: ${new Date(`${imagingMetadata.studyDate}T00:00:00`).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}` : "Select study date"} aria-expanded={isStudyCalendarOpen} aria-haspopup="dialog">
+                  <span>{imagingMetadata.studyDate ? new Date(`${imagingMetadata.studyDate}T00:00:00`).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "Select study date"}</span><CalendarDays size={18} aria-hidden="true" />
+                </button>
+                {isStudyCalendarOpen && (
+                  <div className="date-picker-popover" role="dialog" aria-label="Study date calendar">
+                    <div className="date-picker-controls">
+                      <label>Study month<select value={calendarMonth} onChange={(event) => setCalendarMonth(Number(event.target.value))}>{calendarMonths.map((month, index) => <option value={index} key={month}>{month}</option>)}</select></label>
+                      <label>Study year<select value={calendarYear} onChange={(event) => setCalendarYear(Number(event.target.value))}>{Array.from({ length: new Date().getFullYear() - 1989 }, (_, index) => new Date().getFullYear() - index).map((year) => <option value={year} key={year}>{year}</option>)}</select></label>
+                    </div>
+                    <div className="calendar-weekdays" aria-hidden="true"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+                    <div className="calendar-days">{calendarCellsFor(calendarYear, calendarMonth).map((day, index) => day ? <button className={imagingMetadata.studyDate === dateValueFor(calendarYear, calendarMonth, day) ? "selected" : ""} type="button" key={`${calendarYear}-${calendarMonth}-${day}`} onClick={() => selectStudyDate(day)} aria-label={`Choose ${calendarMonths[calendarMonth]} ${day}, ${calendarYear}`}>{day}</button> : <span key={`blank-${index}`} />)}</div>
+                  </div>
+                )}
+              </div>
               <label className="wide-field">Facility or source (optional)<input value={imagingMetadata.facility} onChange={(event) => updateImagingMetadata("facility", event.target.value)} placeholder="Facility, mobile unit, or source" /></label>
             </div>
             <p className="field-note"><CloudOff size={16} /> This demo stores metadata locally only. It does not upload, read, or interpret a scan.</p>
