@@ -53,8 +53,33 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - All fields are optional for the demo; completeness validation arrives with the AI-consent and temporary-record path.
 - No AI, CT/CXR, aggregation, or external transmission occurs in TASK-002.
 
+## TASK-002 revision - Screening-step fade handoff showcase
+
+### User-visible feature
+
+- Profile, Exposure, and Symptoms now transition inside the screening card: the outgoing step fades upward for 180 ms, then the next step fades and rises into place.
+- Continue and Previous are briefly disabled during the handoff, preventing accidental double changes.
+
+### Demo path
+
+1. Complete consent and demo login, then choose **Start screening**.
+2. On Profile, select **Continue**.
+3. Observe the Profile fields fade out and Exposure fade into the same card; use **Previous** to verify the reverse route.
+
+### Visual evidence
+
+- `docs/stage/reviews/assets/task-002-screening-step-1.png` — Profile step in the clear clinician workspace.
+- `docs/stage/reviews/assets/task-002-screening-step-2.png` — Exposure step after the completed handoff, with the active-step indicator updated.
+
+### Verification and limitation
+
+- `npm.cmd test` — 9 passing tests, including direct coverage that the wizard enters the step-leaving state before Exposure loads.
+- `npm.cmd run build` — passes.
+- The 180 ms motion is decorative only. It does not imply clinical processing, validate data completeness, or make a diagnosis.
+
 ## Promotion
 
 - Status: **awaiting owner approval**
+- Proposed TASK-002 revision: `2b0f4dc` — `style(task-002): animate screening step handoffs`.
 - Proposed promotion: the stage commit created for TASK-002 only.
 - Approval command: `Approve TASK-002 for main`.

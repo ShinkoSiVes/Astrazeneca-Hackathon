@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Screening-step fade handoff
+
+- Status: awaiting owner review with TASK-002
+- The clinician wizard now fades the outgoing step upward over 180 ms, then fades and rises the next step into place.
+- Navigation controls are briefly disabled during the handoff to avoid accidental double transitions.
+
 ## Delivery process revision - Required task showcase
 
 - Status: active for every new stage task
