@@ -226,7 +226,7 @@ export default function App() {
     screeningStepTimer.current = window.setTimeout(() => {
       setScreeningStep(nextStep);
       setIsSwitchingScreeningStep(false);
-    }, 180);
+    }, 260);
   };
 
   return (
@@ -443,7 +443,7 @@ export default function App() {
             </div>
           </div>
 
-          <form className="screening-card" onSubmit={(event) => event.preventDefault()}>
+          <form className={`screening-card ${isSwitchingScreeningStep ? "is-switching" : ""}`} key={screeningStep} onSubmit={(event) => event.preventDefault()}>
             <div className={`screening-step-panel ${isSwitchingScreeningStep ? "is-leaving" : ""}`} key={screeningStep} aria-live="polite">
               {screeningStep === 1 && (
                 <>
