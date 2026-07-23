@@ -83,4 +83,22 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByText(/screening draft saved on this device/i)).toBeInTheDocument();
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("BHW-024-001");
   });
+
+  it("records tobacco-use frequency before the estimated packs", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(screen.getByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(screen.getByRole("button", { name: /start screening/i }));
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+    await user.selectOptions(screen.getByLabelText(/tobacco-use frequency/i), "Per week");
+    await user.type(screen.getByLabelText(/estimated packs/i), "3");
+    await user.click(screen.getByRole("button", { name: /save local draft/i }));
+
+    expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packFrequency\":\"Per week");
+  });
 });

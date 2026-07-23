@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Tobacco-use period
+
+- Status: awaiting owner review with TASK-002
+- Added a period selector before the estimated-pack input: per day, week, month, or year.
+- The selected period and estimated amount are saved together in the local demo draft.
+
 ## TASK-001 revision - Independent FAQ cards
 
 - Status: awaiting owner review with TASK-001

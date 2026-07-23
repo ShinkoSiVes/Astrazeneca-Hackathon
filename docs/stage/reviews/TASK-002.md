@@ -9,6 +9,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - The signed-in clinician can start screening from the workspace.
 - The wizard covers profile/location, exposure/history, and symptoms/notes.
 - The clinician can save and restore a draft on the current browser/device.
+- Tobacco-use capture asks for its period before the estimated number of packs.
 - The form discourages direct identifiers and labels every state as local/demo-only.
 - The Aeris AI wordmark returns the user to the front page without deleting a saved local draft.
 - The front page uses a real, locally cached Philippine landscape background with a contrast overlay.
@@ -17,6 +18,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 ## Changed files
 
 - `src/App.tsx` — wizard state, local draft save/restore, and workspace handoff.
+- `src/App.tsx` and `src/App.test.tsx` — tobacco-use period and local-draft coverage.
 - `src/styles.css` — responsive wizard, progress, and form styling.
 - `src/App.test.tsx` — local draft save coverage.
 - `src/App.tsx` and `src/App.test.tsx` — persistent home navigation and direct coverage.
@@ -28,7 +30,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 ## Verification
 
 - `pnpm run build` passes.
-- `pnpm test` passes: 6 tests.
+- `pnpm test` passes: 7 tests.
 - Visual review passed: consented login led to the wizard, a non-identifying field reference was saved locally, and the local-only confirmation was visible.
 - Landscape visual review remains available in the stage preview. Automated reload was blocked by browser URL policy after the local-asset changes; build and test checks remain green.
 
