@@ -18,6 +18,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
+import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
+import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "aggregation";
 
@@ -30,17 +32,6 @@ const landscapeSlides = [
   "landscape-cebu-forest",
   "landscape-benguet-vista",
 ];
-
-const syntheticRegions = Array.from({ length: 18 }, (_, index) => {
-  const signalLevel = ["Lower", "Moderate", "Higher"][index % 3];
-  return {
-    id: `region-${index + 1}`,
-    label: `Region ${String(index + 1).padStart(2, "0")}`,
-    signalLevel,
-    syntheticRecords: 24 + ((index * 13) % 57),
-    coverage: `${62 + ((index * 7) % 31)}%`,
-  };
-});
 
 const teamPlaceholders = [
   { initials: "01", name: "[Name]", title: "[Role / specialty]" },
@@ -107,7 +98,6 @@ const emptyScreeningDraft: ScreeningDraft = {
 const screeningDraftKey = "aeris-screening-draft-v1";
 const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
-const populationDataKey = "aeris-population-data-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imagingFiles: [] };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -300,22 +290,12 @@ export default function App() {
 
   const openAggregation = () => {
     setAggregationComplete(false);
-    try {
-      const existing = JSON.parse(localStorage.getItem(populationDataKey) || "[]") as PopulationRecord[];
-      setPopulationRecordCount(existing.length);
-    } catch {
-      setPopulationRecordCount(0);
-    }
+    setPopulationRecordCount(readLocalPopulationFixtureCount());
     navigateTo("aggregation");
   };
 
   const openPopulationDashboard = () => {
-    try {
-      const existing = JSON.parse(localStorage.getItem(populationDataKey) || "[]") as PopulationRecord[];
-      setPopulationRecordCount(existing.length);
-    } catch {
-      setPopulationRecordCount(0);
-    }
+    setPopulationRecordCount(readLocalPopulationFixtureCount());
     setSelectedRegionId(syntheticRegions[0].id);
     navigateTo("heatmap-status");
   };
@@ -546,13 +526,9 @@ export default function App() {
               <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
             </div>
             <div className="dashboard-workspace">
-              <section className="regional-grid" aria-label="18 synthetic regional fixtures">
-                {syntheticRegions.map((region) => <button className={`regional-cell signal-${region.signalLevel.toLowerCase()} ${selectedRegionId === region.id ? "selected" : ""}`} type="button" key={region.id} onClick={() => setSelectedRegionId(region.id)} aria-pressed={selectedRegionId === region.id}>
-                  <span>{region.label}</span><small>{region.signalLevel} signal</small>
-                </button>)}
-              </section>
+              <PhilippinesRegionMap regions={syntheticRegions} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} />
               {(() => {
-                const selectedRegion = syntheticRegions.find((region) => region.id === selectedRegionId) || syntheticRegions[0];
+                const selectedRegion: SyntheticRegion = syntheticRegions.find((region) => region.id === selectedRegionId) || syntheticRegions[0];
                 return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected synthetic region</p><h2>{selectedRegion.label}</h2><p>This is an illustrative fixture only; it does not identify a location with elevated clinical risk.</p><dl><div><dt>Follow-up signal</dt><dd>{selectedRegion.signalLevel} (synthetic)</dd></div><div><dt>Demo records</dt><dd>{selectedRegion.syntheticRecords} generated</dd></div><div><dt>Fixture coverage</dt><dd>{selectedRegion.coverage} illustrative</dd></div></dl><small>Local aggregation fixtures stay separate until a future, governed regional-mapping task. External sharing remains disabled.</small></aside>;
               })()}
             </div>
