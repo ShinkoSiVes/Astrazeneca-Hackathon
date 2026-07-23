@@ -95,10 +95,26 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - `npm.cmd run build` — passes.
 - Motion is decorative only and does not indicate data processing or validation.
 
+## TASK-002 revision - Static transparent screening backdrop showcase
+
+### User-visible feature
+
+- The local screening wizard now has a single static Philippine landscape behind a strong pale overlay instead of a blank white page.
+- The form card remains 90% opaque, while the AI-consent and imaging-metadata screens remain clear for focused clinical work.
+
+### Visual evidence
+
+- `docs/stage/reviews/assets/task-002-static-screening-backdrop.png` — Profile step with the subdued static landscape and readable form card.
+
+### Limitation
+
+- The landscape is deliberately static in screening to avoid encoding workflow state or adding motion during data entry.
+
 ## Promotion
 
 - Status: **awaiting owner approval**
 - Proposed TASK-002 revision: `2b0f4dc` — `style(task-002): animate screening step handoffs`.
 - Proposed TASK-002 revision: `d78d4c3` — `style(task-002): fade complete screening cards`.
+- Proposed TASK-002 revision: `22e2ad2` — `style(task-002): add static screening backdrop`.
 - Proposed promotion: the stage commits created for TASK-002 only.
 - Approval command: `Approve TASK-002 for main`.

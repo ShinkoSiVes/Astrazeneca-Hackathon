@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Static transparent screening backdrop
+
+- Status: awaiting owner review with TASK-002
+- Restored one locally cached Philippine landscape behind the screening wizard, held static with a strong pale transparency wash.
+- The screening form card remains 90% opaque; AI-consent and imaging metadata screens stay clear and image-free.
+
 ## TASK-002 revision - Full screening-card fade handoff
 
 - Status: awaiting owner review with TASK-002
