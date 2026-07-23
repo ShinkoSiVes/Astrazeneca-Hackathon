@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Profiling-specific entrance motion
+
+- The profiling workspace uses a dedicated fade-and-rise transition with a short form-card stagger so the data-entry view does not appear abruptly.
+- The effect remains decorative and does not delay access to the fields.
+
 ## Accepted - Continuous stage-demo landscape motion
 
 - The owner requested removal of the motion control. The public-flow rotation and ripple remain continuously enabled in the stage demo.

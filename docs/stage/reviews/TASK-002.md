@@ -19,6 +19,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - Public-flow backgrounds now rotate across five locally cached Philippine landscapes, crossfading every 7.2 seconds; profiling remains deliberately clear.
 - Each public-background change includes a double-ripple effect, continuously enabled for the owner stage preview without a Play/Pause control.
 - View changes now have an exit-and-entry handoff: the current page fades upward before the next page rises in, preventing the abrupt content swap.
+- The profiling workspace now has its own explicit fade-and-rise entrance, with the form card following slightly after the guidance column.
 
 ## Changed files
 

@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Profiling fade-in
+
+- Status: awaiting owner review with TASK-002
+- Added an explicit fade-and-rise entrance for the profiling workspace, followed by a slight stagger on the form card.
+- The stage preview's motion override now applies this entrance even when the local viewer reports reduced motion.
+
 ## TASK-002 revision - Continuous owner-demo motion
 
 - Status: awaiting owner review with TASK-002
