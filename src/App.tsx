@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
 
-type View = "consent" | "login" | "ready" | "about" | "heatmap-status";
+type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening";
 
 const defaultBhwId = "BHW-024";
 
@@ -29,6 +29,32 @@ const teamPlaceholders = [
   { initials: "04", name: "[Name]", title: "[Role / specialty]" },
 ];
 
+type ScreeningDraft = {
+  fieldReference: string;
+  ageRange: string;
+  sexAtBirth: string;
+  barangay: string;
+  province: string;
+  smokingStatus: string;
+  packYears: string;
+  householdSmoke: string;
+  occupationalExposure: string;
+  lungHistory: string;
+  familyHistory: string;
+  persistentCough: string;
+  breathlessness: string;
+  bloodInSputum: string;
+  weightLoss: string;
+  oxygenSaturation: string;
+  clinicianNotes: string;
+};
+
+const emptyScreeningDraft: ScreeningDraft = {
+  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", province: "", smokingStatus: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
+};
+
+const screeningDraftKey = "aeris-screening-draft-v1";
+
 export default function App() {
   const [view, setView] = useState<View>("consent");
   const [hasConsent, setHasConsent] = useState(false);
@@ -36,6 +62,9 @@ export default function App() {
   const [bhwId, setBhwId] = useState(defaultBhwId);
   const [passcode, setPasscode] = useState("");
   const [offline, setOffline] = useState(true);
+  const [screeningStep, setScreeningStep] = useState(1);
+  const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
+  const [draftStatus, setDraftStatus] = useState("");
 
   const enterDemo = () => {
     sessionStorage.setItem("idea-demo-clinician", bhwId || defaultBhwId);
@@ -45,6 +74,39 @@ export default function App() {
   const resetEncounter = () => {
     setDeclined(false);
     setHasConsent(false);
+  };
+
+  const updateDraft = (field: keyof ScreeningDraft, value: string) => {
+    setScreeningDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const saveScreeningDraft = () => {
+    localStorage.setItem(screeningDraftKey, JSON.stringify({ data: screeningDraft, savedAt: new Date().toISOString() }));
+    setDraftStatus("Screening draft saved on this device.");
+  };
+
+  const restoreScreeningDraft = () => {
+    const savedDraft = localStorage.getItem(screeningDraftKey);
+    if (!savedDraft) {
+      setDraftStatus("No saved screening draft is available on this device.");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(savedDraft) as { data?: ScreeningDraft };
+      if (parsed.data) {
+        setScreeningDraft({ ...emptyScreeningDraft, ...parsed.data });
+        setDraftStatus("Saved screening draft restored on this device.");
+      }
+    } catch {
+      setDraftStatus("The saved draft could not be restored.");
+    }
+  };
+
+  const startScreening = () => {
+    setScreeningStep(1);
+    setDraftStatus("");
+    setView("screening");
   };
 
   return (
@@ -236,6 +298,83 @@ export default function App() {
         </section>
       )}
 
+      {view === "screening" && (
+        <section className="screening-layout" aria-labelledby="screening-title">
+          <div className="screening-intro">
+            <button className="back-link" type="button" onClick={() => setView("ready")}>
+              <ChevronLeft size={17} /> Back to workspace
+            </button>
+            <p className="eyebrow"><ShieldCheck size={16} /> Local screening draft</p>
+            <h1 id="screening-title">Record the screening information step by step.</h1>
+            <p>This clinician-only form keeps its demo draft on this device. Do not enter names or other direct identifiers.</p>
+            <div className="screening-steps" aria-label={`Screening step ${screeningStep} of 3`}>
+              {["Profile", "Exposure", "Symptoms"].map((label, index) => (
+                <div className={screeningStep >= index + 1 ? "active" : ""} key={label}>
+                  <span>{index + 1}</span>{label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <form className="screening-card" onSubmit={(event) => event.preventDefault()}>
+            {screeningStep === 1 && (
+              <>
+                <div className="form-heading"><p className="card-kicker">Step 1 of 3</p><h2>Patient profile and place</h2><p>Use a field reference rather than a patient name.</p></div>
+                <div className="form-grid">
+                  <label>Field reference<input value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. BHW-024-001" /></label>
+                  <label>Age range<select value={screeningDraft.ageRange} onChange={(event) => updateDraft("ageRange", event.target.value)}><option value="">Select range</option><option>Under 40</option><option>40-49</option><option>50-59</option><option>60-69</option><option>70 or older</option></select></label>
+                  <label>Sex at birth<select value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
+                  <label>Barangay / municipality<input value={screeningDraft.barangay} onChange={(event) => updateDraft("barangay", event.target.value)} placeholder="Local area" /></label>
+                  <label className="wide-field">Province / region<input value={screeningDraft.province} onChange={(event) => updateDraft("province", event.target.value)} placeholder="Province or region" /></label>
+                </div>
+              </>
+            )}
+
+            {screeningStep === 2 && (
+              <>
+                <div className="form-heading"><p className="card-kicker">Step 2 of 3</p><h2>Exposure and relevant history</h2><p>Record the clinician's screening observations. All fields are optional in this demo.</p></div>
+                <div className="form-grid">
+                  <label>Smoking status<select value={screeningDraft.smokingStatus} onChange={(event) => updateDraft("smokingStatus", event.target.value)}><option value="">Select option</option><option>Never smoked</option><option>Former smoker</option><option>Current smoker</option><option>Not recorded</option></select></label>
+                  <label>Estimated pack-years<input value={screeningDraft.packYears} onChange={(event) => updateDraft("packYears", event.target.value)} inputMode="decimal" placeholder="Optional" /></label>
+                  <label>Household smoke exposure<select value={screeningDraft.householdSmoke} onChange={(event) => updateDraft("householdSmoke", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label>Occupational/environment exposure<select value={screeningDraft.occupationalExposure} onChange={(event) => updateDraft("occupationalExposure", event.target.value)}><option value="">Select option</option><option>Dust / mining / construction</option><option>Smoke / biomass fuel</option><option>Chemical exposure</option><option>None reported</option><option>Unknown</option></select></label>
+                  <label>Lung or TB history<select value={screeningDraft.lungHistory} onChange={(event) => updateDraft("lungHistory", event.target.value)}><option value="">Select option</option><option>TB history</option><option>COPD / asthma</option><option>Other lung condition</option><option>None reported</option><option>Unknown</option></select></label>
+                  <label>Family lung-cancer history<select value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                </div>
+              </>
+            )}
+
+            {screeningStep === 3 && (
+              <>
+                <div className="form-heading"><p className="card-kicker">Step 3 of 3</p><h2>Symptoms and clinician note</h2><p>This is not a diagnosis. Record only information relevant to the screening encounter.</p></div>
+                <div className="form-grid">
+                  <label>Persistent cough<select value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label>Breathlessness<select value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label>Blood in sputum<select value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label>Unintentional weight loss<select value={screeningDraft.weightLoss} onChange={(event) => updateDraft("weightLoss", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label>Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
+                  <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
+                </div>
+              </>
+            )}
+
+            <div className="draft-actions">
+              <div className="draft-status" aria-live="polite">{draftStatus || "Draft has not been saved yet."}</div>
+              <div className="draft-buttons">
+                <button className="text-button" type="button" onClick={restoreScreeningDraft}>Restore local draft</button>
+                <button className="secondary-button" type="button" onClick={saveScreeningDraft}>Save local draft</button>
+                {screeningStep > 1 && <button className="secondary-button" type="button" onClick={() => setScreeningStep((current) => current - 1)}>Previous</button>}
+                {screeningStep < 3 ? (
+                  <button className="primary-button" type="button" onClick={() => setScreeningStep((current) => current + 1)}>Continue <ArrowRight size={18} /></button>
+                ) : (
+                  <button className="primary-button" type="button" onClick={() => { saveScreeningDraft(); setView("ready"); }}>Finish screening draft <Check size={18} /></button>
+                )}
+              </div>
+            </div>
+          </form>
+        </section>
+      )}
+
       {view === "login" && (
         <section className="login-layout" aria-labelledby="login-title">
           <div className="login-context">
@@ -269,12 +408,12 @@ export default function App() {
           <div className="ready-icon"><CircleCheckBig size={34} /></div>
           <p className="eyebrow">Workspace ready</p>
           <h1 id="ready-title">You’re signed in as {bhwId || defaultBhwId}.</h1>
-          <p>Consent is recorded for this encounter. The screening wizard is the next staged feature.</p>
+          <p>Consent is recorded for this encounter. Continue with the clinician-led screening draft.</p>
           <div className="ready-actions">
-            <button className="primary-button" type="button" disabled title="Available after TASK-002 is approved">Start screening in TASK-002 <ArrowRight size={18} /></button>
+            <button className="primary-button" type="button" onClick={startScreening}>Start screening <ArrowRight size={18} /></button>
             <button className="secondary-button" type="button" onClick={() => { sessionStorage.removeItem("idea-demo-clinician"); setView("consent"); resetEncounter(); }}>End demo session</button>
           </div>
-          <p className="stage-note">Stage preview · TASK-001 · Pending your review</p>
+          <p className="stage-note">Stage preview · TASK-002 · Screening drafts stay local</p>
         </section>
       )}
     </main>

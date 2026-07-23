@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - TASK-002 local screening draft
+
+- The wizard is clinician-led and intentionally avoids collecting a patient name; a local field reference is used instead.
+- Draft data is stored only in browser local storage for the demo and can be restored on the same device.
+- TASK-002 does not create final screening data, aggregate records, call AI, or transmit data. Those decisions remain in later tasks.
+
 ## Accepted - Heatmap status before dashboard implementation
 
 - A status view may describe the readiness of the future population dashboard, but it must never resemble or claim to be a live clinical-risk heatmap.

@@ -1,5 +1,17 @@
 # Stage changelog
 
+## TASK-002 - Screening wizard with local draft save
+
+- Status: awaiting owner review
+- Added a three-step clinician-only wizard for profile/location, exposure/history, and symptoms/notes.
+- Added local device draft save and restore under a demo-only key; direct patient identifiers are explicitly discouraged.
+- Added direct automated coverage for the local-save path.
+
+## TASK-001 - Final stage QA
+
+- Status: passed on stage; awaiting explicit main-promotion approval
+- Confirmed the consent decline branch, consented login, staged workspace handoff, FAQ/About/Heatmap status entry points, responsive UI, and clean stage history.
+
 ## TASK-001 revision - Aeris AI working identity
 
 - Status: pending owner review with TASK-001
