@@ -14,6 +14,7 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - The Aeris AI wordmark returns the user to the front page without deleting a saved local draft.
 - The front page uses a real, locally cached Philippine landscape background with a contrast overlay.
 - The landscape treatment now covers the full page and crossfades through a small local Philippine terrace set, with reduced-motion fallback.
+- The clinician profiling/screening workspace deliberately uses a clear, light background without the rotating landscape imagery.
 
 ## Changed files
 

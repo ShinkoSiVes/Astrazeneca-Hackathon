@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Clear screening workspace
+
+- Status: awaiting owner review with TASK-002
+- Removed the rotating landscape backdrop from the clinician profiling/screening workspace and restored a clean, light clinical background.
+- The real landscape rotation remains limited to the public-facing flow.
+
 ## TASK-002 revision - Tobacco-use period
 
 - Status: awaiting owner review with TASK-002

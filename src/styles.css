@@ -15,6 +15,8 @@ button:disabled { cursor: not-allowed; }
 .app-shell { position: relative; isolation: isolate; min-height: 100vh; overflow: hidden; background: #dbece7; }
 .app-shell > :not(.landscape-rotator) { position: relative; z-index: 1; }
 .landscape-rotator { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; background: #dbece7; }
+.view-screening { background: #f7fbfa; }
+.view-screening .landscape-rotator { display: none; }
 .landscape-rotator::after { position: absolute; inset: 0; content: ""; background: linear-gradient(145deg, rgb(245 250 248 / 82%) 0%, rgb(239 248 244 / 68%) 45%, rgb(231 244 239 / 75%) 100%); }
 .landscape-slide { position: absolute; inset: -3%; opacity: 0; background: center / cover no-repeat; animation: landscape-cycle 27s ease-in-out infinite; transform: scale(1.04); }
 .landscape-sagada { background-image: url("./assets/sagada-rice-terraces.jpg"); animation-delay: 0s; }

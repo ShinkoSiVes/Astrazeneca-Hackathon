@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Clear clinician profiling workspace
+
+- The public-facing consent flow may retain the slow landscape rotation, while the clinician profiling/screening workspace uses a plain, light background.
+- This keeps clinical data entry visually calm and avoids imagery behind patient-screening fields.
+
 ## Accepted - Full-page rotating landscape background
 
 - A small local set of real, non-identifying Philippine landscapes may crossfade behind the demo to avoid a generic generated-page appearance.
