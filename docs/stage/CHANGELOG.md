@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Full-page landscape rotation
+
+- Status: awaiting owner review with TASK-002
+- Expanded the landscape treatment to the full page and added a slow, low-key crossfade between three real Philippine terrace images.
+- The foreground keeps a contrast overlay and reduced-motion users receive a single static image.
+
 ## TASK-002 revision - Grounded front-page background
 
 - Status: awaiting owner review with TASK-002

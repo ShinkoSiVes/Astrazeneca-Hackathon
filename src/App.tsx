@@ -111,6 +111,11 @@ export default function App() {
 
   return (
     <main className={`app-shell view-${view}`}>
+      <div className="landscape-rotator" aria-hidden="true">
+        <span className="landscape-slide landscape-sagada" />
+        <span className="landscape-slide landscape-mountain-province" />
+        <span className="landscape-slide landscape-benguet" />
+      </div>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Aeris AI home" onClick={() => setView("consent")}>
           <img className="brand-mark" src={lungMark} alt="" aria-hidden="true" />

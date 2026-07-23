@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Full-page rotating landscape background
+
+- A small local set of real, non-identifying Philippine landscapes may crossfade behind the demo to avoid a generic generated-page appearance.
+- Cycle timing must be slow and purely atmospheric; content must remain readable and no clinical UI state may be encoded in the image rotation.
+- Reduced-motion preference uses a single static image instead of a rotating backdrop.
+
 ## Accepted - Real landscape imagery for the front page
 
 - The front-page background may use real, licensed landscape imagery when it supports place, trust, and geographic-equity framing without distracting from consent.
