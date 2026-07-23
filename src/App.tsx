@@ -144,6 +144,7 @@ export default function App() {
         </div>
       </header>
 
+      <div className="view-transition" key={view}>
       {view === "consent" && (
         <>
           <section className="hero-grid" aria-labelledby="consent-title">
@@ -423,6 +424,7 @@ export default function App() {
           <p className="stage-note">Stage preview · TASK-002 · Screening drafts stay local</p>
         </section>
       )}
+      </div>
     </main>
   );
 }

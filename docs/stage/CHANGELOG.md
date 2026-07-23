@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Flowing view transitions
+
+- Status: awaiting owner review with TASK-002
+- Added a short, calm page-entry transition whenever the user moves between consent, login, workspace, profiling, About, or Heatmap status views.
+- Reduced-motion preferences continue to suppress the animation.
+
 ## TASK-002 revision - Clear screening workspace
 
 - Status: awaiting owner review with TASK-002

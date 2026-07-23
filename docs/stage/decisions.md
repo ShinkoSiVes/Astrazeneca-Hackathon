@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Page-transition motion
+
+- Moving between application views uses a brief fade-and-rise entry transition while the top bar remains stable for orientation.
+- The transition is decorative only: it neither blocks inputs nor represents clinical progress, and reduced-motion settings disable it.
+
 ## Accepted - Clear clinician profiling workspace
 
 - The public-facing consent flow may retain the slow landscape rotation, while the clinician profiling/screening workspace uses a plain, light background.
