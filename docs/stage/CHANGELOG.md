@@ -1,5 +1,10 @@
 # Stage changelog
 
+## TASK-001 revision - Independent FAQ cards
+
+- Status: awaiting owner review with TASK-001
+- Fixed the FAQ grid so opening one answer does not stretch the neighboring closed card.
+
 ## TASK-002 revision - Full-page landscape rotation
 
 - Status: awaiting owner review with TASK-002

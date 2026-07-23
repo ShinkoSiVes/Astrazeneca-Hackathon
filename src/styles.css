@@ -98,8 +98,8 @@ button:disabled { cursor: not-allowed; }
 .faq-heading { max-width: 620px; }
 .faq-heading h2, .about-story h2, .team-heading h2 { margin: 12px 0; color: #153f49; font-size: clamp(30px, 3.3vw, 43px); line-height: 1.06; letter-spacing: -0.045em; }
 .faq-heading > p:last-child { margin: 0; color: #5c777c; font-size: 16px; line-height: 1.55; }
-.faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; margin-top: 32px; }
-.faq-item { border: 1px solid #cfe0dc; border-radius: 15px; padding: 0 18px; color: #45646a; background: #fbfefd; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 13px; margin-top: 32px; }
+.faq-item { align-self: start; border: 1px solid #cfe0dc; border-radius: 15px; padding: 0 18px; color: #45646a; background: #fbfefd; transition: border-color 160ms ease, box-shadow 160ms ease; }
 .faq-item[open] { border-color: #91c4bc; box-shadow: 0 10px 22px rgb(20 92 90 / 7%); }
 .faq-item summary { padding: 18px 0; color: #214c55; cursor: pointer; font-size: 15px; font-weight: 800; list-style-position: outside; }
 .faq-item p { margin: 0 0 18px; padding-right: 10px; font-size: 14px; line-height: 1.55; }

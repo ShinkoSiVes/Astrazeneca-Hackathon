@@ -11,6 +11,7 @@ Deliver a clinician-led survey-consent and demo-login flow that can safely start
 - A consented encounter requires local demo login and lands in a ready workspace state.
 - The flow uses restrained status and transition motion without delaying clinician actions.
 - The temporary product identity is displayed as `Aeris AI | Lung screening` with an original vector placeholder mark.
+- FAQ cards expand independently without changing the height of neighboring closed cards.
 - The front page includes a clinician FAQ and an About view with explicit static team placeholders.
 - The front page provides a Heatmap status entry point that reports demo readiness without exposing a map or live data.
 
