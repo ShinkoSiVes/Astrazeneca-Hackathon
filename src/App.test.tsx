@@ -166,8 +166,11 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
     await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
     const imagingFile = new File(["demo dicom fixture"], "field-ct.dcm", { type: "application/dicom" });
-    await user.upload(await screen.findByLabelText(/imaging file/i), imagingFile);
+    const chestXray = new File(["demo xray fixture"], "field-cxr.png", { type: "image/png" });
+    await user.upload(await screen.findByLabelText(/imaging files/i), [imagingFile, chestXray]);
     expect(screen.getByText("field-ct.dcm")).toBeInTheDocument();
+    expect(screen.getByText("field-cxr.png")).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/acquisition date for field-ct.dcm/i), "2025-01-15");
     await user.click(await screen.findByRole("button", { name: /select study date/i }));
     await user.selectOptions(screen.getByLabelText(/study month/i), "0");
     await user.click(screen.getByRole("button", { name: /choose january 15/i }));
@@ -178,6 +181,8 @@ describe("TASK-001 consent and demo login", () => {
     expect(await screen.findByRole("heading", { name: /more imaging details are needed/i })).toBeInTheDocument();
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("awaiting additional imaging details");
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("field-ct.dcm");
+    expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("field-cxr.png");
+    expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("2025-01-15");
   });
 
   it("records clinician nodule-review branches locally without presenting a diagnosis", async () => {

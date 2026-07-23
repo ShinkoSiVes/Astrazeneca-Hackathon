@@ -59,15 +59,21 @@ type ScreeningDraft = {
   clinicianNotes: string;
 };
 
+type ImagingFileMetadata = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  takenOn: string;
+};
+
 type ImagingMetadata = {
   modality: string;
   studyReference: string;
   studyDate: string;
   sourceStatus: string;
   facility: string;
-  imageFileName: string;
-  imageFileType: string;
-  imageFileSize: number;
+  imagingFiles: ImagingFileMetadata[];
 };
 
 const emptyScreeningDraft: ScreeningDraft = {
@@ -77,7 +83,7 @@ const emptyScreeningDraft: ScreeningDraft = {
 const screeningDraftKey = "aeris-screening-draft-v1";
 const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
-const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imageFileName: "", imageFileType: "", imageFileSize: 0 };
+const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imagingFiles: [] };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 const dateValueFor = (year: number, month: number, day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -147,22 +153,31 @@ export default function App() {
     setScreeningDraft((current) => ({ ...current, [field]: value }));
   };
 
-  const updateImagingMetadata = (field: keyof ImagingMetadata, value: string) => {
+  const updateImagingMetadata = (field: Exclude<keyof ImagingMetadata, "imagingFiles">, value: string) => {
     setImagingMetadata((current) => ({ ...current, [field]: value }));
   };
 
-  const recordImagingFile = (file?: File) => {
-    if (!file) return;
+  const recordImagingFiles = (files?: FileList | File[]) => {
+    if (!files?.length) return;
+    const selectedFiles = Array.from(files).map((file, index) => ({
+      id: `${file.name}-${file.lastModified}-${index}-${Date.now()}`,
+      name: file.name,
+      type: file.type || "Unspecified file type",
+      size: file.size,
+      takenOn: "",
+    }));
+    setImagingMetadata((current) => ({ ...current, imagingFiles: [...current.imagingFiles, ...selectedFiles] }));
+  };
+
+  const updateImagingFileDate = (fileId: string, takenOn: string) => {
     setImagingMetadata((current) => ({
       ...current,
-      imageFileName: file.name,
-      imageFileType: file.type || "Unspecified file type",
-      imageFileSize: file.size,
+      imagingFiles: current.imagingFiles.map((file) => file.id === fileId ? { ...file, takenOn } : file),
     }));
   };
 
-  const removeImagingFile = () => {
-    setImagingMetadata((current) => ({ ...current, imageFileName: "", imageFileType: "", imageFileSize: 0 }));
+  const removeImagingFile = (fileId: string) => {
+    setImagingMetadata((current) => ({ ...current, imagingFiles: current.imagingFiles.filter((file) => file.id !== fileId) }));
     if (imagingFileInput.current) imagingFileInput.current.value = "";
   };
 
@@ -593,13 +608,13 @@ export default function App() {
               </div>
               <label className="wide-field">Facility or source (optional)<input value={imagingMetadata.facility} onChange={(event) => updateImagingMetadata("facility", event.target.value)} placeholder="Facility, mobile unit, or source" /></label>
               <div className="wide-field imaging-file-field">
-                <span id="imaging-file-label" className="field-label">Imaging file (optional)</span>
+                <span id="imaging-file-label" className="field-label">Imaging files (optional)</span>
                 <div
                   className="imaging-dropzone"
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault();
-                    recordImagingFile(event.dataTransfer.files[0]);
+                    recordImagingFiles(event.dataTransfer.files);
                   }}
                 >
                   <input
@@ -608,19 +623,29 @@ export default function App() {
                     className="visually-hidden"
                     type="file"
                     accept=".dcm,.dicom,image/*,application/dicom"
+                    multiple
                     aria-labelledby="imaging-file-label"
-                    onChange={(event) => recordImagingFile(event.target.files?.[0])}
+                    onChange={(event) => {
+                      recordImagingFiles(event.target.files ?? undefined);
+                      event.target.value = "";
+                    }}
                   />
-                  {imagingMetadata.imageFileName ? (
-                    <div className="imaging-file-selected" aria-live="polite">
-                      <span><strong>{imagingMetadata.imageFileName}</strong><small>{imagingMetadata.imageFileType} · {(imagingMetadata.imageFileSize / 1024).toFixed(1)} KB · Local demo reference only</small></span>
-                      <button className="text-button" type="button" onClick={removeImagingFile}>Remove file</button>
+                  {imagingMetadata.imagingFiles.length ? (
+                    <div className="imaging-file-list" aria-live="polite">
+                      <div className="imaging-file-list-header"><span><strong>{imagingMetadata.imagingFiles.length} local file{imagingMetadata.imagingFiles.length === 1 ? "" : "s"} selected</strong><small>Assign an optional acquisition date to each file.</small></span><button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Add files</button></div>
+                      {imagingMetadata.imagingFiles.map((file) => (
+                        <article className="imaging-file-selected" key={file.id}>
+                          <span><strong>{file.name}</strong><small>{file.type} · {(file.size / 1024).toFixed(1)} KB · Local demo reference only</small></span>
+                          <label>Acquisition date (optional)<input type="date" aria-label={`Acquisition date for ${file.name}`} value={file.takenOn} onChange={(event) => updateImagingFileDate(file.id, event.target.value)} /></label>
+                          <button className="text-button" type="button" onClick={() => removeImagingFile(file.id)}>Remove file</button>
+                        </article>
+                      ))}
                     </div>
                   ) : (
                     <div className="imaging-file-empty">
                       <span aria-hidden="true">↓</span>
-                      <p><strong>Drop a CT, CXR, or DICOM file here</strong><small>It stays on this device. This demo does not upload, read, or interpret the file.</small></p>
-                      <button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Choose local file</button>
+                      <p><strong>Drop CT, CXR, or DICOM files here</strong><small>Select multiple files at once. They stay on this device and are not uploaded, read, or interpreted.</small></p>
+                      <button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Choose local files</button>
                     </div>
                   )}
                 </div>
@@ -663,6 +688,7 @@ export default function App() {
               <div><dt>Availability</dt><dd>{imagingMetadata.sourceStatus || "Not recorded"}</dd></div>
               <div><dt>Study reference</dt><dd>{imagingMetadata.studyReference || "Not recorded"}</dd></div>
               <div><dt>Study date</dt><dd>{imagingMetadata.studyDate || "Not recorded"}</dd></div>
+              <div><dt>Local imaging files</dt><dd>{imagingMetadata.imagingFiles.length ? imagingMetadata.imagingFiles.map((file) => `${file.name}${file.takenOn ? ` — taken ${file.takenOn}` : ""}`).join("; ") : "Not attached"}</dd></div>
             </dl>
 
             {reviewOutcome === "pending" && (
