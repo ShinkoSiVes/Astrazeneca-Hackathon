@@ -10,7 +10,7 @@ Deliver a clinician-led survey-consent and demo-login flow that can safely start
 - A declined survey ends the encounter without a screening record.
 - A consented encounter requires local demo login and lands in a ready workspace state.
 - The flow uses restrained status and transition motion without delaying clinician actions.
-- The temporary product identity is displayed as `Hinga | Lung screening` with an original vector placeholder mark.
+- The temporary product identity is displayed as `Hinga Atlas | Lung screening` with an original vector placeholder mark.
 - The front page includes a clinician FAQ and an About view with explicit static team placeholders.
 
 ## Changed files

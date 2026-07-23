@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-001 revision - Distinctive working name
+
+- Status: pending owner review with TASK-001
+- Updated the temporary product identity from `Hinga` to `Hinga Atlas`.
+- `Atlas` reflects the intended geographic-equity, population-mapping direction without implying a diagnosis or medical certification.
+
 ## TASK-001 revision - FAQ and About
 
 - Status: pending owner review with TASK-001

@@ -8,8 +8,8 @@
 
 ## Pending owner confirmation - Temporary name and logo
 
-- Proposed working product name: `Hinga`, with the descriptor `Lung screening`.
-- The name is intentionally short and locally legible; the descriptor keeps the purpose explicit for medical professionals.
+- Proposed working product name: `Hinga Atlas`, with the descriptor `Lung screening`.
+- The name keeps `Hinga` as the locally legible breath reference and adds `Atlas` to reflect geographic equity and future population insights.
 - The placeholder logo is an original teal vector mark: a simplified paired-lung form with a calm waveform, not a diagnostic or regulatory symbol.
 
 ## Accepted - TASK-001 motion revision

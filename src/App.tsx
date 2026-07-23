@@ -50,10 +50,10 @@ export default function App() {
   return (
     <main className={`app-shell view-${view}`}>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Hinga home">
+        <a className="brand" href="#top" aria-label="Hinga Atlas home">
           <img className="brand-mark" src={hingaMark} alt="" aria-hidden="true" />
           <span>
-            <strong>Hinga</strong>
+            <strong>Hinga Atlas</strong>
             <small>Lung screening</small>
           </span>
         </a>
@@ -83,7 +83,7 @@ export default function App() {
             <p className="eyebrow"><MapPinned size={16} /> Community profiling mission</p>
             <h1>Start every screening with a clear patient choice.</h1>
             <p className="intro-copy">
-              Hinga helps field teams gather structured lung-cancer screening information
+              Hinga Atlas helps field teams gather structured lung-cancer screening information
               and prepare reviewed, de-identified population insights.
             </p>
             <div className="principle-list" aria-label="Data handling principles">
@@ -137,8 +137,8 @@ export default function App() {
             </div>
             <div className="faq-grid">
               <details className="faq-item" open>
-                <summary>Does Hinga diagnose lung cancer?</summary>
-                <p>No. Hinga is a clinician-led screening and population-insight demo. It does not replace diagnosis, imaging interpretation, or clinical judgment.</p>
+                <summary>Does Hinga Atlas diagnose lung cancer?</summary>
+                <p>No. Hinga Atlas is a clinician-led screening and population-insight demo. It does not replace diagnosis, imaging interpretation, or clinical judgment.</p>
               </details>
               <details className="faq-item">
                 <summary>What happens if a patient declines?</summary>
@@ -165,7 +165,7 @@ export default function App() {
             </button>
             <p className="eyebrow"><UsersRound size={16} /> About the project</p>
             <h1 id="about-title">A field-friendly path to earlier lung-health follow-up.</h1>
-            <p>Hinga is a hackathon prototype for clinician-led community profiling, designed with geographic equity in the Philippines in mind.</p>
+            <p>Hinga Atlas is a hackathon prototype for clinician-led community profiling, designed with geographic equity in the Philippines in mind.</p>
           </div>
 
           <div className="about-content">
