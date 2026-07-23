@@ -11,6 +11,7 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 - If the patient agrees, the clinician can record imaging modality, local availability, a non-identifying study reference, date, and optional facility/source.
 - Incomplete imaging information is saved as a local temporary record with a clear return-for-more-information instruction.
 - A complete CT metadata set is marked ready for a later clinician nodule-review task; it does not trigger AI.
+- The study-date calendar opens from its calendar control and lets the clinician choose a month, year, and day before the temporary record is saved.
 
 ## Demo path
 
@@ -24,14 +25,17 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 - `src/App.tsx` — AI consent state, imaging metadata state, local temporary-record persistence, and all user-facing branches.
 - `src/styles.css` — clear clinical layouts for AI consent, metadata capture, and temporary-record confirmation.
 - `src/App.test.tsx` — screening-only decline coverage and incomplete-imaging temporary-record coverage.
+- `src/App.tsx`, `src/styles.css`, and `src/App.test.tsx` — custom study-date calendar with month/year selectors, day grid, and direct interaction coverage.
 - `docs/stage/model-provenance.md` — no-model, metadata-only limitation for TASK-003.
 - `docs/stage/reviews/assets/task-003-ai-consent.png` and `docs/stage/reviews/assets/task-003-temporary-record.png` — visual review evidence.
+- `docs/stage/reviews/assets/task-003-study-calendar.png` — visual evidence of the full calendar picker.
 
 ## Verification
 
 - `npm.cmd test` passes: 11 tests.
 - `npm.cmd run build` passes.
 - Visual review passed: the AI-consent choice is clinician-led and explicitly non-diagnostic; an incomplete imaging encounter reaches the temporary-local-record confirmation screen.
+- Calendar visual review passed: the picker opens from the calendar control and keeps the full month, year, and day grid inside the screen.
 
 ## Known limitations
 
@@ -43,4 +47,5 @@ Add the separate AI-risk-support consent, imaging-metadata, and temporary-local-
 
 - Status: **awaiting owner approval**
 - Proposed promotion: `264454d` — `feat(task-003): add AI consent temporary record path`.
+- Proposed TASK-003 revision: `f818f6e` — `feat(task-003): add study date calendar`.
 - Approval command: `Approve TASK-003 for main`.

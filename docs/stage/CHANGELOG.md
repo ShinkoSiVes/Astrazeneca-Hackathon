@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-003 revision - Study-date calendar
+
+- Status: awaiting owner review with TASK-003
+- Replaced the study-date browser field with an in-app calendar that opens from its calendar control.
+- The clinician can choose month, year, and day; the chosen date is retained in the local temporary record metadata.
+
 ## TASK-003 - AI consent, imaging metadata, and temporary-record path
 
 - Status: awaiting owner review
