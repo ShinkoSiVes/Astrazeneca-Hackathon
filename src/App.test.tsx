@@ -71,17 +71,19 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
   });
 
-  it("shows the heatmap status without presenting live data", async () => {
+  it("shows an 18-region synthetic dashboard without presenting live data", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /heatmap status/i }));
 
-    await screen.findByText(/no real patient records in this demo/i);
+    await screen.findByText(/no real patient records/i);
 
-    expect(screen.getByRole("heading", { name: /heatmap status: preparing/i })).toBeInTheDocument();
-    expect(screen.getByText(/no real patient records in this demo/i)).toBeInTheDocument();
-    expect(screen.getByText(/live sharing disabled/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /synthetic regional follow-up dashboard/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /region \d+.*signal/i })).toHaveLength(18);
+    await user.click(screen.getByRole("button", { name: /region 03.*signal/i }));
+    expect(screen.getByRole("heading", { name: "Region 03" })).toBeInTheDocument();
+    expect(screen.getByText(/sharing remains disabled/i)).toBeInTheDocument();
   });
 
   it("saves a clinician screening draft locally", async () => {

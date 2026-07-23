@@ -31,6 +31,17 @@ const landscapeSlides = [
   "landscape-benguet-vista",
 ];
 
+const syntheticRegions = Array.from({ length: 18 }, (_, index) => {
+  const signalLevel = ["Lower", "Moderate", "Higher"][index % 3];
+  return {
+    id: `region-${index + 1}`,
+    label: `Region ${String(index + 1).padStart(2, "0")}`,
+    signalLevel,
+    syntheticRecords: 24 + ((index * 13) % 57),
+    coverage: `${62 + ((index * 7) % 31)}%`,
+  };
+});
+
 const teamPlaceholders = [
   { initials: "01", name: "[Name]", title: "[Role / specialty]" },
   { initials: "02", name: "[Name]", title: "[Role / specialty]" },
@@ -121,6 +132,7 @@ export default function App() {
   const [reviewOutcome, setReviewOutcome] = useState<"pending" | "needs-info" | "accepted" | "forced">("pending");
   const [aggregationComplete, setAggregationComplete] = useState(false);
   const [populationRecordCount, setPopulationRecordCount] = useState(0);
+  const [selectedRegionId, setSelectedRegionId] = useState(syntheticRegions[0].id);
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
@@ -297,6 +309,17 @@ export default function App() {
     navigateTo("aggregation");
   };
 
+  const openPopulationDashboard = () => {
+    try {
+      const existing = JSON.parse(localStorage.getItem(populationDataKey) || "[]") as PopulationRecord[];
+      setPopulationRecordCount(existing.length);
+    } catch {
+      setPopulationRecordCount(0);
+    }
+    setSelectedRegionId(syntheticRegions[0].id);
+    navigateTo("heatmap-status");
+  };
+
   const aggregateDeidentifiedRecord = () => {
     const symptomSignalCount = [screeningDraft.persistentCough, screeningDraft.breathlessness, screeningDraft.bloodInSputum, screeningDraft.weightLoss]
       .filter((value) => value === "Yes").length;
@@ -386,9 +409,9 @@ export default function App() {
               <p><LockKeyhole size={20} /><span><strong>Purpose-limited</strong>Only consented screening information continues.</span></p>
               <p><CloudOff size={20} /><span><strong>Works offline</strong>Drafts stay on this device until a future sync is approved.</span></p>
             </div>
-            <button className="heatmap-status-link" type="button" onClick={() => navigateTo("heatmap-status")}>
+            <button className="heatmap-status-link" type="button" onClick={openPopulationDashboard}>
               <span className="status-beacon" aria-hidden="true" />
-              <span><strong>Heatmap status</strong><small>View current demo readiness</small></span>
+              <span><strong>Heatmap status</strong><small>Open synthetic population dashboard</small></span>
               <ArrowRight size={18} aria-hidden="true" />
             </button>
           </div>
@@ -507,25 +530,31 @@ export default function App() {
               <ChevronLeft size={17} /> Back to screening
             </button>
             <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
-            <h1 id="heatmap-status-title">Heatmap status: preparing the regional view.</h1>
-            <p>This preview reports the dashboard's current demo readiness. It does not show live patient records, clinical risk estimates, or a live public-health map.</p>
+            <h1 id="heatmap-status-title">Synthetic regional follow-up dashboard.</h1>
+            <p>This demo contains 18 illustrative regional fixtures. It is not a live patient map, clinical risk estimate, or external public-health feed.</p>
           </div>
 
           <div className="heatmap-status-card">
             <div className="heatmap-status-topline">
-              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> Demo preparation</span>
-              <span>Next planned feature: TASK-006</span>
+              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> Synthetic demo data</span>
+              <span>{populationRecordCount} local de-identified fixture{populationRecordCount === 1 ? "" : "s"} not mapped</span>
             </div>
-            <div className="heatmap-status-grid">
-              <article><strong>18 regions</strong><span>Planned Philippine coverage</span></article>
-              <article><strong>Synthetic only</strong><span>No real patient records in this demo</span></article>
-              <article><strong>Aggregation gated</strong><span>Requires reviewed, de-identified inputs</span></article>
-              <article><strong>Live sharing disabled</strong><span>External publishing is not enabled</span></article>
+            <div className="dashboard-summary-grid">
+              <article><strong>18 regions</strong><span>Illustrative regional fixtures</span></article>
+              <article><strong>Synthetic only</strong><span>No real patient records</span></article>
+              <article><strong>Review-gated</strong><span>Local population fixtures only</span></article>
+              <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
             </div>
-            <div className="heatmap-placeholder" role="img" aria-label="Placeholder grid for the future regional heatmap">
-              <span>Regional heatmap preview</span>
-              <div className="heatmap-cells" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-              <small>Available after the population dashboard task is approved.</small>
+            <div className="dashboard-workspace">
+              <section className="regional-grid" aria-label="18 synthetic regional fixtures">
+                {syntheticRegions.map((region) => <button className={`regional-cell signal-${region.signalLevel.toLowerCase()} ${selectedRegionId === region.id ? "selected" : ""}`} type="button" key={region.id} onClick={() => setSelectedRegionId(region.id)} aria-pressed={selectedRegionId === region.id}>
+                  <span>{region.label}</span><small>{region.signalLevel} signal</small>
+                </button>)}
+              </section>
+              {(() => {
+                const selectedRegion = syntheticRegions.find((region) => region.id === selectedRegionId) || syntheticRegions[0];
+                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected synthetic region</p><h2>{selectedRegion.label}</h2><p>This is an illustrative fixture only; it does not identify a location with elevated clinical risk.</p><dl><div><dt>Follow-up signal</dt><dd>{selectedRegion.signalLevel} (synthetic)</dd></div><div><dt>Demo records</dt><dd>{selectedRegion.syntheticRecords} generated</dd></div><div><dt>Fixture coverage</dt><dd>{selectedRegion.coverage} illustrative</dd></div></dl><small>Local aggregation fixtures stay separate until a future, governed regional-mapping task. External sharing remains disabled.</small></aside>;
+              })()}
             </div>
           </div>
         </section>
