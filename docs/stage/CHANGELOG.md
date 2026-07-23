@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-003 - AI consent, imaging metadata, and temporary-record path
+
+- Status: awaiting owner review
+- Added a distinct AI-risk-support consent decision after the local screening wizard.
+- A declined AI path retains only a local screening-only status; consented encounters collect local imaging metadata and produce a temporary local record when details are incomplete.
+- No imaging file is uploaded, parsed, or interpreted, and no AI result is produced in this task.
+
 ## TASK-002 revision - Screening-step fade handoff
 
 - Status: awaiting owner review with TASK-002

@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Separate AI consent and metadata-only temporary record
+
+- AI risk support has a separate patient-consent choice after screening; declining it must keep the encounter on the screening-only local path.
+- TASK-003 records only local imaging metadata. It must not upload, parse, or interpret CT/CXR files and must not present any AI result.
+- If a CT study, local availability, and non-identifying study reference are not all present, the consented encounter is retained as an explicitly incomplete local temporary record for a later clinician return.
+
 ## Accepted - Review showcase for every task
 
 - Starting with the next newly added task, every stage task must have a concise showcase before review: the feature outcome, demo steps, screenshots or a short recording, automated/manual test evidence, limitations, and its exact stage commit.
