@@ -1,5 +1,11 @@
 # Stage changelog
 
+## Repository setup - GitHub branch workflow
+
+- Status: stage documentation current
+- Connected the local repository to `ShinkoSiVes/Astrazeneca-Hackathon` as `origin`.
+- Added the stage/main version-control record; published history will remain append-only and task-scoped.
+
 ## TASK-001 revision - Temporary product identity
 
 - Status: pending owner review with TASK-001
