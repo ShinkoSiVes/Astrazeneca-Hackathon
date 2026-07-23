@@ -65,6 +65,9 @@ type ImagingMetadata = {
   studyDate: string;
   sourceStatus: string;
   facility: string;
+  imageFileName: string;
+  imageFileType: string;
+  imageFileSize: number;
 };
 
 const emptyScreeningDraft: ScreeningDraft = {
@@ -74,7 +77,7 @@ const emptyScreeningDraft: ScreeningDraft = {
 const screeningDraftKey = "aeris-screening-draft-v1";
 const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
-const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "" };
+const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imageFileName: "", imageFileType: "", imageFileSize: 0 };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 const dateValueFor = (year: number, month: number, day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -104,6 +107,7 @@ export default function App() {
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
   const navigationTimer = useRef<number | undefined>(undefined);
   const screeningStepTimer = useRef<number | undefined>(undefined);
+  const imagingFileInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const rotation = window.setInterval(() => {
@@ -145,6 +149,21 @@ export default function App() {
 
   const updateImagingMetadata = (field: keyof ImagingMetadata, value: string) => {
     setImagingMetadata((current) => ({ ...current, [field]: value }));
+  };
+
+  const recordImagingFile = (file?: File) => {
+    if (!file) return;
+    setImagingMetadata((current) => ({
+      ...current,
+      imageFileName: file.name,
+      imageFileType: file.type || "Unspecified file type",
+      imageFileSize: file.size,
+    }));
+  };
+
+  const removeImagingFile = () => {
+    setImagingMetadata((current) => ({ ...current, imageFileName: "", imageFileType: "", imageFileSize: 0 }));
+    if (imagingFileInput.current) imagingFileInput.current.value = "";
   };
 
   const openStudyCalendar = () => {
@@ -533,7 +552,7 @@ export default function App() {
           <div className="ai-path-card">
             <p className="card-kicker">Separate consent</p>
             <h2>Record the patient’s choice before collecting imaging details.</h2>
-            <p className="helper-text">No imaging file is uploaded or analysed in this task. The next screen only records local metadata for a possible future clinician review.</p>
+            <p className="helper-text">A local CT/CXR/DICOM file can be selected for reference, but this demo does not upload, read, or analyse it. The next screen records local metadata for a possible future clinician review.</p>
             <div className="ai-choice-list">
               <button className="secondary-button" type="button" onClick={() => recordAiConsent(false)}>No, keep screening only</button>
               <button className="primary-button" type="button" onClick={() => recordAiConsent(true)}>Yes, continue to imaging details <ArrowRight size={18} /></button>
@@ -573,8 +592,41 @@ export default function App() {
                 )}
               </div>
               <label className="wide-field">Facility or source (optional)<input value={imagingMetadata.facility} onChange={(event) => updateImagingMetadata("facility", event.target.value)} placeholder="Facility, mobile unit, or source" /></label>
+              <div className="wide-field imaging-file-field">
+                <span id="imaging-file-label" className="field-label">Imaging file (optional)</span>
+                <div
+                  className="imaging-dropzone"
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    recordImagingFile(event.dataTransfer.files[0]);
+                  }}
+                >
+                  <input
+                    ref={imagingFileInput}
+                    id="imaging-file"
+                    className="visually-hidden"
+                    type="file"
+                    accept=".dcm,.dicom,image/*,application/dicom"
+                    aria-labelledby="imaging-file-label"
+                    onChange={(event) => recordImagingFile(event.target.files?.[0])}
+                  />
+                  {imagingMetadata.imageFileName ? (
+                    <div className="imaging-file-selected" aria-live="polite">
+                      <span><strong>{imagingMetadata.imageFileName}</strong><small>{imagingMetadata.imageFileType} · {(imagingMetadata.imageFileSize / 1024).toFixed(1)} KB · Local demo reference only</small></span>
+                      <button className="text-button" type="button" onClick={removeImagingFile}>Remove file</button>
+                    </div>
+                  ) : (
+                    <div className="imaging-file-empty">
+                      <span aria-hidden="true">↓</span>
+                      <p><strong>Drop a CT, CXR, or DICOM file here</strong><small>It stays on this device. This demo does not upload, read, or interpret the file.</small></p>
+                      <button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Choose local file</button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="field-note"><CloudOff size={16} /> This demo stores metadata locally only. It does not upload, read, or interpret a scan.</p>
+            <p className="field-note"><CloudOff size={16} /> This demo stores file metadata locally only. It does not upload, read, or interpret a scan.</p>
             <div className="draft-buttons"><button className="primary-button" type="button" onClick={saveTemporaryRecord}>Save temporary local record <Check size={18} /></button></div>
           </form>
         </section>
