@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-002 revision - Full screening-card fade handoff
+
+- Status: awaiting owner review with TASK-002
+- Continue and Previous now fade the complete local-screening card out before the next step fades in, rather than swapping only the fields inside a persistent card.
+- The 260 ms exit prevents duplicate clicks and makes the direction of the form handoff visible.
+
 ## TASK-003 revision - Study-date calendar
 
 - Status: awaiting owner review with TASK-003

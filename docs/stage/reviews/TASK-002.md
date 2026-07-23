@@ -77,9 +77,28 @@ Deliver a clinician-led, three-step screening wizard that saves and restores a l
 - `npm.cmd run build` — passes.
 - The 180 ms motion is decorative only. It does not imply clinical processing, validate data completeness, or make a diagnosis.
 
+## TASK-002 revision - Full screening-card fade showcase
+
+### User-visible feature
+
+- Continue and Previous fade the full local-screening card upward for 260 ms, then the next step's card fades in.
+- Controls remain disabled during the exit, preventing duplicate transitions.
+
+### Visual evidence
+
+- `docs/stage/reviews/assets/task-002-screening-card-fade-out.png` — Profile card during the outgoing fade.
+- `docs/stage/reviews/assets/task-002-screening-card-fade-in.png` — Exposure card after its entry animation.
+
+### Verification and limitation
+
+- `npm.cmd test` — 11 passing tests, including direct coverage for the leaving state on both the card and form panel.
+- `npm.cmd run build` — passes.
+- Motion is decorative only and does not indicate data processing or validation.
+
 ## Promotion
 
 - Status: **awaiting owner approval**
 - Proposed TASK-002 revision: `2b0f4dc` — `style(task-002): animate screening step handoffs`.
-- Proposed promotion: the stage commit created for TASK-002 only.
+- Proposed TASK-002 revision: `d78d4c3` — `style(task-002): fade complete screening cards`.
+- Proposed promotion: the stage commits created for TASK-002 only.
 - Approval command: `Approve TASK-002 for main`.
