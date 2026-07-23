@@ -1,5 +1,10 @@
 # Stage decisions
 
+## Accepted - Review showcase for every task
+
+- Starting with the next newly added task, every stage task must have a concise showcase before review: the feature outcome, demo steps, screenshots or a short recording, automated/manual test evidence, limitations, and its exact stage commit.
+- A showcase is review evidence only. It does not authorize promotion to `main`; explicit owner approval remains required.
+
 ## Accepted - Profiling-specific entrance motion
 
 - The profiling workspace uses a dedicated fade-and-rise transition with a short form-card stagger so the data-entry view does not appear abruptly.

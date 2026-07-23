@@ -1,5 +1,10 @@
 # Stage changelog
 
+## Delivery process revision - Required task showcase
+
+- Status: active for every new stage task
+- Each task review now includes the user-visible feature, a concise demo path, screenshots or a short recording, test results, known limitations, and the exact proposed stage commit before owner review or any promotion request.
+
 ## TASK-002 revision - Profiling fade-in
 
 - Status: awaiting owner review with TASK-002
