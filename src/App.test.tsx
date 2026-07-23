@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import App from "./App";
 
 describe("TASK-001 consent and demo login", () => {
@@ -100,5 +101,19 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
 
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packFrequency\":\"Per week");
+  });
+
+  it("rotates through the public landscape scenes", () => {
+    vi.useFakeTimers();
+    const { container } = render(<App />);
+
+    expect(container.querySelector(".landscape-sagada")).toHaveClass("is-active");
+
+    act(() => {
+      vi.advanceTimersByTime(7200);
+    });
+
+    expect(container.querySelector(".landscape-mountain-province")).toHaveClass("is-active");
+    vi.useRealTimers();
   });
 });

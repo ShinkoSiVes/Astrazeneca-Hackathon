@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -21,6 +21,14 @@ import lungMark from "./assets/hinga-mark.svg";
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening";
 
 const defaultBhwId = "BHW-024";
+
+const landscapeSlides = [
+  "landscape-sagada",
+  "landscape-mountain-province",
+  "landscape-benguet",
+  "landscape-cebu-forest",
+  "landscape-benguet-vista",
+];
 
 const teamPlaceholders = [
   { initials: "01", name: "[Name]", title: "[Role / specialty]" },
@@ -65,6 +73,18 @@ export default function App() {
   const [offline, setOffline] = useState(true);
   const [screeningStep, setScreeningStep] = useState(1);
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
+  const [activeBackdrop, setActiveBackdrop] = useState(0);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    if (prefersReducedMotion) return undefined;
+
+    const rotation = window.setInterval(() => {
+      setActiveBackdrop((current) => (current + 1) % landscapeSlides.length);
+    }, 7200);
+
+    return () => window.clearInterval(rotation);
+  }, []);
   const [draftStatus, setDraftStatus] = useState("");
 
   const enterDemo = () => {
@@ -113,9 +133,9 @@ export default function App() {
   return (
     <main className={`app-shell view-${view}`}>
       <div className="landscape-rotator" aria-hidden="true">
-        <span className="landscape-slide landscape-sagada" />
-        <span className="landscape-slide landscape-mountain-province" />
-        <span className="landscape-slide landscape-benguet" />
+        {landscapeSlides.map((slide, index) => (
+          <span className={`landscape-slide ${slide} ${index === activeBackdrop ? "is-active" : ""}`} key={slide} />
+        ))}
       </div>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Aeris AI home" onClick={() => setView("consent")}>

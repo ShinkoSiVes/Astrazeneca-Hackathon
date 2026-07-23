@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-002 revision - Diverse animated landscape rotation
+
+- Status: awaiting owner review with TASK-002
+- Replaced the brittle timed CSS cycle with an app-controlled 7.2-second rotation and a visible 1.5-second crossfade plus slow image movement.
+- Added locally cached Cebu forest and Benguet mountain-vista images so the public flow is no longer only terraces.
+- Profiling remains intentionally clear, without any background imagery.
+
 ## TASK-002 revision - Flowing view transitions
 
 - Status: awaiting owner review with TASK-002

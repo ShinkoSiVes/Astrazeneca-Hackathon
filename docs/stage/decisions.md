@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Diverse, visible public-flow landscape rotation
+
+- The public flow uses five different, locally cached Philippine landscape scenes rather than a terrace-only sequence.
+- The transition is a 1.5-second crossfade with a slow image movement every 7.2 seconds; reduced-motion users receive the original static scene.
+- The clinician profiling workspace remains image-free, as previously approved.
+
 ## Accepted - Page-transition motion
 
 - Moving between application views uses a brief fade-and-rise entry transition while the top bar remains stable for orientation.

@@ -25,3 +25,19 @@
   - License: Unsplash License (source marks it free to use)
   - Local optimization: 1600 px wide JPEG request, quality 65; 383,289 bytes
 - Usage: slow background-only crossfade behind the full app; never a clinical data visualization or indicator.
+
+## Rotation diversity additions
+
+- Local file: `src/assets/cebu-forest-canopy.jpg`
+  - Source: [Lush green forest filled with lots of trees](https://unsplash.com/photos/a-lush-green-forest-filled-with-lots-of-trees-32x2qLTDxS4)
+  - Photographer: XT7 Core
+  - Location supplied by source: Cebu, Philippines
+  - License: Unsplash License (source marks it free to use)
+  - Local optimization: 1920 px wide JPEG request, quality 78; 538,921 bytes
+- Local file: `src/assets/benguet-mountain-vista.jpg`
+  - Source: [A scenic view of a mountain range with trees in the foreground](https://unsplash.com/photos/a-scenic-view-of-a-mountain-range-with-trees-in-the-foreground-D6Q1UQHdK_A)
+  - Photographer: Johann Ocampo
+  - Location supplied by source: Benguet, Philippines
+  - License: Unsplash License (source marks it free to use)
+  - Local optimization: 1920 px wide JPEG request, quality 78; 469,562 bytes
+- Usage: these images broaden the public-flow rotation beyond rice terraces. They remain locally cached and never indicate clinical status, patient data, or a geographic-risk result.
