@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Synthetic 18-region dashboard boundary
+
+- TASK-006 may display 18 numbered, synthetic regional fixtures with synthetic follow-up signals for interaction design only.
+- The fixtures may not use live patient data, claim regional clinical risk, attribute a signal to a real Philippine region, or map a TASK-005 local fixture to a region.
+- Local population-fixture count may be displayed as an unmapped total only. External sharing remains disabled.
+
 ## Accepted - Clinician-approved local de-identification gate
 
 - Only the accepted clinician-review branch can open TASK-005 aggregation. Forced continuation remains a local workflow exception and cannot be aggregated.

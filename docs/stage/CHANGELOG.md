@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-006 - Synthetic 18-region population dashboard
+
+- Status: awaiting owner review
+- Replaced the dashboard placeholder with 18 selectable synthetic regional fixtures and a local-only detail panel.
+- The dashboard distinguishes synthetic follow-up signals from clinical risk and keeps local TASK-005 population fixtures unmapped.
+- No external sharing, live patient data, regional attribution, or clinical prediction is enabled.
+
 ## TASK-005 - Local de-identification and aggregation gate
 
 - Status: awaiting owner review
