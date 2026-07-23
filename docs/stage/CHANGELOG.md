@@ -1,5 +1,11 @@
 # Stage changelog
 
+## TASK-001 revision - Aeris AI working identity
+
+- Status: pending owner review with TASK-001
+- Renamed the temporary product identity from `Hinga Atlas` to `Aeris AI` at the owner's request.
+- The name change does not alter the clinician-review gate, demo-data limitation, or placeholder logo status.
+
 ## TASK-001 revision - Heatmap status
 
 - Status: pending owner review with TASK-001

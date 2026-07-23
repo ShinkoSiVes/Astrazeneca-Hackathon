@@ -8,14 +8,14 @@
 
 ## Accepted - Public-facing placeholder content
 
-- The front-page FAQ answers workflow and consent questions only. It explicitly states that Hinga is not diagnostic and AI cannot make the final decision.
+- The front-page FAQ answers workflow and consent questions only. It explicitly states that Aeris AI is not diagnostic and AI cannot make the final decision.
 - The About view is static demo content. Team profiles use visibly bracketed placeholders until the owner supplies approved names, roles, photos, and links.
 - Placeholder social links do not leave the demo or represent real accounts.
 
 ## Pending owner confirmation - Temporary name and logo
 
-- Proposed working product name: `Hinga Atlas`, with the descriptor `Lung screening`.
-- The name keeps `Hinga` as the locally legible breath reference and adds `Atlas` to reflect geographic equity and future population insights.
+- Proposed working product name: `Aeris AI`, with the descriptor `Lung screening`.
+- The name is a short, distinctive temporary product identifier. It does not represent a clinical claim, a validated AI model, or a final brand decision.
 - The placeholder logo is an original teal vector mark: a simplified paired-lung form with a calm waveform, not a diagnostic or regulatory symbol.
 
 ## Accepted - TASK-001 motion revision

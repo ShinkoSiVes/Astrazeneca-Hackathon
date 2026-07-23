@@ -16,7 +16,7 @@ import {
   UsersRound,
   WifiOff,
 } from "lucide-react";
-import hingaMark from "./assets/hinga-mark.svg";
+import lungMark from "./assets/hinga-mark.svg";
 
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status";
 
@@ -50,10 +50,10 @@ export default function App() {
   return (
     <main className={`app-shell view-${view}`}>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Hinga Atlas home">
-          <img className="brand-mark" src={hingaMark} alt="" aria-hidden="true" />
+        <a className="brand" href="#top" aria-label="Aeris AI home">
+          <img className="brand-mark" src={lungMark} alt="" aria-hidden="true" />
           <span>
-            <strong>Hinga Atlas</strong>
+            <strong>Aeris AI</strong>
             <small>Lung screening</small>
           </span>
         </a>
@@ -83,7 +83,7 @@ export default function App() {
             <p className="eyebrow"><MapPinned size={16} /> Community profiling mission</p>
             <h1>Start every screening with a clear patient choice.</h1>
             <p className="intro-copy">
-              Hinga Atlas helps field teams gather structured lung-cancer screening information
+              Aeris AI helps field teams gather structured lung-cancer screening information
               and prepare reviewed, de-identified population insights.
             </p>
             <div className="principle-list" aria-label="Data handling principles">
@@ -142,8 +142,8 @@ export default function App() {
             </div>
             <div className="faq-grid">
               <details className="faq-item" open>
-                <summary>Does Hinga Atlas diagnose lung cancer?</summary>
-                <p>No. Hinga Atlas is a clinician-led screening and population-insight demo. It does not replace diagnosis, imaging interpretation, or clinical judgment.</p>
+                <summary>Does Aeris AI diagnose lung cancer?</summary>
+                <p>No. Aeris AI is a clinician-led screening and population-insight demo. It does not replace diagnosis, imaging interpretation, or clinical judgment.</p>
               </details>
               <details className="faq-item">
                 <summary>What happens if a patient declines?</summary>
@@ -170,7 +170,7 @@ export default function App() {
             </button>
             <p className="eyebrow"><UsersRound size={16} /> About the project</p>
             <h1 id="about-title">A field-friendly path to earlier lung-health follow-up.</h1>
-            <p>Hinga Atlas is a hackathon prototype for clinician-led community profiling, designed with geographic equity in the Philippines in mind.</p>
+            <p>Aeris AI is a hackathon prototype for clinician-led community profiling, designed with geographic equity in the Philippines in mind.</p>
           </div>
 
           <div className="about-content">
