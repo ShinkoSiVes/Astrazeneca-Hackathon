@@ -15,8 +15,8 @@ button:disabled { cursor: not-allowed; }
 .app-shell { position: relative; isolation: isolate; min-height: 100vh; overflow: hidden; background: #dbece7; }
 .app-shell > :not(.landscape-rotator) { position: relative; z-index: 1; }
 .landscape-rotator { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; background: #dbece7; }
-.view-screening { background: #f7fbfa; }
-.view-screening .landscape-rotator { display: none; }
+.view-screening, .view-ai-consent, .view-imaging-metadata, .view-temporary-record, .view-screening-complete { background: #f7fbfa; }
+.view-screening .landscape-rotator, .view-ai-consent .landscape-rotator, .view-imaging-metadata .landscape-rotator, .view-temporary-record .landscape-rotator, .view-screening-complete .landscape-rotator { display: none; }
 .view-transition { animation: view-flow-in 480ms cubic-bezier(.22, .8, .24, 1) both; will-change: opacity, transform; }
 .view-transition.is-leaving { pointer-events: none; animation: view-flow-out 220ms cubic-bezier(.55, .02, .74, .32) both; }
 .landscape-rotator::after { position: absolute; z-index: 2; inset: 0; content: ""; background: linear-gradient(145deg, rgb(245 250 248 / 82%) 0%, rgb(239 248 244 / 68%) 45%, rgb(231 244 239 / 75%) 100%); }
@@ -102,6 +102,19 @@ button:disabled { cursor: not-allowed; }
 .ready-layout > p { margin-inline: auto; }
 .ready-actions { justify-content: center; }
 .stage-note { justify-content: center; margin-top: 32px; color: #71898d; }
+.temporary-record-layout { max-width: 850px; }
+
+.ai-path-layout { width: min(1120px, calc(100% - 48px)); margin: clamp(42px, 10vh, 118px) auto 94px; display: grid; grid-template-columns: minmax(0, .88fr) minmax(380px, .75fr); gap: clamp(38px, 8vw, 112px); align-items: center; }
+.ai-path-context { animation: content-enter 620ms 80ms both; }
+.ai-path-context .back-link { margin-bottom: 34px; }
+.ai-path-context h1 { max-width: 620px; margin: 14px 0 20px; color: #103d49; font-size: clamp(40px, 4.9vw, 64px); line-height: .99; letter-spacing: -0.057em; }
+.ai-path-context > p:last-child { max-width: 580px; margin: 0; color: #526d74; font-size: 17px; line-height: 1.6; }
+.ai-path-card { border: 1px solid #d9e8e4; border-radius: 25px; padding: clamp(26px, 4vw, 42px); background: rgb(255 255 255 / 88%); box-shadow: 0 18px 48px rgb(20 64 69 / 7%); animation: card-enter 680ms 140ms both; }
+.ai-path-card .card-kicker { margin-top: 0; }
+.ai-path-card h2 { margin: 0; color: #163f49; font-size: clamp(28px, 3.1vw, 39px); line-height: 1.08; letter-spacing: -0.045em; }
+.ai-choice-list { display: grid; gap: 12px; margin-top: 26px; }
+.ai-choice-list .secondary-button, .ai-choice-list .primary-button { width: 100%; }
+.imaging-form .field-note { margin: 24px 0; }
 
 .faq-section { width: min(1240px, calc(100% - 48px)); margin: 0 auto 90px; padding: clamp(30px, 5vw, 58px); border: 1px solid #d8e8e4; border-radius: 28px; background: rgb(255 255 255 / 68%); box-shadow: 0 18px 48px rgb(20 64 69 / 5%); animation: content-enter 600ms 220ms both; }
 .faq-heading { max-width: 620px; }
@@ -266,6 +279,7 @@ button:disabled { cursor: not-allowed; }
   .hero-grid, .login-layout { width: min(100% - 32px, 680px); grid-template-columns: 1fr; gap: 38px; margin-top: 42px; }
   .hero-grid { min-height: 0; padding: 30px 24px; }
   .faq-section, .about-layout { width: min(100% - 32px, 680px); }
+  .ai-path-layout { width: min(100% - 32px, 680px); grid-template-columns: 1fr; gap: 38px; }
   .intro-panel h1, .login-context h1 { font-size: clamp(38px, 11vw, 56px); }
   .workflow-card, .login-card { padding: 27px 22px; border-radius: 20px; }
   .faq-grid { grid-template-columns: 1fr; }
@@ -285,6 +299,8 @@ button:disabled { cursor: not-allowed; }
   .faq-section { margin-bottom: 54px; padding: 25px 20px; border-radius: 20px; }
   .hero-grid { padding: 25px 20px; border-radius: 22px; }
   .about-layout { margin-bottom: 60px; }
+  .ai-path-layout { margin-bottom: 60px; }
+  .ai-path-card { padding: 25px 20px; border-radius: 20px; }
   .heatmap-status-layout { margin-bottom: 60px; }
   .about-story, .team-section { padding: 25px 20px; border-radius: 20px; }
   .team-grid { grid-template-columns: 1fr; }

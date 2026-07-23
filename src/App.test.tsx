@@ -126,6 +126,51 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packFrequency\":\"Per week");
   });
 
+  it("keeps the screening-only path local when AI consent is declined", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
+    await user.click(await screen.findByRole("button", { name: /no, keep screening only/i }));
+
+    expect(await screen.findByRole("heading", { name: /saved without ai support/i })).toBeInTheDocument();
+    expect(localStorage.getItem("aeris-screening-only-status-v1")).toContain("aiConsent\":false");
+    expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toBeNull();
+  });
+
+  it("stores incomplete imaging details as a temporary local record", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
+    await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
+    await user.selectOptions(await screen.findByLabelText(/imaging modality/i), "No imaging available");
+    await user.click(screen.getByRole("button", { name: /save temporary local record/i }));
+
+    expect(await screen.findByRole("heading", { name: /more imaging details are needed/i })).toBeInTheDocument();
+    expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("awaiting additional imaging details");
+  });
+
   it("rotates through the public landscape scenes", () => {
     vi.useFakeTimers();
     const { container } = render(<App />);

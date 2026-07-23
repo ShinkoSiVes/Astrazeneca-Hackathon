@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
 
-type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening";
+type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete";
 
 const defaultBhwId = "BHW-024";
 
@@ -58,11 +58,21 @@ type ScreeningDraft = {
   clinicianNotes: string;
 };
 
+type ImagingMetadata = {
+  modality: string;
+  studyReference: string;
+  studyDate: string;
+  sourceStatus: string;
+  facility: string;
+};
+
 const emptyScreeningDraft: ScreeningDraft = {
   fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
 };
 
 const screeningDraftKey = "aeris-screening-draft-v1";
+const temporaryRecordKey = "aeris-temporary-ai-record-v1";
+const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "" };
 
 export default function App() {
   const [view, setView] = useState<View>("consent");
@@ -73,6 +83,9 @@ export default function App() {
   const [offline, setOffline] = useState(true);
   const [screeningStep, setScreeningStep] = useState(1);
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
+  const [aiConsent, setAiConsent] = useState<boolean | null>(null);
+  const [imagingMetadata, setImagingMetadata] = useState<ImagingMetadata>(emptyImagingMetadata);
+  const [temporaryRecordReady, setTemporaryRecordReady] = useState(false);
   const [activeBackdrop, setActiveBackdrop] = useState(0);
   const [isLeavingView, setIsLeavingView] = useState(false);
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
@@ -117,6 +130,10 @@ export default function App() {
     setScreeningDraft((current) => ({ ...current, [field]: value }));
   };
 
+  const updateImagingMetadata = (field: keyof ImagingMetadata, value: string) => {
+    setImagingMetadata((current) => ({ ...current, [field]: value }));
+  };
+
   const saveScreeningDraft = () => {
     localStorage.setItem(screeningDraftKey, JSON.stringify({ data: screeningDraft, savedAt: new Date().toISOString() }));
     setDraftStatus("Screening draft saved on this device.");
@@ -144,6 +161,37 @@ export default function App() {
     setScreeningStep(1);
     setDraftStatus("");
     navigateTo("screening");
+  };
+
+  const finishScreening = () => {
+    saveScreeningDraft();
+    setAiConsent(null);
+    setImagingMetadata(emptyImagingMetadata);
+    setTemporaryRecordReady(false);
+    navigateTo("ai-consent");
+  };
+
+  const recordAiConsent = (agrees: boolean) => {
+    setAiConsent(agrees);
+    if (!agrees) {
+      localStorage.setItem("aeris-screening-only-status-v1", JSON.stringify({ savedAt: new Date().toISOString(), aiConsent: false }));
+      navigateTo("screening-complete");
+      return;
+    }
+    navigateTo("imaging-metadata");
+  };
+
+  const saveTemporaryRecord = () => {
+    const readyForReview = imagingMetadata.modality === "CT scan" && imagingMetadata.studyReference.trim() !== "" && imagingMetadata.sourceStatus === "Available locally";
+    localStorage.setItem(temporaryRecordKey, JSON.stringify({
+      savedAt: new Date().toISOString(),
+      status: readyForReview ? "ready for clinician nodule review" : "awaiting additional imaging details",
+      aiConsent: true,
+      imaging: imagingMetadata,
+      screening: screeningDraft,
+    }));
+    setTemporaryRecordReady(readyForReview);
+    navigateTo("temporary-record");
   };
 
   const changeScreeningStep = (nextStep: number) => {
@@ -424,11 +472,79 @@ export default function App() {
                 {screeningStep < 3 ? (
                   <button className="primary-button" type="button" disabled={isSwitchingScreeningStep} onClick={() => changeScreeningStep(screeningStep + 1)}>Continue <ArrowRight size={18} /></button>
                 ) : (
-                  <button className="primary-button" type="button" onClick={() => { saveScreeningDraft(); navigateTo("ready"); }}>Finish screening draft <Check size={18} /></button>
+                  <button className="primary-button" type="button" onClick={finishScreening}>Finish screening draft <Check size={18} /></button>
                 )}
               </div>
             </div>
           </form>
+        </section>
+      )}
+
+      {view === "ai-consent" && (
+        <section className="ai-path-layout" aria-labelledby="ai-consent-title">
+          <div className="ai-path-context">
+            <button className="back-link" type="button" onClick={() => navigateTo("screening")}><ChevronLeft size={17} /> Back to screening</button>
+            <p className="eyebrow"><ShieldCheck size={16} /> Optional risk-support path</p>
+            <h1 id="ai-consent-title">Would the patient agree to clinician-led AI risk support?</h1>
+            <p>Explain that this optional demo path does not diagnose cancer. A medical professional supplies any imaging details and decides whether a future output is useful.</p>
+          </div>
+          <div className="ai-path-card">
+            <p className="card-kicker">Separate consent</p>
+            <h2>Record the patient’s choice before collecting imaging details.</h2>
+            <p className="helper-text">No imaging file is uploaded or analysed in this task. The next screen only records local metadata for a possible future clinician review.</p>
+            <div className="ai-choice-list">
+              <button className="secondary-button" type="button" onClick={() => recordAiConsent(false)}>No, keep screening only</button>
+              <button className="primary-button" type="button" onClick={() => recordAiConsent(true)}>Yes, continue to imaging details <ArrowRight size={18} /></button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {view === "imaging-metadata" && (
+        <section className="ai-path-layout" aria-labelledby="imaging-metadata-title">
+          <div className="ai-path-context">
+            <button className="back-link" type="button" onClick={() => navigateTo("ai-consent")}><ChevronLeft size={17} /> Back to AI consent</button>
+            <p className="eyebrow"><ShieldCheck size={16} /> Local imaging metadata</p>
+            <h1 id="imaging-metadata-title">Prepare a temporary local record.</h1>
+            <p>Record only what is available during the visit. Missing details create an offline temporary record so the clinician can return later with more information.</p>
+          </div>
+          <form className="ai-path-card imaging-form" onSubmit={(event) => event.preventDefault()}>
+            <p className="card-kicker">Imaging check</p>
+            <h2>Is an imaging study available for the future review?</h2>
+            <div className="form-grid">
+              <label>Imaging modality<select value={imagingMetadata.modality} onChange={(event) => updateImagingMetadata("modality", event.target.value)}><option value="">Select option</option><option>CT scan</option><option>Chest X-ray</option><option>No imaging available</option></select></label>
+              <label>Imaging availability<select value={imagingMetadata.sourceStatus} onChange={(event) => updateImagingMetadata("sourceStatus", event.target.value)}><option value="">Select option</option><option>Available locally</option><option>Patient will return with it</option><option>Not available</option></select></label>
+              <label>Study / facility reference<input value={imagingMetadata.studyReference} onChange={(event) => updateImagingMetadata("studyReference", event.target.value)} placeholder="Non-identifying local reference" /></label>
+              <label>Study date (if known)<input type="date" value={imagingMetadata.studyDate} onChange={(event) => updateImagingMetadata("studyDate", event.target.value)} /></label>
+              <label className="wide-field">Facility or source (optional)<input value={imagingMetadata.facility} onChange={(event) => updateImagingMetadata("facility", event.target.value)} placeholder="Facility, mobile unit, or source" /></label>
+            </div>
+            <p className="field-note"><CloudOff size={16} /> This demo stores metadata locally only. It does not upload, read, or interpret a scan.</p>
+            <div className="draft-buttons"><button className="primary-button" type="button" onClick={saveTemporaryRecord}>Save temporary local record <Check size={18} /></button></div>
+          </form>
+        </section>
+      )}
+
+      {view === "temporary-record" && (
+        <section className="ready-layout temporary-record-layout" aria-labelledby="temporary-record-title">
+          <div className="ready-icon"><ShieldCheck size={34} /></div>
+          <p className="eyebrow">Temporary local record</p>
+          <h1 id="temporary-record-title">{temporaryRecordReady ? "Imaging details are ready for clinician review." : "More imaging details are needed before clinician review."}</h1>
+          <p>{temporaryRecordReady ? "The consented screening draft and imaging metadata are stored only on this device. No AI result has been generated." : "This local draft is marked for follow-up. Return with an available CT study and non-identifying reference before the next review step."}</p>
+          <div className="ready-actions">
+            <button className="secondary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Update imaging details</button>
+            <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
+          </div>
+          <p className="stage-note">AI is not run in TASK-003. Clinician review remains a later, separate step.</p>
+        </section>
+      )}
+
+      {view === "screening-complete" && (
+        <section className="ready-layout temporary-record-layout" aria-labelledby="screening-complete-title">
+          <div className="ready-icon"><Check size={34} /></div>
+          <p className="eyebrow">Screening-only path</p>
+          <h1 id="screening-complete-title">The local screening draft was saved without AI support.</h1>
+          <p>The patient did not opt into the separate AI risk-support path. No imaging metadata or AI-related temporary record was created.</p>
+          <div className="ready-actions"><button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button></div>
         </section>
       )}
 
