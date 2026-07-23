@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Clear-to-subtle clinical backdrop hierarchy
+
+- A single locally cached landscape may continue from screening through AI consent, imaging metadata, temporary-record, screening-complete, and clinician-review pages.
+- The backdrop is progressively washed out: consent keeps the strongest visual context, metadata is quieter, and temporary/review states are closest to a clear clinical canvas.
+- No clinical view may cycle images, ripple, or imply an AI or clinical processing state through motion.
+
 ## Accepted - Metadata-only clinician review gate
 
 - TASK-004 may demonstrate the clinician decision workflow only after a local CT metadata record is marked ready.

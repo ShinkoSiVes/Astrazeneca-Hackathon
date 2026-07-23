@@ -39,6 +39,29 @@ Provide a clinician-only nodule-review workflow checkpoint with safe, explicit d
 - The screen does not inspect images or invoke an AI model.
 - “Force continue” records a workflow caveat only; it must not be interpreted as clinical validation or permission to aggregate data.
 
+## TASK-004 revision - Clinical backdrop hierarchy showcase
+
+### User-visible effect
+
+- The local Philippine landscape now continues after screening instead of dropping to a plain canvas.
+- AI consent is the most visible of the clinical backdrops; imaging metadata is quieter; temporary-record and clinician-review screens are almost clear for legibility.
+- The clinical workflow uses one static image only: no cycling, ripple, or motion is shown after the screening flow begins.
+
+### Visual evidence
+
+- [AI consent backdrop](assets/task-004-ai-consent-backdrop.png)
+- [Imaging metadata backdrop](assets/task-004-imaging-backdrop.png)
+
+### Verification
+
+- `npm.cmd run build` passed on 2026-07-24.
+- Visual review passed for AI consent and imaging metadata at the stage preview. The form surface remains readable over its increasingly pale backdrop.
+
+### Revision limitations
+
+- The imagery is decorative and locally cached. It is not patient, environmental, risk, or AI data.
+- This revision does not alter the screening data, temporary-record state, or clinician-review decision logic.
+
 ## Promotion
 
 - Status: **awaiting owner approval**

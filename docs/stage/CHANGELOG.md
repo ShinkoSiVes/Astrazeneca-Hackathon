@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-004 revision - Layered clinical backdrops
+
+- Status: awaiting owner review with TASK-004
+- Extended the one local, static Philippine landscape from screening through AI consent, imaging metadata, temporary-record, and clinician-review pages.
+- Consent is the most visibly contextual clinical screen; data entry is more subdued; temporary and review decisions use the strongest pale wash for the clearest reading surface.
+- Clinical backgrounds do not rotate, crossfade, or ripple, so imagery never resembles progress or a diagnostic result.
+
 ## TASK-004 - Clinician nodule-review screen and decision branches
 
 - Status: awaiting owner review
