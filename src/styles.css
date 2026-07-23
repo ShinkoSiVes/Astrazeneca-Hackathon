@@ -139,6 +139,13 @@ button:disabled { cursor: not-allowed; }
 .review-actions p, .review-resolution p { margin: 0; color: #59747a; font-size: 14px; line-height: 1.55; }
 .review-actions strong, .review-resolution strong { color: #1c4b54; }
 .review-resolution { padding: 18px; border: 1px solid #c8e1db; border-radius: 15px; background: #eef8f5; }
+.aggregation-card .helper-text { margin-bottom: 0; }
+.deid-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 24px; }
+.deid-grid section { padding: 14px; border: 1px solid #dbe9e6; border-radius: 13px; background: #fbfefd; }
+.deid-grid section:first-child { border-color: #dfd8c6; background: #fffcf3; }
+.deid-grid strong { color: #1d4c55; font-size: 13px; }
+.deid-grid p { margin: 7px 0 0; color: #607b80; font-size: 13px; line-height: 1.5; }
+.aggregation-facts { margin-top: 12px; }
 .study-date-picker { position: relative; }
 .form-grid .study-date-picker { display: grid; gap: 8px; min-width: 0; color: #2a525b; font-size: 14px; font-weight: 800; }
 .date-picker-trigger { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 50px; border: 1px solid #b9d0ce; border-radius: 11px; padding: 0 13px; color: #173e47; background: #fcfefd; font: inherit; font-weight: 500; text-align: left; }
@@ -377,6 +384,7 @@ button:disabled { cursor: not-allowed; }
   .review-layout { margin-bottom: 60px; }
   .review-card { padding: 25px 20px; border-radius: 20px; }
   .review-facts { grid-template-columns: 1fr; }
+  .deid-grid { grid-template-columns: 1fr; }
   .heatmap-status-layout { margin-bottom: 60px; }
   .about-story, .team-section { padding: 25px 20px; border-radius: 20px; }
   .team-grid { grid-template-columns: 1fr; }

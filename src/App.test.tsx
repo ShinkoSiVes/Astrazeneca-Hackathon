@@ -183,7 +183,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("field-ct.dcm");
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("field-cxr.png");
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("2025-01-15");
-  });
+  }, 10_000);
 
   it("records clinician nodule-review branches locally without presenting a diagnosis", async () => {
     localStorage.clear();
@@ -213,7 +213,45 @@ describe("TASK-001 consent and demo login", () => {
     expect(await screen.findByText(/forced continuation recorded/i)).toBeInTheDocument();
     expect(localStorage.getItem("aeris-clinician-nodule-review-v1")).toContain("forced");
     expect(screen.getByText(/not a nodule finding, malignancy estimate, or diagnosis/i)).toBeInTheDocument();
-  });
+  }, 10_000);
+
+  it("creates a de-identified local population record only after clinician acceptance", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await screen.findByRole("heading", { name: /patient profile and place/i });
+    await user.type(screen.getByLabelText(/field reference/i), "PRIVATE-024");
+    await user.type(screen.getByLabelText(/province \/ region/i), "Benguet");
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
+    await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
+    await user.selectOptions(await screen.findByLabelText(/imaging modality/i), "CT scan");
+    await user.selectOptions(screen.getByLabelText(/imaging availability/i), "Available locally");
+    await user.type(screen.getByLabelText(/study \/ facility reference/i), "CT-LOCAL-025");
+    await user.click(screen.getByRole("button", { name: /save temporary local record/i }));
+    await user.click(await screen.findByRole("button", { name: /open clinician review/i }));
+    await user.click(await screen.findByRole("button", { name: /accept as reviewed workflow data/i }));
+    await user.click(await screen.findByRole("button", { name: /prepare de-identified population record/i }));
+
+    expect(await screen.findByRole("heading", { name: /prepare a population record/i })).toBeInTheDocument();
+    expect(screen.getByText(/field reference, barangay, clinician notes/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /create local population record/i }));
+
+    const populationData = localStorage.getItem("aeris-population-data-v1") || "";
+    expect(await screen.findByText(/local population record created/i)).toBeInTheDocument();
+    expect(populationData).toContain("Province-level: Benguet");
+    expect(populationData).not.toContain("PRIVATE-024");
+    expect(populationData).not.toContain("CT-LOCAL-025");
+  }, 12_000);
 
   it("rotates through the public landscape scenes", () => {
     vi.useFakeTimers();

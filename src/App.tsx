@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
 
-type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review";
+type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "aggregation";
 
 const defaultBhwId = "BHW-024";
 
@@ -76,6 +76,19 @@ type ImagingMetadata = {
   imagingFiles: ImagingFileMetadata[];
 };
 
+type PopulationRecord = {
+  id: string;
+  createdAt: string;
+  geography: string;
+  ageRange: string;
+  sexAtBirth: string;
+  smokingStatus: string;
+  householdSmoke: string;
+  occupationalExposure: string;
+  symptomSignalCount: number;
+  pathway: "clinician-reviewed";
+};
+
 const emptyScreeningDraft: ScreeningDraft = {
   fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
 };
@@ -83,6 +96,7 @@ const emptyScreeningDraft: ScreeningDraft = {
 const screeningDraftKey = "aeris-screening-draft-v1";
 const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
+const populationDataKey = "aeris-population-data-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imagingFiles: [] };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -105,6 +119,8 @@ export default function App() {
   const [imagingMetadata, setImagingMetadata] = useState<ImagingMetadata>(emptyImagingMetadata);
   const [temporaryRecordReady, setTemporaryRecordReady] = useState(false);
   const [reviewOutcome, setReviewOutcome] = useState<"pending" | "needs-info" | "accepted" | "forced">("pending");
+  const [aggregationComplete, setAggregationComplete] = useState(false);
+  const [populationRecordCount, setPopulationRecordCount] = useState(0);
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
@@ -268,6 +284,45 @@ export default function App() {
   const openNoduleReview = () => {
     setReviewOutcome("pending");
     navigateTo("nodule-review");
+  };
+
+  const openAggregation = () => {
+    setAggregationComplete(false);
+    try {
+      const existing = JSON.parse(localStorage.getItem(populationDataKey) || "[]") as PopulationRecord[];
+      setPopulationRecordCount(existing.length);
+    } catch {
+      setPopulationRecordCount(0);
+    }
+    navigateTo("aggregation");
+  };
+
+  const aggregateDeidentifiedRecord = () => {
+    const symptomSignalCount = [screeningDraft.persistentCough, screeningDraft.breathlessness, screeningDraft.bloodInSputum, screeningDraft.weightLoss]
+      .filter((value) => value === "Yes").length;
+    const populationRecord: PopulationRecord = {
+      id: `population-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      geography: screeningDraft.province.trim() ? `Province-level: ${screeningDraft.province.trim()}` : "Province-level: not recorded",
+      ageRange: screeningDraft.ageRange || "Not recorded",
+      sexAtBirth: screeningDraft.sexAtBirth || "Not recorded",
+      smokingStatus: screeningDraft.smokingStatus || "Not recorded",
+      householdSmoke: screeningDraft.householdSmoke || "Not recorded",
+      occupationalExposure: screeningDraft.occupationalExposure || "Not recorded",
+      symptomSignalCount,
+      pathway: "clinician-reviewed",
+    };
+
+    try {
+      const existing = JSON.parse(localStorage.getItem(populationDataKey) || "[]") as PopulationRecord[];
+      localStorage.setItem(populationDataKey, JSON.stringify([...existing, populationRecord]));
+      setPopulationRecordCount(existing.length + 1);
+      setAggregationComplete(true);
+    } catch {
+      localStorage.setItem(populationDataKey, JSON.stringify([populationRecord]));
+      setPopulationRecordCount(1);
+      setAggregationComplete(true);
+    }
   };
 
   const changeScreeningStep = (nextStep: number) => {
@@ -711,8 +766,38 @@ export default function App() {
               <div className="review-resolution" role="status">
                 <strong>{reviewOutcome === "forced" ? "Forced continuation recorded." : "Clinician review recorded."}</strong>
                 <p>{reviewOutcome === "forced" ? "The local record is clearly marked as forced and remains subject to later clinician and governance review." : "The local record is marked as clinician-reviewed workflow data. It has not been aggregated or shared."}</p>
-                <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
+                {reviewOutcome === "accepted" ? <div className="draft-buttons"><button className="primary-button" type="button" onClick={openAggregation}>Prepare de-identified population record <ArrowRight size={18} /></button><button className="secondary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button></div> : <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>}
               </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {view === "aggregation" && (
+        <section className="review-layout" aria-labelledby="aggregation-title">
+          <div className="review-context">
+            <button className="back-link" type="button" onClick={() => navigateTo("nodule-review")}><ChevronLeft size={17} /> Back to clinician review</button>
+            <p className="eyebrow"><ShieldCheck size={16} /> Local aggregation gate</p>
+            <h1 id="aggregation-title">Prepare a population record without patient-identifying details.</h1>
+            <p>This local demo transforms only a clinician-reviewed workflow record into a minimal population-data fixture. It does not transmit, share, or create a clinical risk result.</p>
+          </div>
+          <div className="review-card aggregation-card">
+            <div className="review-card-topline"><span className="status-chip">De-identification preview</span><span>Local only</span></div>
+            <h2>Population-data preview</h2>
+            <div className="deid-grid">
+              <section><strong>Removed before aggregation</strong><p>Field reference, barangay, clinician notes, facility, study reference, study dates, and local imaging-file metadata.</p></section>
+              <section><strong>Retained as grouped signals</strong><p>Province-level geography, age band, recorded exposure categories, symptom signal count, and clinician-reviewed pathway status.</p></section>
+            </div>
+            <dl className="review-facts aggregation-facts">
+              <div><dt>Geography</dt><dd>{screeningDraft.province.trim() ? `Province-level: ${screeningDraft.province.trim()}` : "Province-level: not recorded"}</dd></div>
+              <div><dt>Age band</dt><dd>{screeningDraft.ageRange || "Not recorded"}</dd></div>
+              <div><dt>Smoking status</dt><dd>{screeningDraft.smokingStatus || "Not recorded"}</dd></div>
+              <div><dt>Symptom signals</dt><dd>{[screeningDraft.persistentCough, screeningDraft.breathlessness, screeningDraft.bloodInSputum, screeningDraft.weightLoss].filter((value) => value === "Yes").length} recorded</dd></div>
+            </dl>
+            {aggregationComplete ? (
+              <div className="review-resolution" role="status"><strong>Local population record created.</strong><p>This de-identified fixture is now one of {populationRecordCount} local population record{populationRecordCount === 1 ? "" : "s"}. External sharing and the regional dashboard remain disabled until later tasks.</p><button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button></div>
+            ) : (
+              <div className="review-actions"><p><strong>Aggregation check</strong> Confirm that only the grouped preview above will be added to the local population-data fixture.</p><button className="primary-button" type="button" onClick={aggregateDeidentifiedRecord}>Create local population record <Check size={18} /></button></div>
             )}
           </div>
         </section>
