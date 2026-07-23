@@ -33,6 +33,29 @@ Provide a useful, visually clear 18-region population-dashboard interaction with
 - `npm.cmd run build` passed.
 - Visual review passed: the 18-cell grid, selected region, and synthetic-data disclaimer are legible at the stage preview.
 
+## TASK-006 revision - Interactive Philippines map surface
+
+### User-visible effect
+
+- The 18 regional cards are now represented by a native SVG, 3D-styled Philippines selection model.
+- Each numbered fixture can be clicked or selected with Enter/Space. Selection raises the area visually and updates the region detail panel.
+- A signal legend and explicit non-GIS disclaimer remain beside the map.
+
+### Visual evidence
+
+- [Interactive Philippines map](assets/task-006-interactive-philippines-map.png)
+
+### Verification
+
+- `npm.cmd test -- --run` passed: 14 tests, including direct map keyboard-selection coverage.
+- `npm.cmd run build` passed.
+- Visual review passed: selecting Region 12 on the map updates the selected-region panel while the synthetic-data safeguards remain visible.
+
+### Revision limitations
+
+- The Philippines shape and numbered areas are a stylized selection surface, not real administrative or GIS boundaries.
+- Map height, signal color, and 3D depth are visual-only; they do not encode clinical severity, risk, or location data.
+
 ## Known limitations
 
 - Regions are numbered synthetic fixtures, not named or attributed to real-world Philippine administrative areas.
@@ -43,4 +66,6 @@ Provide a useful, visually clear 18-region population-dashboard interaction with
 
 - Status: **awaiting owner approval**
 - Proposed promotion: `8e01ac8` — `feat(task-006): add synthetic regional dashboard`.
+- Proposed TASK-006 revision: `af45d66` — `feat(task-006): add interactive map surface`.
+- Proposed TASK-006 revision: `fcf01d4` — `feat(task-006): connect map to population fixtures`.
 - Approval command: `Approve TASK-006 for main`.

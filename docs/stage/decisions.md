@@ -1,5 +1,11 @@
 # Stage decisions
 
+## Accepted - Stylized map interaction without GIS attribution
+
+- TASK-006 may use a native SVG, 3D-styled Philippines-shaped selection surface for the 18 numbered synthetic fixtures.
+- The surface must remain keyboard-operable and route selection through the existing local synthetic-fixture contract.
+- It is not a geospatial model, an administrative-boundary map, or a representation of real regional health data.
+
 ## Accepted - Synthetic 18-region dashboard boundary
 
 - TASK-006 may display 18 numbered, synthetic regional fixtures with synthetic follow-up signals for interaction design only.

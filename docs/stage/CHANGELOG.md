@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-006 revision - Interactive Philippines map surface
+
+- Status: awaiting owner review with TASK-006
+- Replaced the regional card grid with a native SVG, 3D-styled Philippines selection model containing 18 numbered synthetic fixtures.
+- Click, Enter, and Space select a synthetic fixture and update the existing detail panel through the local population-dashboard contract.
+- The visual is intentionally illustrative rather than GIS or administrative-boundary data.
+
 ## TASK-006 - Synthetic 18-region population dashboard
 
 - Status: awaiting owner review
