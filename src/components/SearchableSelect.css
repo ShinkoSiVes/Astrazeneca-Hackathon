@@ -2,16 +2,17 @@
   position: relative;
   display: grid;
   gap: .42rem;
+  min-width: 0;
 }
 
 .searchable-select__control {
   display: flex;
   align-items: center;
   gap: .45rem;
-  min-height: 2.85rem;
-  border: 1px solid rgba(45, 113, 111, .36);
-  border-radius: .75rem;
-  background: rgba(255, 255, 255, .88);
+  min-height: 50px;
+  border: 1px solid #b9d0ce;
+  border-radius: 11px;
+  background: #fcfefd;
   padding: 0 .75rem;
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -21,19 +22,35 @@
   box-shadow: 0 0 0 3px rgba(48, 144, 140, .15);
 }
 
+.searchable-select.is-required-missing .searchable-select__control {
+  border-color: #b52c39;
+  background: #fff7f7;
+  box-shadow: 0 0 0 4px rgba(181, 44, 57, .11);
+}
+
+.searchable-select.is-required-missing { color: #a32531; }
+
 .searchable-select__control > svg { color: var(--teal-dark); flex: 0 0 auto; }
 
+.form-grid .searchable-select__control > input,
 .searchable-select input {
   width: 100%;
   min-width: 0;
+  min-height: 0;
   border: 0;
+  border-radius: 0;
   outline: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
+  padding: 0;
+  box-shadow: none;
 }
 
-.searchable-select.is-disabled .searchable-select__control { background: rgba(230, 237, 236, .78); color: var(--ink-soft); }
+.form-grid .searchable-select__control > input:focus { border-color: transparent; box-shadow: none; }
+
+.searchable-select.is-disabled .searchable-select__control { border-color: #d3dfdd; background: #edf3f2; color: var(--ink-soft); }
+.searchable-select.is-disabled .searchable-select__control > input { color: var(--ink-soft); }
 
 .searchable-select__menu {
   position: absolute;
@@ -69,6 +86,7 @@
 
 .screening-location-fields {
   display: grid;
+  align-items: start;
   grid-column: 1 / -1;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;

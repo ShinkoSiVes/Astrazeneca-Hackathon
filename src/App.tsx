@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ArrowRight,
+  BrainCircuit,
   CalendarDays,
   Check,
   ChevronLeft,
@@ -12,22 +14,23 @@ import {
   LockKeyhole,
   Mail,
   MapPinned,
+  ScanSearch,
   ShieldCheck,
   Stethoscope,
   UsersRound,
   WifiOff,
 } from "lucide-react";
-import lungMark from "./assets/hinga-mark.svg";
+import lungMark from "./assets/aeris-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
 import { TobaccoUseAmount } from "./components/TobaccoUseAmount";
-import { deleteStoredScreening, storeScreeningSnapshot } from "./local-screenings";
+import { deleteStoredScreening, readStoredScreenings, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
-type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "aggregation";
+type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "risk-estimate" | "aggregation";
 
-const defaultBhwId = "BHW-024";
+const defaultClinicianId = "CLINICIAN-024";
 
 const landscapeSlides = [
   "landscape-sagada",
@@ -44,28 +47,7 @@ const teamPlaceholders = [
   { initials: "04", name: "[Name]", title: "[Role / specialty]" },
 ];
 
-type ScreeningDraft = {
-  fieldReference: string;
-  ageRange: string;
-  sexAtBirth: string;
-  barangay: string;
-  municipality: string;
-  province: string;
-  smokingStatus: string;
-  packFrequency: string;
-  packYears: string;
-  householdSmoke: string;
-  occupationalExposure: string;
-  lungHistory: string;
-  familyHistory: string;
-  persistentCough: string;
-  breathlessness: string;
-  bloodInSputum: string;
-  weightLoss: string;
-  weightLossAmount: string;
-  oxygenSaturation: string;
-  clinicianNotes: string;
-};
+type ScreeningDraft = LocalScreeningDraft;
 
 type ImagingFileMetadata = {
   id: string;
@@ -73,7 +55,11 @@ type ImagingFileMetadata = {
   type: string;
   size: number;
   takenOn: string;
+  previewUrl?: string;
 };
+
+type LocalImagingFile = { id: string; file: File };
+type CxrInference = { nodule_related_signal: number; related_signals: Record<string, number>; model: string; attention_map: string; notice: string };
 
 type ImagingMetadata = {
   modality: string;
@@ -97,8 +83,24 @@ type PopulationRecord = {
   pathway: "clinician-reviewed";
 };
 
+type HeatmapDataMode = "public" | "app-screenings";
+
+const normaliseRegionName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const appScreeningRegionsFor = (profiles: LocalScreeningDraft[]): SyntheticRegion[] => syntheticRegions.map((region) => {
+  const regionNames = region.label.split("—").map(normaliseRegionName).filter((name) => name.length > 3);
+  const screenedIndividuals = profiles.filter((profile) => {
+    if (profile.previousSurveyResponse !== "No") return false;
+    const geography = normaliseRegionName(profile.province);
+    return regionNames.some((name) => geography.includes(name));
+  }).length;
+  const signalLevel: SyntheticRegion["signalLevel"] = screenedIndividuals === 0 ? "Lower" : screenedIndividuals < 3 ? "Moderate" : "Higher";
+
+  return { ...region, signalLevel, syntheticRecords: screenedIndividuals, coverage: `${screenedIndividuals} app-screened` };
+});
+
 const emptyScreeningDraft: ScreeningDraft = {
-  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", weightLossAmount: "", oxygenSaturation: "", clinicianNotes: "",
+  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", weightLossAmount: "", previousSurveyResponse: "", oxygenSaturation: "", clinicianNotes: "",
 };
 
 const screeningDraftKey = "aeris-screening-draft-v1";
@@ -106,11 +108,8 @@ const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imagingFiles: [] };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const exposureChecklistOptions = ["Dust / mining / construction", "Smoke / biomass fuel", "Chemical exposure", "None reported", "Unknown"];
-const lungHistoryChecklistOptions = ["TB history", "COPD / asthma", "Other lung condition", "None reported", "Unknown"];
-
 const viewLabels: Record<View, string> = {
-  consent: "Field start", login: "Secure login", ready: "Clinician workspace", about: "About Aeris AI", "heatmap-status": "Population dashboard", screening: "Screening", "ai-consent": "AI consent", "imaging-metadata": "Imaging metadata", "temporary-record": "Temporary record", "screening-complete": "Screening complete", "nodule-review": "Clinician review", aggregation: "Aggregation",
+  consent: "Field start", login: "Secure login", ready: "Clinician workspace", about: "About Aeris AI", "heatmap-status": "Population dashboard", screening: "Screening", "ai-consent": "AI consent", "imaging-metadata": "Imaging metadata", "temporary-record": "Temporary record", "screening-complete": "Screening complete", "nodule-review": "Clinician review", "risk-estimate": "Risk support", aggregation: "Aggregation",
 };
 
 const dateValueFor = (year: number, month: number, day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -119,23 +118,69 @@ const calendarCellsFor = (year: number, month: number) => Array.from({ length: n
   return day > 0 ? day : null;
 });
 
+const screeningFields: (keyof ScreeningDraft)[] = [
+  "fieldReference", "ageRange", "sexAtBirth", "barangay", "municipality", "province", "smokingStatus", "packFrequency", "packYears", "householdSmoke", "occupationalExposure", "lungHistory", "familyHistory", "persistentCough", "breathlessness", "bloodInSputum", "weightLoss", "previousSurveyResponse",
+];
+
+const screeningStepForField: Partial<Record<keyof ScreeningDraft, number>> = {
+  fieldReference: 1, ageRange: 1, sexAtBirth: 1, barangay: 1, municipality: 1, province: 1,
+  smokingStatus: 2, packFrequency: 2, packYears: 2, householdSmoke: 2, occupationalExposure: 2, lungHistory: 2, familyHistory: 2,
+  persistentCough: 3, breathlessness: 3, bloodInSputum: 3, weightLoss: 3,
+  previousSurveyResponse: 4,
+};
+
+const exposureChecklistOptions = ["Dust / mining / construction", "Smoke / biomass fuel", "Chemical exposure", "None reported", "Unknown"];
+const lungHistoryChecklistOptions = ["TB history", "COPD / asthma", "Other lung condition", "None reported", "Unknown"];
+
+const scorePrototypeRisk = (screening: ScreeningDraft) => {
+  let score = 5;
+  score += ({ "0-17": 0, "18-29": 0, "30-39": 0, "40-49": 3, "50-59": 8, "60-69": 15, "70 or older": 21 } as Record<string, number>)[screening.ageRange] || 0;
+  score += ({ "Current smoker": 23, "Former smoker": 13, "Never smoked": 0, "Not recorded": 4 } as Record<string, number>)[screening.smokingStatus] || 0;
+  score += Math.min(Number.parseFloat(screening.packYears) * (screening.packFrequency === "Per day" ? 4 : 1.5) || 0, 15);
+  if (screening.householdSmoke === "Yes") score += 4;
+  if (screening.occupationalExposure && !["None reported", "Unknown"].includes(screening.occupationalExposure)) score += 5;
+  if (screening.lungHistory && !["None reported", "Unknown"].includes(screening.lungHistory)) score += 5;
+  if (screening.familyHistory === "Yes") score += 5;
+  score += [screening.persistentCough, screening.breathlessness, screening.bloodInSputum, screening.weightLoss].filter((item) => item === "Yes").length * 6;
+  return Math.max(3, Math.min(92, Math.round(score)));
+};
+
+const modelReferenceFor = (modality: string) => modality === "CT scan" ? {
+  name: "MONAI lung nodule CT detection",
+  url: "https://catalog.ngc.nvidia.com/orgs/nvidia/monaitoolkit/models/monai_lung_nodule_ct_detection/0.6.6",
+  capability: "Planned research adapter: 3D CT candidate boxes and candidate scores.",
+  limitation: "This browser prototype does not run the MONAI bundle or parse DICOM CT volume data.",
+} : {
+  name: "TorchXRayVision + CXR follow-up research reference",
+  url: "https://github.com/mlmed/torchxrayvision",
+  capability: "Planned research adapter: chest X-ray nodule-related signal with a reviewable attention visualization.",
+  limitation: "This browser prototype does not run pretrained X-ray weights or validate an image-level prediction.",
+};
+
 export default function App() {
   const [view, setView] = useState<View>("consent");
   const [hasConsent, setHasConsent] = useState(false);
-  const [declined, setDeclined] = useState(false);
-  const [bhwId, setBhwId] = useState(defaultBhwId);
+  const [clinicianId, setClinicianId] = useState(defaultClinicianId);
+  const [professionalRole, setProfessionalRole] = useState("Health professional");
   const [passcode, setPasscode] = useState("");
   const [offline, setOffline] = useState(true);
   const [screeningStep, setScreeningStep] = useState(1);
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
   const [aiConsent, setAiConsent] = useState<boolean | null>(null);
   const [imagingMetadata, setImagingMetadata] = useState<ImagingMetadata>(emptyImagingMetadata);
+  const [localImagingFiles, setLocalImagingFiles] = useState<LocalImagingFile[]>([]);
+  const [cxrInference, setCxrInference] = useState<CxrInference | null>(null);
+  const [cxrInferenceStatus, setCxrInferenceStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [cxrInferenceMessage, setCxrInferenceMessage] = useState("");
   const [temporaryRecordReady, setTemporaryRecordReady] = useState(false);
   const [reviewOutcome, setReviewOutcome] = useState<"pending" | "needs-info" | "accepted" | "forced">("pending");
   const [aggregationComplete, setAggregationComplete] = useState(false);
   const [populationRecordCount, setPopulationRecordCount] = useState(0);
+  const [appScreeningProfiles, setAppScreeningProfiles] = useState<LocalScreeningDraft[]>([]);
+  const [heatmapDataMode, setHeatmapDataMode] = useState<HeatmapDataMode>("public");
   const [selectedRegionId, setSelectedRegionId] = useState(syntheticRegions[0].id);
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
+  const [showIncompleteFields, setShowIncompleteFields] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
   const [activeBackdrop, setActiveBackdrop] = useState(0);
@@ -144,8 +189,33 @@ export default function App() {
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
   const navigationTimer = useRef<number | undefined>(undefined);
   const screeningStepTimer = useRef<number | undefined>(undefined);
+  const incompleteFieldFocusTimer = useRef<number | undefined>(undefined);
   const previousScrollY = useRef(0);
   const imagingFileInput = useRef<HTMLInputElement | null>(null);
+  const screeningIsComplete = screeningFields.every((field) => screeningDraft[field].trim() !== "");
+  const firstIncompleteField = screeningFields.find((field) => !screeningDraft[field].trim());
+  const missingFieldClass = (field: keyof ScreeningDraft) => showIncompleteFields && !screeningDraft[field].trim() ? "is-required-missing" : "";
+  const prototypeRiskScore = useMemo(() => scorePrototypeRisk(screeningDraft), [screeningDraft]);
+  const uploadedPreview = imagingMetadata.imagingFiles.find((file) => file.previewUrl)?.previewUrl;
+  const prototypeRiskBand = prototypeRiskScore >= 50 ? "Elevated triage signal" : prototypeRiskScore >= 25 ? "Intermediate triage signal" : "Lower triage signal";
+  const appScreeningRegions = useMemo(() => appScreeningRegionsFor(appScreeningProfiles), [appScreeningProfiles]);
+  const heatmapEligibleProfiles = useMemo(() => appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "No"), [appScreeningProfiles]);
+  const priorSurveyProfiles = useMemo(() => appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "Yes"), [appScreeningProfiles]);
+  const heatmapRegions = heatmapDataMode === "public" ? syntheticRegions : appScreeningRegions;
+  const symptomSignals = [
+    [screeningDraft.persistentCough, "Persistent cough"],
+    [screeningDraft.breathlessness, "Breathlessness"],
+    [screeningDraft.bloodInSputum, "Blood in sputum"],
+    [screeningDraft.weightLoss, "Unintentional weight loss"],
+  ] as const;
+  const profileRiskDrivers = [
+    screeningDraft.smokingStatus === "Current smoker" ? "Current tobacco use" : screeningDraft.smokingStatus === "Former smoker" ? "Previous tobacco use" : "No tobacco-use signal recorded",
+    screeningDraft.householdSmoke === "Yes" ? "Household smoke exposure" : null,
+    screeningDraft.occupationalExposure && !["None reported", "Unknown"].includes(screeningDraft.occupationalExposure) ? screeningDraft.occupationalExposure : null,
+    screeningDraft.lungHistory && !["None reported", "Unknown"].includes(screeningDraft.lungHistory) ? screeningDraft.lungHistory : null,
+    screeningDraft.familyHistory === "Yes" ? "Family lung-cancer history" : null,
+    ...symptomSignals.filter(([value]) => value === "Yes").map(([, label]) => label),
+  ].filter((value): value is string => Boolean(value));
 
   useEffect(() => {
     const rotation = window.setInterval(() => {
@@ -158,7 +228,9 @@ export default function App() {
   useEffect(() => () => {
     if (navigationTimer.current !== undefined) window.clearTimeout(navigationTimer.current);
     if (screeningStepTimer.current !== undefined) window.clearTimeout(screeningStepTimer.current);
+    if (incompleteFieldFocusTimer.current !== undefined) window.clearTimeout(incompleteFieldFocusTimer.current);
   }, []);
+
   useEffect(() => {
     previousScrollY.current = window.scrollY;
     setIsScrollHeaderVisible(true);
@@ -170,7 +242,6 @@ export default function App() {
     window.addEventListener("scroll", updateScrollHeader, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollHeader);
   }, [view]);
-
   const [draftStatus, setDraftStatus] = useState("");
 
   const navigateTo = (nextView: View) => {
@@ -184,12 +255,11 @@ export default function App() {
   };
 
   const enterDemo = () => {
-    sessionStorage.setItem("idea-demo-clinician", bhwId || defaultBhwId);
+    sessionStorage.setItem("idea-demo-clinician", clinicianId || defaultClinicianId);
     navigateTo("ready");
   };
 
   const resetEncounter = () => {
-    setDeclined(false);
     setHasConsent(false);
   };
 
@@ -226,6 +296,18 @@ export default function App() {
       takenOn: "",
     }));
     setImagingMetadata((current) => ({ ...current, imagingFiles: [...current.imagingFiles, ...selectedFiles] }));
+    setLocalImagingFiles((current) => [...current, ...selectedFiles.map((selected, index) => ({ id: selected.id, file: Array.from(files)[index] }))]);
+    Array.from(files).forEach((file, index) => {
+      if (!file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagingMetadata((current) => ({
+          ...current,
+          imagingFiles: current.imagingFiles.map((item) => item.id === selectedFiles[index].id ? { ...item, previewUrl: typeof reader.result === "string" ? reader.result : undefined } : item),
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const updateImagingFileDate = (fileId: string, takenOn: string) => {
@@ -237,11 +319,25 @@ export default function App() {
 
   const removeImagingFile = (fileId: string) => {
     setImagingMetadata((current) => ({ ...current, imagingFiles: current.imagingFiles.filter((file) => file.id !== fileId) }));
+    setLocalImagingFiles((current) => current.filter((file) => file.id !== fileId));
     if (imagingFileInput.current) imagingFileInput.current.value = "";
+  };
+
+  const deleteTemporaryRecord = () => {
+    localStorage.removeItem(temporaryRecordKey);
+    setTemporaryRecordReady(false);
+    setImagingMetadata(emptyImagingMetadata);
+    setLocalImagingFiles([]);
+    setCxrInference(null);
+    setCxrInferenceStatus("idle");
+    setCxrInferenceMessage("");
+    setReviewOutcome("pending");
+    setIsStudyCalendarOpen(false);
   };
 
   const deleteSavedScreening = (screeningId: string) => {
     deleteStoredScreening(screeningId);
+    setAppScreeningProfiles(readStoredScreenings().map((screening) => screening.data));
   };
 
   const openStudyCalendar = () => {
@@ -261,6 +357,7 @@ export default function App() {
   const saveScreeningDraft = () => {
     localStorage.setItem(screeningDraftKey, JSON.stringify({ data: screeningDraft, savedAt: new Date().toISOString() }));
     storeScreeningSnapshot(screeningDraft);
+    setAppScreeningProfiles(readStoredScreenings().map((screening) => screening.data));
     setDraftStatus("Screening draft saved on this device.");
   };
 
@@ -289,12 +386,26 @@ export default function App() {
     navigateTo("screening");
   };
 
+  const editSavedScreening = (draft: LocalScreeningDraft) => {
+    setScreeningDraft({ ...emptyScreeningDraft, ...draft });
+    setScreeningStep(1);
+    setDraftStatus("Local screening loaded for clinician review.");
+    navigateTo("screening");
+  };
+
+  const endDemoSession = () => {
+    sessionStorage.removeItem("idea-demo-clinician");
+    navigateTo("consent");
+    resetEncounter();
+  };
+
   const finishScreening = () => {
+    if (!screeningIsComplete) {
+      setDraftStatus("Screening is incomplete. Complete all 18 fields before the risk-support eligibility check can run.");
+      return;
+    }
     saveScreeningDraft();
-    setAiConsent(null);
-    setImagingMetadata(emptyImagingMetadata);
-    setTemporaryRecordReady(false);
-    navigateTo("ai-consent");
+    navigateTo("risk-estimate");
   };
 
   const recordAiConsent = (agrees: boolean) => {
@@ -308,7 +419,7 @@ export default function App() {
   };
 
   const saveTemporaryRecord = () => {
-    const readyForReview = imagingMetadata.modality === "CT scan" && imagingMetadata.studyReference.trim() !== "" && imagingMetadata.sourceStatus === "Available locally";
+    const readyForReview = ["CT scan", "Chest X-ray"].includes(imagingMetadata.modality) && imagingMetadata.studyReference.trim() !== "" && imagingMetadata.sourceStatus === "Available locally" && imagingMetadata.imagingFiles.length > 0;
     localStorage.setItem(temporaryRecordKey, JSON.stringify({
       savedAt: new Date().toISOString(),
       status: readyForReview ? "ready for clinician nodule review" : "awaiting additional imaging details",
@@ -335,6 +446,32 @@ export default function App() {
     navigateTo("nodule-review");
   };
 
+  const openRiskEstimate = () => navigateTo("risk-estimate");
+
+  const runCxrInference = async () => {
+    const localImage = localImagingFiles.find(({ file }) => file.type.startsWith("image/"));
+    if (!localImage) {
+      setCxrInferenceStatus("error");
+      setCxrInferenceMessage("Choose a PNG, JPEG, or WebP chest X-ray preview before requesting local research inference.");
+      return;
+    }
+
+    setCxrInferenceStatus("loading");
+    setCxrInferenceMessage("");
+    try {
+      const payload = new FormData();
+      payload.append("file", localImage.file);
+      const response = await fetch(`${import.meta.env.VITE_LUNG_AI_API || "http://127.0.0.1:8000"}/infer/cxr`, { method: "POST", body: payload });
+      const body = await response.json() as CxrInference & { detail?: string };
+      if (!response.ok) throw new Error(body.detail || "The local research adapter could not process this image.");
+      setCxrInference(body);
+      setCxrInferenceStatus("idle");
+    } catch (error) {
+      setCxrInferenceStatus("error");
+      setCxrInferenceMessage(error instanceof Error ? error.message : "The local research adapter is unavailable.");
+    }
+  };
+
   const openAggregation = () => {
     setAggregationComplete(false);
     setPopulationRecordCount(readLocalPopulationFixtureCount());
@@ -342,7 +479,9 @@ export default function App() {
   };
 
   const openPopulationDashboard = () => {
+    setAppScreeningProfiles(readStoredScreenings().map((screening) => screening.data));
     setPopulationRecordCount(readLocalPopulationFixtureCount());
+    setHeatmapDataMode("public");
     setSelectedRegionId(syntheticRegions[0].id);
     navigateTo("heatmap-status");
   };
@@ -365,8 +504,9 @@ export default function App() {
 
     try {
       const existing = JSON.parse(localStorage.getItem(populationDataKey) || "[]") as PopulationRecord[];
-      localStorage.setItem(populationDataKey, JSON.stringify([...existing, populationRecord]));
-      setPopulationRecordCount(existing.length + 1);
+      const nextRecords = [...existing, populationRecord];
+      localStorage.setItem(populationDataKey, JSON.stringify(nextRecords));
+      setPopulationRecordCount(nextRecords.length);
       setAggregationComplete(true);
     } catch {
       localStorage.setItem(populationDataKey, JSON.stringify([populationRecord]));
@@ -383,6 +523,17 @@ export default function App() {
       setScreeningStep(nextStep);
       setIsSwitchingScreeningStep(false);
     }, 260);
+  };
+
+  const takeToIncompleteField = () => {
+    if (!firstIncompleteField) return;
+    setShowIncompleteFields(true);
+    const targetStep = screeningStepForField[firstIncompleteField] ?? 1;
+    if (targetStep !== screeningStep) changeScreeningStep(targetStep);
+    if (incompleteFieldFocusTimer.current !== undefined) window.clearTimeout(incompleteFieldFocusTimer.current);
+    incompleteFieldFocusTimer.current = window.setTimeout(() => {
+      document.querySelector<HTMLElement>(`[name="${firstIncompleteField}"]`)?.focus();
+    }, targetStep === screeningStep ? 0 : 300);
   };
 
   return (
@@ -450,33 +601,19 @@ export default function App() {
             <h2 id="consent-title">Would the patient like to participate in the screening survey?</h2>
             <p className="helper-text">With permission, this screening information is combined without names with other local responses to help health teams estimate which regions may need more lung-health follow-up. It does not diagnose cancer or decide care for any individual.</p>
 
-            {declined ? (
-              <div className="declined-state" role="status">
-                <CircleCheckBig size={28} />
-                <div>
-                  <strong>Encounter ended</strong>
-                  <p>No screening record was created.</p>
-                </div>
-                <button type="button" className="text-button" onClick={resetEncounter}>Start another encounter</button>
-              </div>
-            ) : (
-              <>
-                <label className="consent-check">
-                  <input
-                    type="checkbox"
-                    checked={hasConsent}
-                    onChange={(event) => setHasConsent(event.target.checked)}
-                  />
-                  <span>I confirm the patient has agreed to take part in this screening survey.</span>
-                </label>
-                <div className="button-row">
-                  <button className="secondary-button" type="button" onClick={() => setDeclined(true)}>No, end encounter</button>
-                  <button className="primary-button" type="button" disabled={!hasConsent} onClick={() => navigateTo("login")}>
-                    Continue to secure login <ArrowRight size={18} />
-                  </button>
-                </div>
-              </>
-            )}
+            <label className="consent-check">
+              <input
+                type="checkbox"
+                checked={hasConsent}
+                onChange={(event) => setHasConsent(event.target.checked)}
+              />
+              <span>I confirm the patient has agreed to take part in this screening survey.</span>
+            </label>
+            <div className="button-row">
+              <button className="primary-button" type="button" disabled={!hasConsent} onClick={() => navigateTo("login")}>
+                Continue to secure login <ArrowRight size={18} />
+              </button>
+            </div>
             </div>
           </section>
 
@@ -527,6 +664,52 @@ export default function App() {
               <p className="placeholder-note">Project details, partners, and institutional affiliations: [add approved information here].</p>
             </article>
 
+            <section className="about-feature-section" aria-labelledby="features-title">
+              <p className="card-kicker">Available now</p>
+              <h2 id="features-title">Features</h2>
+              <div className="about-feature-grid">
+                <article>
+                  <h3>Clinician-led local profiling</h3>
+                  <p>A four-step screening draft captures location, tobacco and exposure history, symptoms, and past-survey history with clear completeness guidance.</p>
+                </article>
+                <article>
+                  <h3>Private, local temporary records</h3>
+                  <p>Screening drafts stay on the device and can be imported, extracted individually, or deleted when they are no longer needed.</p>
+                </article>
+                <article>
+                  <h3>Separated heat-map views</h3>
+                  <p>Static public baseline data and profiles screened in this app are shown separately, preventing the two sources from being counted together.</p>
+                </article>
+                <article>
+                  <h3>Review-aware risk support</h3>
+                  <p>The prototype keeps risk and imaging details in a clinician-review workflow, with no automated output presented as a diagnosis.</p>
+                </article>
+              </div>
+            </section>
+
+            <section className="about-feature-section" aria-labelledby="future-features-title">
+              <p className="card-kicker">Planned next</p>
+              <h2 id="future-features-title">Future features</h2>
+              <div className="about-feature-grid">
+                <article>
+                  <h3>Secure identity and governed sync</h3>
+                  <p>Role-aware accounts, secure synchronization, and organization-approved data retention controls for production use.</p>
+                </article>
+                <article>
+                  <h3>Clinical workflow integration</h3>
+                  <p>Validated referral pathways, richer follow-up documentation, and integrations shaped with healthcare partners.</p>
+                </article>
+                <article>
+                  <h3>Privacy-reviewed population reporting</h3>
+                  <p>Aggregated reporting designed with privacy thresholds and governance review before community-level sharing.</p>
+                </article>
+                <article>
+                  <h3>Evaluated imaging support</h3>
+                  <p>Careful clinical evaluation and safe imaging-data integration before any future model-assisted review is considered.</p>
+                </article>
+              </div>
+            </section>
+
             <section className="team-section" aria-labelledby="team-title">
               <div className="team-heading">
                 <p className="card-kicker">Meet the team</p>
@@ -559,25 +742,37 @@ export default function App() {
             </button>
             <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
             <h1 id="heatmap-status-title">Regional follow-up dashboard.</h1>
-            <p>This demo uses real Philippine regional boundary geometry with static synthetic follow-up fixtures. It is not a live patient map, clinical risk estimate, or external public-health feed.</p>
+            <p>Switch between the static public baseline and profiles saved in this web app. The two data sources are displayed separately and are never combined.</p>
           </div>
 
           <div className="heatmap-status-card">
             <div className="heatmap-status-topline">
-              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> Static synthetic demo data</span>
-              <span>{populationRecordCount} local de-identified fixture{populationRecordCount === 1 ? "" : "s"} not mapped</span>
+              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> {heatmapDataMode === "public" ? "Static public baseline" : "App screening profiles only"}</span>
+              <span>{heatmapDataMode === "public" ? "Static public data only" : `${heatmapEligibleProfiles.length} heatmap-eligible profile${heatmapEligibleProfiles.length === 1 ? "" : "s"}`}</span>
+            </div>
+            <div className="heatmap-source-switch" role="group" aria-label="Heat map data source">
+              <button className={heatmapDataMode === "public" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "public"} onClick={() => { setHeatmapDataMode("public"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>Public data</strong><span>Static baseline</span></button>
+              <button className={heatmapDataMode === "app-screenings" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "app-screenings"} onClick={() => { setHeatmapDataMode("app-screenings"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>App screenings</strong><span>Eligible profiles only</span></button>
             </div>
             <div className="dashboard-summary-grid">
-              <article><strong>18 regions</strong><span>PSA-aligned regional geometry</span></article>
-              <article><strong>Synthetic only</strong><span>No real patient records</span></article>
-              <article><strong>Review-gated</strong><span>Local population fixtures only</span></article>
-              <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
+              {heatmapDataMode === "public" ? <>
+                <article><strong>18 regions</strong><span>PSA-aligned regional geometry</span></article>
+                <article><strong>Static baseline</strong><span>No app screening profiles</span></article>
+                <article><strong>Separate source</strong><span>Not combined with app data</span></article>
+                <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
+              </> : <>
+                <article><strong>{heatmapEligibleProfiles.length}</strong><span>Heatmap-eligible profiles</span></article>
+                <article><strong>Region keyed</strong><span>Uses each profile’s selected region</span></article>
+                <article><strong>{priorSurveyProfiles.length} excluded</strong><span>Previously surveyed participants</span></article>
+                <article><strong>Local storage</strong><span>Records stay on this device</span></article>
+              </>}
             </div>
             <div className="dashboard-workspace">
-              <PhilippinesRegionMap regions={syntheticRegions} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} />
+              <PhilippinesRegionMap regions={heatmapRegions} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} dataSource={heatmapDataMode} />
               {(() => {
-                const selectedRegion: SyntheticRegion = syntheticRegions.find((region) => region.id === selectedRegionId) || syntheticRegions[0];
-                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>The boundary is a static geographic reference; its signal is a synthetic fixture and does not identify a location with elevated clinical risk.</p><dl><div><dt>Community lung-health attention</dt><dd>{selectedRegion.signalLevel} (synthetic)</dd></div><div><dt>Demo records</dt><dd>{selectedRegion.syntheticRecords} generated</dd></div><div><dt>Fixture coverage</dt><dd>{selectedRegion.coverage} illustrative</dd></div></dl><small>Local aggregation fixtures stay separate until a future, governed regional-mapping task. External sharing remains disabled.</small></aside>;
+                const selectedRegion: SyntheticRegion = heatmapRegions.find((region) => region.id === selectedRegionId) || heatmapRegions[0];
+                const isAppScreeningMode = heatmapDataMode === "app-screenings";
+                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>{isAppScreeningMode ? "This view counts only saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded." : "This boundary uses the static public baseline only. It does not include profiling drafts saved in this web app."}</p><dl><div><dt>{isAppScreeningMode ? "Screened individuals" : "High Risk Areas"}</dt><dd>{isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : `${selectedRegion.signalLevel} (static)`}</dd></div><div><dt>{isAppScreeningMode ? "Region key" : "Public records"}</dt><dd>{isAppScreeningMode ? "Selected profile region" : `${selectedRegion.syntheticRecords} baseline`}</dd></div><div><dt>Data separation</dt><dd>{isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd></div></dl><small>{isAppScreeningMode ? "Profiles marked Yes for a previous survey are excluded. Saving the same field reference again replaces that local profile rather than adding a duplicate." : "Switch to App screenings to view only the profiles saved in this web app."}</small></aside>;
               })()}
             </div>
           </div>
@@ -592,9 +787,9 @@ export default function App() {
             </button>
             <p className="eyebrow"><ShieldCheck size={16} /> Local screening draft</p>
             <h1 id="screening-title">Record the screening information step by step.</h1>
-            <p>This clinician-only form keeps its demo draft on this device. Do not enter names or other direct identifiers.</p>
-            <div className="screening-steps" aria-label={`Screening step ${screeningStep} of 3`}>
-              {["Profile", "Exposure", "Symptoms"].map((label, index) => (
+            <p>This clinician-only form keeps its demo draft on this device. All fields are required for the prototype eligibility gate; do not enter names or other direct identifiers.</p>
+            <div className="screening-steps" aria-label={`Screening step ${screeningStep} of 4`}>
+              {["Profile", "Exposure", "Symptoms", "Survey history"].map((label, index) => (
                 <div className={screeningStep >= index + 1 ? "active" : ""} key={label}>
                   <span>{index + 1}</span>{label}
                 </div>
@@ -603,18 +798,21 @@ export default function App() {
           </div>
 
           <form className={`screening-card ${isSwitchingScreeningStep ? "is-switching" : ""}`} key={screeningStep} onSubmit={(event) => event.preventDefault()}>
-            <div className={`screening-step-panel ${isSwitchingScreeningStep ? "is-leaving" : ""}`} key={screeningStep} aria-live="polite">
+            <div className={`screening-step-panel ${isSwitchingScreeningStep ? "is-leaving" : ""} ${showIncompleteFields ? "show-incomplete-fields" : ""}`} key={screeningStep} aria-live="polite">
               {screeningStep === 1 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 1 of 3</p><h2>Patient profile and place</h2><p>Use a field reference rather than a patient name.</p></div>
+                <div className="form-heading"><p className="card-kicker">Step 1 of 4</p><h2>Patient profile and place</h2><p>Use a field reference rather than a patient name.</p></div>
                 <div className="form-grid">
-                  <label>Field reference<input value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. BHW-024-001" /></label>
-                  <label>Age range<select value={screeningDraft.ageRange} onChange={(event) => updateDraft("ageRange", event.target.value)}><option value="">Select range</option><option>Under 40</option><option>40-49</option><option>50-59</option><option>60-69</option><option>70 or older</option></select></label>
-                  <label>Sex at birth<select value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
+                  <label className={missingFieldClass("fieldReference")}>Field reference<input name="fieldReference" value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. FIELD-024-001" /></label>
+                  <label className={missingFieldClass("ageRange")}>Age range<select name="ageRange" value={screeningDraft.ageRange} onChange={(event) => updateDraft("ageRange", event.target.value)}><option value="">Select range</option><option>0-17</option><option>18-29</option><option>30-39</option><option>40-49</option><option>50-59</option><option>60-69</option><option>70 or older</option></select></label>
+                  <label className={missingFieldClass("sexAtBirth")}>Sex at birth<select name="sexAtBirth" value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
                   <ScreeningLocationFields
                     region={screeningDraft.province}
                     municipality={screeningDraft.municipality}
                     barangay={screeningDraft.barangay}
+                    invalidRegion={showIncompleteFields && !screeningDraft.province.trim()}
+                    invalidMunicipality={showIncompleteFields && !screeningDraft.municipality.trim()}
+                    invalidBarangay={showIncompleteFields && !screeningDraft.barangay.trim()}
                     onRegionChange={(region) => setScreeningDraft((current) => ({ ...current, province: region, municipality: "", barangay: "" }))}
                     onMunicipalityChange={(municipality) => setScreeningDraft((current) => ({ ...current, municipality, barangay: "" }))}
                     onBarangayChange={(barangay) => updateDraft("barangay", barangay)}
@@ -625,60 +823,80 @@ export default function App() {
 
               {screeningStep === 2 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 2 of 3</p><h2>Exposure and relevant history</h2><p>Record the clinician's screening observations. All fields are optional in this demo.</p></div>
+                <div className="form-heading"><p className="card-kicker">Step 2 of 4</p><h2>Exposure and relevant history</h2><p>Record the clinician's screening observations. Complete every field to unlock the prototype risk-support check.</p></div>
                 <div className="form-grid">
-                  <label>Smoking status<select value={screeningDraft.smokingStatus} onChange={(event) => updateDraft("smokingStatus", event.target.value)}><option value="">Select option</option><option>Never smoked</option><option>Former smoker</option><option>Current smoker</option><option>Not recorded</option></select></label>
-                  <label>Household smoke exposure<select value={screeningDraft.householdSmoke} onChange={(event) => updateDraft("householdSmoke", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label className={missingFieldClass("smokingStatus")}>Smoking status<select name="smokingStatus" value={screeningDraft.smokingStatus} onChange={(event) => updateDraft("smokingStatus", event.target.value)}><option value="">Select option</option><option>Never smoked</option><option>Former smoker</option><option>Current smoker</option><option>Not recorded</option></select></label>
+                  <label className={missingFieldClass("householdSmoke")}>Household smoke exposure<select name="householdSmoke" value={screeningDraft.householdSmoke} onChange={(event) => updateDraft("householdSmoke", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
                   <TobaccoUseAmount
                     frequency={screeningDraft.packFrequency}
                     packs={screeningDraft.packYears}
                     onFrequencyChange={(frequency) => updateDraft("packFrequency", frequency)}
                     onPacksChange={(packs) => updateDraft("packYears", packs)}
+                    frequencyInvalid={showIncompleteFields && !screeningDraft.packFrequency.trim()}
+                    packsInvalid={showIncompleteFields && !screeningDraft.packYears.trim()}
                   />
-                  <fieldset className="screening-checklist">
+                  <fieldset className={`screening-checklist ${missingFieldClass("occupationalExposure")}`}>
                     <legend>Occupational/environment exposure</legend>
                     <p>Select all factors that apply.</p>
                     <div className="screening-checklist__options">
-                      {exposureChecklistOptions.map((option) => <label key={option}><input type="checkbox" checked={selectedChecklistOptions(screeningDraft.occupationalExposure).includes(option)} onChange={() => toggleChecklistOption("occupationalExposure", option, exposureChecklistOptions)} />{option}</label>)}
+                      {exposureChecklistOptions.map((option) => <label key={option}><input name="occupationalExposure" type="checkbox" checked={selectedChecklistOptions(screeningDraft.occupationalExposure).includes(option)} onChange={() => toggleChecklistOption("occupationalExposure", option, exposureChecklistOptions)} />{option}</label>)}
                     </div>
                   </fieldset>
-                  <fieldset className="screening-checklist">
+                  <fieldset className={`screening-checklist ${missingFieldClass("lungHistory")}`}>
                     <legend>Lung or TB history</legend>
                     <p>Select all factors that apply.</p>
                     <div className="screening-checklist__options">
-                      {lungHistoryChecklistOptions.map((option) => <label key={option}><input type="checkbox" checked={selectedChecklistOptions(screeningDraft.lungHistory).includes(option)} onChange={() => toggleChecklistOption("lungHistory", option, lungHistoryChecklistOptions)} />{option}</label>)}
+                      {lungHistoryChecklistOptions.map((option) => <label key={option}><input name="lungHistory" type="checkbox" checked={selectedChecklistOptions(screeningDraft.lungHistory).includes(option)} onChange={() => toggleChecklistOption("lungHistory", option, lungHistoryChecklistOptions)} />{option}</label>)}
                     </div>
                   </fieldset>
-                  <label>Family lung-cancer history<select value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label className={missingFieldClass("familyHistory")}>Family lung-cancer history<select name="familyHistory" value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
                 </div>
                 </>
               )}
 
               {screeningStep === 3 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 3 of 3</p><h2>Symptoms and clinician note</h2><p>This is not a diagnosis. Record only information relevant to the screening encounter.</p></div>
-                  <div className="form-grid symptom-form-grid">
-                    <label className="symptom-cough">Persistent cough<select value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                    <label className="symptom-breath">Breathlessness<select value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                    <label className="symptom-blood">Blood in sputum<select value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                    <div className={`weight-loss-field ${screeningDraft.weightLoss === "Yes" ? "has-detail" : ""}`}><label>Unintentional weight loss<select value={screeningDraft.weightLoss} onChange={(event) => updateWeightLoss(event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>{screeningDraft.weightLoss === "Yes" && <label>How much weight did the patient lose? (optional)<input value={screeningDraft.weightLossAmount} onChange={(event) => updateDraft("weightLossAmount", event.target.value)} placeholder="e.g. 5 kg or 11 lb" /></label>}</div>
-                    <label className="symptom-oxygen">Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
-                    <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
+                <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Symptoms and clinician note</h2><p>This is not a diagnosis. Complete every field with a recorded value; use “Unknown” when appropriate.</p></div>
+                <div className="form-grid symptom-form-grid">
+                  <label className={`symptom-cough ${missingFieldClass("persistentCough")}`}>Persistent cough<select name="persistentCough" value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label className={`symptom-breath ${missingFieldClass("breathlessness")}`}>Breathlessness<select name="breathlessness" value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <label className={`symptom-blood ${missingFieldClass("bloodInSputum")}`}>Blood in sputum<select name="bloodInSputum" value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <div className={`weight-loss-field ${screeningDraft.weightLoss === "Yes" ? "has-detail" : ""} ${missingFieldClass("weightLoss")}`}>
+                    <label>Unintentional weight loss<select name="weightLoss" value={screeningDraft.weightLoss} onChange={(event) => updateWeightLoss(event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                    {screeningDraft.weightLoss === "Yes" && <label>How much weight did the patient lose? (optional)<input value={screeningDraft.weightLossAmount} onChange={(event) => updateDraft("weightLossAmount", event.target.value)} placeholder="e.g. 5 kg or 11 lb" /></label>}
+                  </div>
+                  <label className="symptom-oxygen">Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
+                  <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
                 </div>
+                </>
+              )}
+
+              {screeningStep === 4 && (
+                <>
+                  <div className="form-heading"><p className="card-kicker">Step 4 of 4</p><h2>Previous survey history</h2><p>Confirm whether this patient has answered a screening survey before so the heat map does not count the same participant twice.</p></div>
+                  <div className="form-grid">
+                    <label className={`wide-field ${missingFieldClass("previousSurveyResponse")}`}>Has the patient answered any screening surveys in the past?
+                      <select name="previousSurveyResponse" value={screeningDraft.previousSurveyResponse} onChange={(event) => updateDraft("previousSurveyResponse", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option></select>
+                    </label>
+                    {screeningDraft.previousSurveyResponse === "Yes" && <p className="field-note wide-field">This profile can be saved locally for clinician review, but it will be excluded from the app-screenings heat map to avoid duplicate participants.</p>}
+                  </div>
                 </>
               )}
             </div>
 
             <div className="draft-actions">
-              <div className="draft-status" aria-live="polite">{draftStatus || "Draft has not been saved yet."}</div>
+              <div className={`draft-status ${screeningIsComplete ? "is-complete" : ""}`} aria-live="polite">{draftStatus || (screeningIsComplete ? "Screening complete — eligible for prototype risk-support review." : `${screeningFields.filter((field) => !screeningDraft[field].trim()).length} required screening field(s) still need a value.`)}</div>
               <div className="draft-buttons">
                 <button className="text-button" type="button" onClick={restoreScreeningDraft}>Restore local draft</button>
                 <button className="secondary-button" type="button" onClick={saveScreeningDraft}>Save local draft</button>
                 {screeningStep > 1 && <button className="secondary-button" type="button" disabled={isSwitchingScreeningStep} onClick={() => changeScreeningStep(screeningStep - 1)}>Previous</button>}
-                {screeningStep < 3 ? (
+                {screeningStep < 4 ? (
                   <button className="primary-button" type="button" disabled={isSwitchingScreeningStep} onClick={() => changeScreeningStep(screeningStep + 1)}>Continue <ArrowRight size={18} /></button>
                 ) : (
-                  <button className="primary-button" type="button" onClick={finishScreening}>Finish screening draft <Check size={18} /></button>
+                  <>
+                    {!screeningIsComplete && <button className="secondary-button" type="button" onClick={takeToIncompleteField}>Take to incomplete field <ArrowRight size={18} /></button>}
+                    <button className="primary-button" type="button" disabled={!screeningIsComplete} onClick={finishScreening}>Run completeness check <Check size={18} /></button>
+                  </>
                 )}
               </div>
             </div>
@@ -692,12 +910,12 @@ export default function App() {
             <button className="back-link" type="button" onClick={() => navigateTo("screening")}><ChevronLeft size={17} /> Back to screening</button>
             <p className="eyebrow"><ShieldCheck size={16} /> Optional risk-support path</p>
             <h1 id="ai-consent-title">Would the patient agree to clinician-led AI risk support?</h1>
-            <p>Explain that this optional demo path does not diagnose cancer. A medical professional supplies any imaging details and decides whether a future output is useful.</p>
+            <p>The screening completeness gate has passed. Explain that this optional prototype does not diagnose cancer; a medical professional remains responsible for image interpretation and follow-up.</p>
           </div>
           <div className="ai-path-card">
             <p className="card-kicker">Separate consent</p>
             <h2>Record the patient’s choice before collecting imaging details.</h2>
-            <p className="helper-text">A local CT/CXR/DICOM file can be selected for reference, but this demo does not upload, read, or analyse it. The next screen records local metadata for a possible future clinician review.</p>
+            <p className="helper-text">A local CT, chest X-ray, or DICOM file can be selected. The prototype keeps the file on this device and creates an illustrative triage estimate and attention overlay only; it does not make a diagnosis.</p>
             <div className="ai-choice-list">
               <button className="secondary-button" type="button" onClick={() => recordAiConsent(false)}>No, keep screening only</button>
               <button className="primary-button" type="button" onClick={() => recordAiConsent(true)}>Yes, continue to imaging details <ArrowRight size={18} /></button>
@@ -711,12 +929,12 @@ export default function App() {
           <div className="ai-path-context">
             <button className="back-link" type="button" onClick={() => navigateTo("ai-consent")}><ChevronLeft size={17} /> Back to AI consent</button>
             <p className="eyebrow"><ShieldCheck size={16} /> Local imaging metadata</p>
-            <h1 id="imaging-metadata-title">Prepare a temporary local record.</h1>
-            <p>Record only what is available during the visit. Missing details create an offline temporary record so the clinician can return later with more information.</p>
+            <h1 id="imaging-metadata-title">Prepare local imaging metadata.</h1>
+            <p>The AI imaging model is still under development. This optional step saves local study details for a future clinician-reviewed model workflow; it does not analyse the scan today.</p>
           </div>
           <form className="ai-path-card imaging-form" onSubmit={(event) => event.preventDefault()}>
             <p className="card-kicker">Imaging check</p>
-            <h2>Is an imaging study available for the future review?</h2>
+            <h2>Is an imaging study available for future model review?</h2>
             <div className="form-grid">
               <label>Imaging modality<select value={imagingMetadata.modality} onChange={(event) => updateImagingMetadata("modality", event.target.value)}><option value="">Select option</option><option>CT scan</option><option>Chest X-ray</option><option>No imaging available</option></select></label>
               <label>Imaging availability<select value={imagingMetadata.sourceStatus} onChange={(event) => updateImagingMetadata("sourceStatus", event.target.value)}><option value="">Select option</option><option>Available locally</option><option>Patient will return with it</option><option>Not available</option></select></label>
@@ -774,14 +992,14 @@ export default function App() {
                   ) : (
                     <div className="imaging-file-empty">
                       <span aria-hidden="true">↓</span>
-                      <p><strong>Drop CT, CXR, or DICOM files here</strong><small>Select multiple files at once. They stay on this device and are not uploaded, read, or interpreted.</small></p>
+                      <p><strong>Drop CT, CXR, or DICOM files here</strong><small>Image formats can be previewed locally. DICOM is retained as a local reference; this prototype does not parse diagnostic DICOM pixel data.</small></p>
                       <button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Choose local files</button>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-            <p className="field-note"><CloudOff size={16} /> This demo stores file metadata locally only. It does not upload, read, or interpret a scan.</p>
+            <p className="field-note"><CloudOff size={16} /> The AI model is still under development. Files and metadata stay local in this demo and are not interpreted.</p>
             <div className="draft-buttons"><button className="primary-button" type="button" onClick={saveTemporaryRecord}>Save temporary local record <Check size={18} /></button></div>
           </form>
         </section>
@@ -791,13 +1009,41 @@ export default function App() {
         <section className="ready-layout temporary-record-layout" aria-labelledby="temporary-record-title">
           <div className="ready-icon"><ShieldCheck size={34} /></div>
           <p className="eyebrow">Temporary local record</p>
-          <h1 id="temporary-record-title">{temporaryRecordReady ? "Imaging details are ready for clinician review." : "More imaging details are needed before clinician review."}</h1>
-          <p>{temporaryRecordReady ? "The consented screening draft and imaging metadata are stored only on this device. No AI result has been generated." : "This local draft is marked for follow-up. Return with an available CT study and non-identifying reference before the next review step."}</p>
+          <h1 id="temporary-record-title">{temporaryRecordReady ? "Local imaging metadata has been saved." : "More imaging details can be added later."}</h1>
+          <p>{temporaryRecordReady ? "The AI imaging model is still under development, so no image analysis or additional risk estimate has been generated. The local record is ready for a future clinician-reviewed model workflow." : "This local draft is marked for follow-up. You can return with an available CT or chest X-ray and local study details when ready."}</p>
           <div className="ready-actions">
             <button className="secondary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Update imaging details</button>
-            {temporaryRecordReady ? <button className="primary-button" type="button" onClick={openNoduleReview}>Open clinician review <ArrowRight size={18} /></button> : <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>}
+            <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
           </div>
-          <p className="stage-note">AI is not run in TASK-003. Clinician review remains a later, separate step.</p>
+          <p className="stage-note">AI imaging model: under development · clinician review is required before any real clinical action.</p>
+        </section>
+      )}
+
+      {view === "risk-estimate" && (
+        <section className="risk-layout" aria-labelledby="risk-estimate-title">
+          <div className="risk-intro">
+            <button className="back-link" type="button" onClick={() => navigateTo("screening")}><ChevronLeft size={17} /> Edit screening profile</button>
+            <p className="eyebrow"><BrainCircuit size={16} /> Static screening demo</p>
+            <h1 id="risk-estimate-title">Estimated lung-cancer follow-up risk.</h1>
+            <p>This static demonstration reads the completed screening profile only. It weighs recorded habits, environmental exposure, health history, and symptoms to estimate whether follow-up risk is lower, intermediate, or high.</p>
+            <div className="clinical-warning"><AlertTriangle size={19} /><span><strong>Clinician oversight required.</strong> Escalate symptoms or concerning imaging through the appropriate clinical pathway regardless of this prototype display.</span></div>
+          </div>
+          <div className="risk-workspace">
+            <article className="risk-score-card">
+              <div className="risk-card-topline"><span>Screening-only estimate</span><span>Static demo</span></div>
+              <div className={`risk-score risk-${prototypeRiskScore >= 50 ? "elevated" : prototypeRiskScore >= 25 ? "intermediate" : "lower"}`}><strong>{prototypeRiskScore}<small>/100</small></strong><span>{prototypeRiskBand}</span></div>
+              <p>This is a transparent demo calculation, not a cancer probability or a validated clinical score. It does not diagnose or rule out lung cancer.</p>
+              <dl className="risk-inputs"><div><dt>Smoking status</dt><dd>{screeningDraft.smokingStatus}</dd></div><div><dt>Exposure</dt><dd>{screeningDraft.occupationalExposure}</dd></div><div><dt>Symptoms recorded</dt><dd>{symptomSignals.filter(([value]) => value === "Yes").length} positive</dd></div><div><dt>Profile completeness</dt><dd>{screeningFields.length} / {screeningFields.length} complete</dd></div></dl>
+              <div className="static-demo-actions"><button className="secondary-button" type="button" onClick={() => navigateTo("screening")}>Review screening profile</button><button className="primary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Continue to local imaging metadata <ArrowRight size={18} /></button></div>
+            </article>
+            <article className="heatmap-card static-driver-card">
+              <div className="risk-card-topline"><span>Factors included</span><span>Profile only</span></div>
+              <h2>What informed this estimate</h2>
+              <p>The static demo considers only the values entered in the screening form. It does not use CT scans, chest X-rays, or a model-generated heatmap.</p>
+              <div className="risk-driver-list">{profileRiskDrivers.map((driver) => <span key={driver}>{driver}</span>)}</div>
+              <p>Imaging review and image-derived heatmaps are intentionally deferred until the next prototype phase.</p>
+            </article>
+          </div>
         </section>
       )}
 
@@ -900,15 +1146,26 @@ export default function App() {
             <p className="card-kicker">Demo access</p>
             <h2 id="login-title">Secure field login</h2>
             <label>
-              Barangay health worker ID
-              <input value={bhwId} onChange={(event) => setBhwId(event.target.value)} autoComplete="username" />
+              Health professional role
+              <select value={professionalRole} onChange={(event) => setProfessionalRole(event.target.value)}>
+                <option>Health professional</option>
+                <option>Doctor</option>
+                <option>Nurse</option>
+                <option>Radiologist</option>
+                <option>Barangay health worker</option>
+                <option>Other health professional</option>
+              </select>
+            </label>
+            <label>
+              Health professional ID
+              <input value={clinicianId} onChange={(event) => setClinicianId(event.target.value)} placeholder="e.g. CLINICIAN-024" autoComplete="username" />
             </label>
             <label>
               Demo passcode
               <input value={passcode} onChange={(event) => setPasscode(event.target.value)} type="password" placeholder="Enter any passcode" autoComplete="current-password" />
             </label>
             <p className="field-note"><LockKeyhole size={15} /> This is a hackathon demo. Authentication will be replaced before clinical use.</p>
-            <button className="primary-button full-width" type="submit" disabled={!bhwId || !passcode}>
+            <button className="primary-button full-width" type="submit" disabled={!clinicianId || !passcode}>
               Enter screening workspace <ArrowRight size={18} />
             </button>
             <button className="text-button" type="button" onClick={() => navigateTo("consent")}>Back to consent</button>
@@ -918,12 +1175,13 @@ export default function App() {
 
       {view === "ready" && (
         <EncounterDashboard
-          clinicianId={bhwId || defaultBhwId}
-          onStartScreening={startScreening}
-          onEditScreening={(draft) => { setScreeningDraft({ ...emptyScreeningDraft, ...draft }); setScreeningStep(1); setDraftStatus("Local screening loaded for clinician review."); navigateTo("screening"); }}
-          onDeleteScreening={deleteSavedScreening}
-          onViewTemporaryRecord={() => navigateTo("temporary-record")}
-          onEndSession={() => { sessionStorage.removeItem("idea-demo-clinician"); navigateTo("consent"); resetEncounter(); }}
+            clinicianId={`${professionalRole} · ${clinicianId || defaultClinicianId}`}
+            onStartScreening={startScreening}
+            onEditScreening={editSavedScreening}
+            onDeleteScreening={deleteSavedScreening}
+            onViewTemporaryRecord={() => navigateTo("temporary-record")}
+          onDeleteTemporaryRecord={deleteTemporaryRecord}
+          onEndSession={endDemoSession}
         />
       )}
 
@@ -931,7 +1189,7 @@ export default function App() {
         <section className="ready-layout" aria-labelledby="ready-title">
           <div className="ready-icon"><CircleCheckBig size={34} /></div>
           <p className="eyebrow">Workspace ready</p>
-          <h1 id="ready-title">You’re signed in as {bhwId || defaultBhwId}.</h1>
+          <h1 id="ready-title">You’re signed in as {professionalRole} · {clinicianId || defaultClinicianId}.</h1>
           <p>Consent is recorded for this encounter. Continue with the clinician-led screening draft.</p>
           <div className="ready-actions">
             <button className="primary-button" type="button" onClick={startScreening}>Start screening <ArrowRight size={18} /></button>

@@ -43,7 +43,7 @@
 
 .encounter-action-card--primary {
   border-color: var(--teal);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--teal) 10%, white), white 70%);
+  background: #f2faf8;
 }
 
 .encounter-action-card > svg {
@@ -61,6 +61,69 @@
   color: var(--ink-soft);
   font-size: .92rem;
   line-height: 1.5;
+}
+
+.temporary-delete-button,
+.temporary-extract-button {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .7rem;
+}
+
+.temporary-delete-button {
+  color: #9c2632;
+}
+
+.temporary-delete-button:disabled,
+.temporary-extract-button:disabled {
+  color: var(--ink-soft);
+}
+
+.temporary-extract-button { color: var(--teal-dark); }
+
+.temporary-delete-confirmation {
+  display: grid;
+  gap: .55rem;
+  width: 100%;
+  margin-top: .7rem;
+  border: 1px solid #e4b4b7;
+  border-radius: .7rem;
+  padding: .7rem;
+  color: #75202a;
+  background: #fff7f7;
+  font-size: .8rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.temporary-delete-confirmation > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  align-items: center;
+}
+
+.danger-button {
+  border: 1px solid #8b1e2d;
+  border-radius: .65rem;
+  padding: .55rem .75rem;
+  color: #fff;
+  background: #8b1e2d;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.danger-button:hover {
+  background: #6d1322;
+}
+
+.temporary-deletion-message {
+  margin-top: .7rem !important;
+  color: var(--teal-dark) !important;
+  font-weight: 700;
 }
 
 .encounter-history {

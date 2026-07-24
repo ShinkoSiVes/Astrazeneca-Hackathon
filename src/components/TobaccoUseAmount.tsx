@@ -3,6 +3,8 @@ type TobaccoUseAmountProps = {
   packs: string;
   onFrequencyChange: (frequency: string) => void;
   onPacksChange: (packs: string) => void;
+  frequencyInvalid?: boolean;
+  packsInvalid?: boolean;
 };
 
 const noTobaccoUse = "Not a smoker";
@@ -14,7 +16,7 @@ const amountSummary = (packs: string, frequency: string) => {
   return "Choose a frequency first, then record the estimated packs.";
 };
 
-export function TobaccoUseAmount({ frequency, packs, onFrequencyChange, onPacksChange }: TobaccoUseAmountProps) {
+export function TobaccoUseAmount({ frequency, packs, onFrequencyChange, onPacksChange, frequencyInvalid = false, packsInvalid = false }: TobaccoUseAmountProps) {
   const hasNoTobaccoUse = frequency === noTobaccoUse;
 
   const updateFrequency = (nextFrequency: string) => {
@@ -29,9 +31,9 @@ export function TobaccoUseAmount({ frequency, packs, onFrequencyChange, onPacksC
         <span id="tobacco-use-heading">Tobacco-use amount</span>
         <span className="tobacco-use-group__step">Frequency → estimate</span>
       </div>
-      <label>
+      <label className={frequencyInvalid ? "is-required-missing" : ""}>
         Tobacco-use frequency
-        <select value={frequency} onChange={(event) => updateFrequency(event.target.value)}>
+        <select name="packFrequency" value={frequency} aria-invalid={frequencyInvalid} onChange={(event) => updateFrequency(event.target.value)}>
           <option value="">Select period first</option>
           <option>{noTobaccoUse}</option>
           <option>Per day</option>
@@ -41,9 +43,9 @@ export function TobaccoUseAmount({ frequency, packs, onFrequencyChange, onPacksC
         </select>
       </label>
       <div className="tobacco-use-group__connector" aria-hidden="true"><span>Then estimate</span></div>
-      <label>
+      <label className={packsInvalid ? "is-required-missing" : ""}>
         Estimated packs
-        <input value={packs} onChange={(event) => onPacksChange(event.target.value)} inputMode="decimal" placeholder="e.g. 1.5" disabled={!frequency || hasNoTobaccoUse} />
+        <input name="packYears" value={packs} aria-invalid={packsInvalid} onChange={(event) => onPacksChange(event.target.value)} inputMode="decimal" placeholder="e.g. 1.5" disabled={!frequency || hasNoTobaccoUse} />
       </label>
       <p className="tobacco-use-group__summary" aria-live="polite">{amountSummary(packs, frequency)}</p>
     </section>

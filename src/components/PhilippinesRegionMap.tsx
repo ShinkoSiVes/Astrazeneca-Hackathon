@@ -100,9 +100,10 @@ type PhilippinesRegionMapProps = {
   regions: SyntheticRegion[];
   selectedRegionId: string;
   onSelect: (regionId: string) => void;
+  dataSource?: "public" | "app-screenings";
 };
 
-export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: PhilippinesRegionMapProps) {
+export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, dataSource = "public" }: PhilippinesRegionMapProps) {
   const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
 
   return (
@@ -114,7 +115,7 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: Ph
         </div>
         <span>18 regions</span>
       </div>
-      <p className="map-panel-copy">Choose a real administrative-region outline to inspect its static demo fixture. Province lines are shown for orientation; the follow-up signal remains synthetic.</p>
+      <p className="map-panel-copy">{dataSource === "app-screenings" ? "Choose a region to see only saved profiling drafts grouped by their selected region. Public baseline data is excluded." : "Choose a real administrative-region outline to inspect the static public baseline. App screening profiles are excluded."}</p>
       <div className="philippines-map-stage">
         <svg className="philippines-region-map" viewBox={`0 0 ${viewport.width} ${viewport.height}`} role="group" aria-label="Interactive Philippines model with 18 selectable administrative regions">
           <defs>
@@ -149,7 +150,7 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: Ph
                   key={region.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.label}, ${region.signalLevel} synthetic demo signal`}
+                  aria-label={`${region.label}, ${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}
                   aria-pressed={isSelected}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={selectFromKeyboard}
@@ -164,14 +165,27 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: Ph
               );
             })}
           </g>
-          <text className="map-compass" x="622" y="58" textAnchor="middle" aria-hidden="true">N</text>
-          <path className="map-compass-line" d="M622 70v38" aria-hidden="true" />
-          <circle className="map-compass-dot" cx="622" cy="112" r="3" aria-hidden="true" />
+          <g className="map-compass-rose" role="img" aria-label="Compass showing north, east, south, and west">
+            <path className="map-compass-line" d="M622 62v64M590 94h64" aria-hidden="true" />
+            <path className="map-compass-needle map-compass-needle-north" d="M622 58l-8 36 8-7 8 7z" aria-hidden="true" />
+            <path className="map-compass-needle map-compass-needle-south" d="M622 130l-8-36 8 7 8-7z" aria-hidden="true" />
+            <circle className="map-compass-dot" cx="622" cy="94" r="3.5" aria-hidden="true" />
+            <text className="map-compass" x="622" y="49" textAnchor="middle" aria-hidden="true">N</text>
+            <text className="map-compass" x="670" y="98" textAnchor="middle" aria-hidden="true">E</text>
+            <text className="map-compass" x="622" y="145" textAnchor="middle" aria-hidden="true">S</text>
+            <text className="map-compass" x="574" y="98" textAnchor="middle" aria-hidden="true">W</text>
+          </g>
         </svg>
-        <div className="map-depth-key" aria-label="Synthetic signal key">
-          <span><i className="signal-lower" /> Lower</span>
-          <span><i className="signal-moderate" /> Moderate</span>
-          <span><i className="signal-higher" /> Higher</span>
+        <div className="map-depth-key" aria-label={dataSource === "app-screenings" ? "App-screening profile count key" : "Static public baseline key"}>
+          {dataSource === "app-screenings" ? <>
+            <span><i className="signal-lower" /> No saved profiles</span>
+            <span><i className="signal-moderate" /> 1–2 profiles</span>
+            <span><i className="signal-higher" /> 3+ profiles</span>
+          </> : <>
+            <span><i className="signal-lower" /> Lower</span>
+            <span><i className="signal-moderate" /> Moderate</span>
+            <span><i className="signal-higher" /> Higher</span>
+          </>}
         </div>
       </div>
       <p className="map-source-note">Boundary geometry: 2023 provincial snapshot, grouped to the PSA’s current 18-region roster. Static, offline, and for demo orientation only.</p>

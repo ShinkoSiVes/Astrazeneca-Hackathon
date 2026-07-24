@@ -1,11 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { EncounterDashboard } from "./EncounterDashboard";
 import { screeningHistoryKey, temporaryRecordKey, type LocalScreeningDraft } from "../local-screenings";
 
 const draft: LocalScreeningDraft = {
-  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", weightLossAmount: "", oxygenSaturation: "97", clinicianNotes: "Demo entry",
+  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", weightLossAmount: "", previousSurveyResponse: "No", oxygenSaturation: "97", clinicianNotes: "Demo entry",
 };
 
 const renderDashboard = () => {
@@ -15,10 +15,11 @@ const renderDashboard = () => {
     onEditScreening: vi.fn(),
     onDeleteScreening: vi.fn(),
     onViewTemporaryRecord: vi.fn(),
+    onDeleteTemporaryRecord: vi.fn(),
     onEndSession: vi.fn(),
   };
-  render(<EncounterDashboard {...props} />);
-  return props;
+  const rendered = render(<EncounterDashboard {...props} />);
+  return { ...props, ...rendered };
 };
 
 describe("TASK-007 clinician encounter dashboard", () => {
@@ -71,5 +72,31 @@ describe("TASK-007 clinician encounter dashboard", () => {
     expect(temporaryButton).toBeEnabled();
     await user.click(temporaryButton);
     expect(props.onViewTemporaryRecord).toHaveBeenCalledOnce();
+  });
+
+  it("imports the screening profile embedded in one temporary record", async () => {
+    const user = userEvent.setup();
+    const props = renderDashboard();
+    const temporaryRecordFile = new File([JSON.stringify({ savedAt: "2026-07-24T09:30:00.000Z", status: "awaiting additional imaging details", screening: draft })], "previous-temporary-record.json", { type: "application/json" });
+
+    await user.upload(screen.getByLabelText(/import local screening or temporary record/i), temporaryRecordFile);
+
+    await waitFor(() => expect(props.onEditScreening).toHaveBeenCalledWith(draft));
+    expect(screen.getByText(/temporary record loaded/i)).toBeInTheDocument();
+  });
+
+  it("requires confirmation before deleting a saved temporary record", async () => {
+    localStorage.setItem(temporaryRecordKey, JSON.stringify({ savedAt: "2026-07-24T09:30:00.000Z", status: "awaiting additional imaging details", screening: draft }));
+    const user = userEvent.setup();
+    const props = renderDashboard();
+
+    await user.click(screen.getByRole("button", { name: /delete local temporary data/i }));
+    expect(screen.getByRole("group", { name: /confirm temporary data deletion/i })).toBeInTheDocument();
+    expect(props.onDeleteTemporaryRecord).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /confirm delete/i }));
+    expect(props.onDeleteTemporaryRecord).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: /open temporary record/i })).toBeDisabled();
+    expect(screen.getByText(/local temporary data was deleted/i)).toBeInTheDocument();
   });
 });

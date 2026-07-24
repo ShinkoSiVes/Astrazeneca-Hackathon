@@ -9,10 +9,12 @@ type SearchableSelectProps = {
   placeholder: string;
   emptyMessage: string;
   disabled?: boolean;
+  inputName?: string;
+  invalid?: boolean;
   onChange: (value: string) => void;
 };
 
-export function SearchableSelect({ label, value, options, placeholder, emptyMessage, disabled = false, onChange }: SearchableSelectProps) {
+export function SearchableSelect({ label, value, options, placeholder, emptyMessage, disabled = false, inputName, invalid = false, onChange }: SearchableSelectProps) {
   const [query, setQuery] = useState(value);
   const [open, setOpen] = useState(false);
   const listId = useId();
@@ -35,7 +37,7 @@ export function SearchableSelect({ label, value, options, placeholder, emptyMess
   };
 
   return (
-    <label className={`searchable-select ${disabled ? "is-disabled" : ""}`}>
+    <label className={`searchable-select ${disabled ? "is-disabled" : ""} ${invalid ? "is-required-missing" : ""}`}>
       {label}
       <span className="searchable-select__control">
         <Search size={16} aria-hidden="true" />
@@ -44,11 +46,13 @@ export function SearchableSelect({ label, value, options, placeholder, emptyMess
           aria-controls={listId}
           aria-expanded={open}
           aria-label={label}
+          aria-invalid={invalid}
           autoComplete="off"
           disabled={disabled}
           onBlur={close}
           onChange={(event) => { setQuery(event.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
+          name={inputName}
           placeholder={placeholder}
           role="combobox"
           value={query}

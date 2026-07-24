@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import App from "./App";
+import { screeningHistoryKey } from "./local-screenings";
 
 describe("TASK-001 consent and demo login", () => {
   it("keeps navigation active on page changes and tucks it away only while scrolling down", async () => {
@@ -25,16 +26,6 @@ describe("TASK-001 consent and demo login", () => {
     expect(navigation).toHaveClass("is-visible");
   });
 
-  it("ends a declined encounter without creating a screening record", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-
-    await user.click(screen.getByRole("button", { name: /no, end encounter/i }));
-
-    expect(screen.getByText(/encounter ended/i)).toBeInTheDocument();
-    expect(screen.getByText(/no screening record was created/i)).toBeInTheDocument();
-  });
-
   it("starts the FAQ with every answer collapsed", () => {
     const { container } = render(<App />);
 
@@ -52,14 +43,15 @@ describe("TASK-001 consent and demo login", () => {
 
     const enterButton = await screen.findByRole("button", { name: /enter screening workspace/i });
     expect(enterButton).toBeDisabled();
+    await user.selectOptions(screen.getByLabelText(/health professional role/i), "Radiologist");
     await user.type(screen.getByLabelText(/demo passcode/i), "1234");
     await user.click(enterButton);
 
     await screen.findByText(/consent is recorded for this encounter/i);
 
-    expect(screen.getByRole("heading", { name: /you’re signed in as bhw-024/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /radiologist.*clinician-024/i })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveClass("view-ready");
-    expect(sessionStorage.getItem("idea-demo-clinician")).toBe("BHW-024");
+    expect(sessionStorage.getItem("idea-demo-clinician")).toBe("CLINICIAN-024");
   });
 
   it("opens the static About view and returns to the consent screen", async () => {
@@ -71,6 +63,8 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByText(/people behind the prototype/i);
 
     expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^features$/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^future features$/i })).toBeInTheDocument();
     expect(screen.getByText(/people behind the prototype/i)).toBeInTheDocument();
     expect(screen.getAllByText("[Name]")).toHaveLength(4);
 
@@ -92,19 +86,38 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
   });
 
-  it("shows an 18-region dashboard with static signals and no live data", async () => {
+  it("shows an 18-region dashboard with a separate static public-data mode", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /heatmap status/i }));
 
-    await screen.findByText(/no real patient records/i);
+    await screen.findByText(/static public data only/i);
 
     expect(screen.getByRole("heading", { name: /regional follow-up dashboard/i })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /synthetic demo signal/i })).toHaveLength(18);
-    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*signal/i }));
+    expect(screen.getAllByRole("button", { name: /static public baseline/i })).toHaveLength(18);
+    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*static public baseline/i }));
     expect(screen.getByRole("heading", { name: /region iii.*central luzon/i })).toBeInTheDocument();
     expect(screen.getByText(/sharing remains disabled/i)).toBeInTheDocument();
+  });
+
+  it("counts saved profiling drafts by selected region without combining public data", async () => {
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([{
+      id: "FIELD-001",
+      savedAt: "2026-07-24T09:30:00.000Z",
+      data: { fieldReference: "FIELD-001", province: "Region III — Central Luzon", previousSurveyResponse: "No" },
+    }]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await screen.findByText(/static public data only/i);
+    await user.click(screen.getByRole("button", { name: /app screenings/i }));
+
+    expect(screen.getByText(/1 heatmap-eligible profile/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*moderate app screening profile count/i }));
+    expect(screen.getByText(/1 app-screened/i)).toBeInTheDocument();
+    expect(screen.getByText(/public data excluded/i)).toBeInTheDocument();
   });
 
   it("saves a clinician screening draft locally", async () => {
@@ -148,6 +161,48 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
 
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packFrequency\":\"Per week");
+  });
+
+  it("shows an optional weight-loss amount only after a positive symptom response", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+
+    expect(screen.queryByLabelText(/how much weight did the patient lose/i)).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/unintentional weight loss/i), "Yes");
+    expect(screen.getByLabelText(/how much weight did the patient lose/i)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/how much weight did the patient lose/i), "5 kg");
+    expect(screen.getByLabelText(/how much weight did the patient lose/i)).toHaveValue("5 kg");
+  });
+
+  it("records prior-survey history in the final profiling step", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /previous survey history/i });
+
+    await user.selectOptions(screen.getByLabelText(/has the patient answered any screening surveys/i), "Yes");
+    expect(screen.getByText(/excluded from the app-screenings heat map/i)).toBeInTheDocument();
   });
 
   it("keeps the screening-only path local when AI consent is declined", async () => {

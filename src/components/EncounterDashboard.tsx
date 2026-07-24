@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { ArchiveRestore, ArrowRight, FilePenLine, FolderClock, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { ArchiveRestore, ArrowRight, Download, FilePenLine, FolderClock, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import {
   normaliseScreeningDraft,
   readStoredScreenings,
   readTemporaryRecordSummary,
+  temporaryRecordKey,
   type LocalScreeningDraft,
   type StoredScreening,
   type TemporaryRecordSummary,
@@ -16,6 +17,7 @@ type EncounterDashboardProps = {
   onEditScreening: (draft: LocalScreeningDraft) => void;
   onDeleteScreening: (screeningId: string) => void;
   onViewTemporaryRecord: () => void;
+  onDeleteTemporaryRecord: () => void;
   onEndSession: () => void;
 };
 
@@ -25,10 +27,12 @@ const timeLabel = (value: string) => new Intl.DateTimeFormat("en-PH", {
 
 const hasAnyScreeningField = (draft: LocalScreeningDraft) => Object.values(draft).some((value) => value.trim() !== "");
 
-export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreening, onDeleteScreening, onViewTemporaryRecord, onEndSession }: EncounterDashboardProps) {
+export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreening, onDeleteScreening, onViewTemporaryRecord, onDeleteTemporaryRecord, onEndSession }: EncounterDashboardProps) {
   const [screenings, setScreenings] = useState<StoredScreening[]>([]);
   const [temporaryRecord, setTemporaryRecord] = useState<TemporaryRecordSummary | null>(null);
   const [importMessage, setImportMessage] = useState("");
+  const [isConfirmingTemporaryDeletion, setIsConfirmingTemporaryDeletion] = useState(false);
+  const [temporaryDeletionMessage, setTemporaryDeletionMessage] = useState("");
   const [screeningPendingDeletion, setScreeningPendingDeletion] = useState<StoredScreening | null>(null);
   const [screeningDeletionMessage, setScreeningDeletionMessage] = useState("");
   const importInput = useRef<HTMLInputElement>(null);
@@ -54,18 +58,54 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(String(reader.result)) as { data?: Partial<LocalScreeningDraft> } | Partial<LocalScreeningDraft>;
-        const importedData = "data" in parsed && parsed.data ? parsed.data : parsed as Partial<LocalScreeningDraft>;
-        const draft = normaliseScreeningDraft(importedData);
+        const parsed = JSON.parse(String(reader.result)) as unknown;
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid local record");
+        const record = parsed as { data?: unknown; screening?: unknown };
+        const importedData = record.screening ?? record.data ?? record;
+        if (!importedData || typeof importedData !== "object" || Array.isArray(importedData)) throw new Error("Invalid screening data");
+        const draft = normaliseScreeningDraft(importedData as Partial<LocalScreeningDraft>);
         if (!hasAnyScreeningField(draft)) throw new Error("No screening fields");
-        setImportMessage("Local update loaded. Review and save it before continuing.");
+        setImportMessage(record.screening ? "Temporary record loaded. Review the screening profile and save it before continuing." : "Local screening update loaded. Review and save it before continuing.");
         onEditScreening(draft);
       } catch {
-        setImportMessage("That file could not be read as a local screening update.");
+        setImportMessage("That file could not be read as a local screening or temporary record.");
       }
     };
     reader.onerror = () => setImportMessage("The local update could not be read on this device.");
     reader.readAsText(updateFile);
+  };
+
+  const deleteTemporaryRecord = () => {
+    onDeleteTemporaryRecord();
+    setTemporaryRecord(null);
+    setIsConfirmingTemporaryDeletion(false);
+    setTemporaryDeletionMessage("Local temporary data was deleted from this device.");
+  };
+
+  const extractTemporaryRecord = () => {
+    const savedRecord = localStorage.getItem(temporaryRecordKey);
+    if (!savedRecord) return;
+
+    try {
+      const parsed = JSON.parse(savedRecord) as { imaging?: { imagingFiles?: Array<Record<string, unknown>> } } & Record<string, unknown>;
+      const imaging = parsed.imaging && typeof parsed.imaging === "object"
+        ? {
+          ...parsed.imaging,
+          imagingFiles: Array.isArray(parsed.imaging.imagingFiles) ? parsed.imaging.imagingFiles.map(({ previewUrl: _previewUrl, ...file }) => file) : [],
+        }
+        : parsed.imaging;
+      const exportRecord = { ...parsed, imaging };
+      const blob = new Blob([JSON.stringify(exportRecord, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const download = document.createElement("a");
+      download.href = url;
+      download.download = `aeris-temporary-record-${new Date().toISOString().slice(0, 10)}.json`;
+      download.click();
+      URL.revokeObjectURL(url);
+      setTemporaryDeletionMessage("Temporary record extracted as a local JSON file. Image preview and file bytes were not included.");
+    } catch {
+      setTemporaryDeletionMessage("The temporary record could not be extracted on this device.");
+    }
   };
 
   const deleteScreening = () => {
@@ -97,6 +137,19 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
           <h2>View temporary data</h2>
           <p>{temporaryRecord ? `Saved ${timeLabel(temporaryRecord.savedAt)} · ${temporaryRecord.status}` : "No temporary imaging record is stored on this device."}</p>
           <button className="secondary-button" type="button" disabled={!temporaryRecord} onClick={onViewTemporaryRecord}>Open temporary record <ArrowRight size={18} /></button>
+          <button className="text-button temporary-extract-button" type="button" disabled={!temporaryRecord} onClick={extractTemporaryRecord}><Download size={16} /> Extract local temporary data</button>
+          {isConfirmingTemporaryDeletion ? (
+            <div className="temporary-delete-confirmation" role="group" aria-label="Confirm temporary data deletion">
+              <span>Delete this temporary record from this device?</span>
+              <div>
+                <button className="danger-button" type="button" onClick={deleteTemporaryRecord}>Confirm delete</button>
+                <button className="text-button" type="button" onClick={() => setIsConfirmingTemporaryDeletion(false)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button className="text-button temporary-delete-button" type="button" disabled={!temporaryRecord} onClick={() => { setIsConfirmingTemporaryDeletion(true); setTemporaryDeletionMessage(""); }}><Trash2 size={16} /> Delete local temporary data</button>
+          )}
+          {temporaryDeletionMessage && <p className="temporary-deletion-message" role="status">{temporaryDeletionMessage}</p>}
         </article>
         <article className="encounter-action-card">
           <LogOut size={22} aria-hidden="true" />
@@ -113,12 +166,12 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
             <h2 id="saved-screenings-title">Screening records</h2>
           </div>
           <div className="encounter-history__tools">
-            <input ref={importInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={importLocalUpdate} />
-            <button className="text-button" type="button" onClick={() => importInput.current?.click()}><Upload size={16} /> Import local update</button>
+            <input ref={importInput} className="visually-hidden" type="file" accept="application/json,.json" aria-label="Import local screening or temporary record" onChange={importLocalUpdate} />
+            <button className="text-button" type="button" onClick={() => importInput.current?.click()}><Upload size={16} /> Import local record</button>
             <button className="text-button" type="button" onClick={refresh}>Refresh</button>
           </div>
         </div>
-        <p className="field-note">Import accepts a local JSON screening update for review only. File bytes are not uploaded or retained. Keep patient identifiers out of demo files.</p>
+        <p className="field-note">Import accepts one local JSON screening update or one temporary record from a screening record. The embedded screening profile opens for review; file bytes are not uploaded or retained.</p>
         {importMessage && <p className="encounter-import-message" role="status">{importMessage}</p>}
         {screeningDeletionMessage && <p className="encounter-import-message" role="status">{screeningDeletionMessage}</p>}
 
