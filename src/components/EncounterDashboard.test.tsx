@@ -5,7 +5,7 @@ import { EncounterDashboard } from "./EncounterDashboard";
 import { screeningHistoryKey, temporaryRecordKey, type LocalScreeningDraft } from "../local-screenings";
 
 const draft: LocalScreeningDraft = {
-  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", oxygenSaturation: "97", clinicianNotes: "Demo entry",
+  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", weightLossAmount: "", oxygenSaturation: "97", clinicianNotes: "Demo entry",
 };
 
 const renderDashboard = () => {

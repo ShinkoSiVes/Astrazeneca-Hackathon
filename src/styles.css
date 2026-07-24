@@ -288,6 +288,13 @@ button:disabled { cursor: not-allowed; }
 .form-grid textarea { min-height: 104px; padding: 12px 13px; resize: vertical; }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #0e8179; box-shadow: 0 0 0 4px rgb(14 129 121 / 12%); }
 .wide-field { grid-column: 1 / -1; }
+.weight-loss-field { display: grid; gap: 10px; align-content: start; }
+.symptom-form-grid:has(.weight-loss-field.has-detail) { grid-template-areas: "cough breath" "blood weight" "oxygen weight"; }
+.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-cough { grid-area: cough; }
+.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-breath { grid-area: breath; }
+.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-blood { grid-area: blood; }
+.symptom-form-grid:has(.weight-loss-field.has-detail) .weight-loss-field { grid-area: weight; }
+.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-oxygen { grid-area: oxygen; align-self: start; }
 .screening-checklist { display: grid; gap: 8px; min-width: 0; margin: 0; border: 1px solid #b9d0ce; border-radius: 14px; padding: 13px; background: rgb(252 254 253 / 88%); }
 .screening-checklist legend { padding: 0 4px; color: #2a525b; font-size: 14px; font-weight: 800; }
 .screening-checklist > p { margin: 0; color: #678087; font-size: 12px; line-height: 1.4; }
@@ -461,6 +468,7 @@ button:disabled { cursor: not-allowed; }
   .screening-layout { margin-bottom: 60px; }
   .screening-card { padding: 25px 20px; border-radius: 20px; }
   .form-grid { grid-template-columns: 1fr; }
+  .symptom-form-grid:has(.weight-loss-field.has-detail) { grid-template-areas: none; }
   .wide-field { grid-column: auto; }
   .imaging-file-empty { grid-template-columns: auto 1fr; }
   .imaging-file-empty .secondary-button { grid-column: 1 / -1; width: 100%; }

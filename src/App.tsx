@@ -62,6 +62,7 @@ type ScreeningDraft = {
   breathlessness: string;
   bloodInSputum: string;
   weightLoss: string;
+  weightLossAmount: string;
   oxygenSaturation: string;
   clinicianNotes: string;
 };
@@ -97,7 +98,7 @@ type PopulationRecord = {
 };
 
 const emptyScreeningDraft: ScreeningDraft = {
-  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
+  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", weightLossAmount: "", oxygenSaturation: "", clinicianNotes: "",
 };
 
 const screeningDraftKey = "aeris-screening-draft-v1";
@@ -205,6 +206,10 @@ export default function App() {
       else selected.add(option);
       return { ...current, [field]: options.filter((item) => selected.has(item)).join(" | ") };
     });
+  };
+
+  const updateWeightLoss = (value: string) => {
+    setScreeningDraft((current) => ({ ...current, weightLoss: value, weightLossAmount: value === "Yes" ? current.weightLossAmount : "" }));
   };
 
   const updateImagingMetadata = (field: Exclude<keyof ImagingMetadata, "imagingFiles">, value: string) => {
@@ -652,13 +657,13 @@ export default function App() {
               {screeningStep === 3 && (
                 <>
                 <div className="form-heading"><p className="card-kicker">Step 3 of 3</p><h2>Symptoms and clinician note</h2><p>This is not a diagnosis. Record only information relevant to the screening encounter.</p></div>
-                <div className="form-grid">
-                  <label>Persistent cough<select value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <label>Breathlessness<select value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <label>Blood in sputum<select value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <label>Unintentional weight loss<select value={screeningDraft.weightLoss} onChange={(event) => updateDraft("weightLoss", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <label>Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
-                  <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
+                  <div className="form-grid symptom-form-grid">
+                    <label className="symptom-cough">Persistent cough<select value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                    <label className="symptom-breath">Breathlessness<select value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                    <label className="symptom-blood">Blood in sputum<select value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                    <div className={`weight-loss-field ${screeningDraft.weightLoss === "Yes" ? "has-detail" : ""}`}><label>Unintentional weight loss<select value={screeningDraft.weightLoss} onChange={(event) => updateWeightLoss(event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>{screeningDraft.weightLoss === "Yes" && <label>How much weight did the patient lose? (optional)<input value={screeningDraft.weightLossAmount} onChange={(event) => updateDraft("weightLossAmount", event.target.value)} placeholder="e.g. 5 kg or 11 lb" /></label>}</div>
+                    <label className="symptom-oxygen">Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
+                    <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
                 </div>
                 </>
               )}

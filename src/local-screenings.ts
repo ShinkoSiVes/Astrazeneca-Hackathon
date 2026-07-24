@@ -16,6 +16,7 @@ export type LocalScreeningDraft = {
   breathlessness: string;
   bloodInSputum: string;
   weightLoss: string;
+  weightLossAmount: string;
   oxygenSaturation: string;
   clinicianNotes: string;
 };
@@ -36,7 +37,7 @@ export const screeningHistoryKey = "aeris-screening-history-v1";
 export const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 
 export const emptyLocalScreeningDraft: LocalScreeningDraft = {
-  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
+  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", weightLossAmount: "", oxygenSaturation: "", clinicianNotes: "",
 };
 
 export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | undefined): LocalScreeningDraft => ({
