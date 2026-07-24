@@ -126,14 +126,22 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
           <div className="screening-history-list">
             {screenings.map((screening) => (
               <article className="screening-history-item" key={`${screening.id}-${screening.savedAt}`}>
-                <div>
+                <div className="screening-history-item__summary">
                   <p className="screening-history-item__label">Field reference</p>
                   <h3>{screening.data.fieldReference || "Unlabelled local draft"}</h3>
                   <p>Last saved {timeLabel(screening.savedAt)} · {screening.data.barangay || "Location not recorded"}{screening.data.province ? `, ${screening.data.province}` : ""}</p>
                 </div>
                 <div className="screening-history-item__actions">
-                  <button className="secondary-button" type="button" onClick={() => onEditScreening(screening.data)}><FilePenLine size={17} /> Edit screening</button>
+                  <button className="secondary-button" type="button" onClick={() => onEditScreening(screening.data)}><FilePenLine size={17} /> Update screening</button>
                   <button className="text-button danger-text-button" type="button" onClick={() => { setScreeningPendingDeletion(screening); setScreeningDeletionMessage(""); }}><Trash2 size={16} /> Delete local copy</button>
+                </div>
+                <div className="screening-history-item__updates">
+                  <p className="screening-history-item__label">Saved updates · {screening.updates.length}</p>
+                  <ol>
+                    {screening.updates.map((update, index) => (
+                      <li key={update.id}><strong>Update {screening.updates.length - index}</strong><span>{timeLabel(update.savedAt)}</span><span>{update.data.barangay || "Location not recorded"}{update.data.province ? `, ${update.data.province}` : ""}</span></li>
+                    ))}
+                  </ol>
                 </div>
               </article>
             ))}
