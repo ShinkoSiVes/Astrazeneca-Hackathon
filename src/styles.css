@@ -14,6 +14,7 @@ button:disabled { cursor: not-allowed; }
 
 .app-shell { position: relative; isolation: isolate; min-height: 100vh; overflow: hidden; background: #dbece7; }
 .app-shell > :not(.landscape-rotator) { position: relative; z-index: 1; }
+.app-shell > .topbar { position: fixed; z-index: 50; }
 .landscape-rotator { position: fixed; z-index: 0; inset: 0; overflow: hidden; pointer-events: none; background: #dbece7; }
 .view-screening, .view-ai-consent, .view-imaging-metadata, .view-temporary-record, .view-screening-complete, .view-nodule-review { background: #f7fbfa; }
 .view-screening .landscape-rotator, .view-ai-consent .landscape-rotator, .view-imaging-metadata .landscape-rotator, .view-temporary-record .landscape-rotator, .view-screening-complete .landscape-rotator, .view-nodule-review .landscape-rotator { display: block; }
