@@ -53,4 +53,4 @@ The workspace also lists saved screening snapshots by field reference. A clinici
 
 ## Proposed promotion commit(s)
 
-`Pending stage commit for TASK-007; this field will be updated before review handoff.`
+`582fa90 feat(task-007): add clinician encounter dashboard`
