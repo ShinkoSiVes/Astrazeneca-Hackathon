@@ -105,6 +105,10 @@ const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imagingFiles: [] };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const exposureChecklistOptions = ["Dust / mining / construction", "Smoke / biomass fuel", "Chemical exposure", "None reported", "Unknown"];
+const lungHistoryChecklistOptions = ["TB history", "COPD / asthma", "Other lung condition", "None reported", "Unknown"];
+const exclusiveChecklistOptions = new Set(["None reported", "Unknown"]);
+
 const viewLabels: Record<View, string> = {
   consent: "Field start", login: "Secure login", ready: "Clinician workspace", about: "About Aeris AI", "heatmap-status": "Population dashboard", screening: "Screening", "ai-consent": "AI consent", "imaging-metadata": "Imaging metadata", "temporary-record": "Temporary record", "screening-complete": "Screening complete", "nodule-review": "Clinician review", aggregation: "Aggregation",
 };
@@ -191,6 +195,21 @@ export default function App() {
 
   const updateDraft = (field: keyof ScreeningDraft, value: string) => {
     setScreeningDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const selectedChecklistOptions = (value: string) => value ? value.split(" | ") : [];
+
+  const toggleChecklistOption = (field: "occupationalExposure" | "lungHistory", option: string, options: string[]) => {
+    const selected = new Set(selectedChecklistOptions(screeningDraft[field]));
+    if (exclusiveChecklistOptions.has(option)) {
+      selected.clear();
+      selected.add(option);
+    } else {
+      exclusiveChecklistOptions.forEach((exclusiveOption) => selected.delete(exclusiveOption));
+      if (selected.has(option)) selected.delete(option);
+      else selected.add(option);
+    }
+    updateDraft(field, options.filter((item) => selected.has(item)).join(" | "));
   };
 
   const updateImagingMetadata = (field: Exclude<keyof ImagingMetadata, "imagingFiles">, value: string) => {
@@ -616,8 +635,20 @@ export default function App() {
                     onFrequencyChange={(frequency) => updateDraft("packFrequency", frequency)}
                     onPacksChange={(packs) => updateDraft("packYears", packs)}
                   />
-                  <label>Occupational/environment exposure<select value={screeningDraft.occupationalExposure} onChange={(event) => updateDraft("occupationalExposure", event.target.value)}><option value="">Select option</option><option>Dust / mining / construction</option><option>Smoke / biomass fuel</option><option>Chemical exposure</option><option>None reported</option><option>Unknown</option></select></label>
-                  <label>Lung or TB history<select value={screeningDraft.lungHistory} onChange={(event) => updateDraft("lungHistory", event.target.value)}><option value="">Select option</option><option>TB history</option><option>COPD / asthma</option><option>Other lung condition</option><option>None reported</option><option>Unknown</option></select></label>
+                  <fieldset className="screening-checklist">
+                    <legend>Occupational/environment exposure</legend>
+                    <p>Select all factors that apply.</p>
+                    <div className="screening-checklist__options">
+                      {exposureChecklistOptions.map((option) => <label key={option}><input type="checkbox" checked={selectedChecklistOptions(screeningDraft.occupationalExposure).includes(option)} onChange={() => toggleChecklistOption("occupationalExposure", option, exposureChecklistOptions)} />{option}</label>)}
+                    </div>
+                  </fieldset>
+                  <fieldset className="screening-checklist">
+                    <legend>Lung or TB history</legend>
+                    <p>Select all factors that apply.</p>
+                    <div className="screening-checklist__options">
+                      {lungHistoryChecklistOptions.map((option) => <label key={option}><input type="checkbox" checked={selectedChecklistOptions(screeningDraft.lungHistory).includes(option)} onChange={() => toggleChecklistOption("lungHistory", option, lungHistoryChecklistOptions)} />{option}</label>)}
+                    </div>
+                  </fieldset>
                   <label>Family lung-cancer history<select value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
                 </div>
                 </>
