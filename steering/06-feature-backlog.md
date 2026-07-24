@@ -8,6 +8,7 @@ Each item is one stage task. Start the next item only after the owner approves o
 4. `TASK-004` - Clinician nodule-review screen and decision branches. **Awaiting owner review.**
 5. `TASK-005` - De-identification and aggregation. **Awaiting owner review.**
 6. `TASK-006` - 18-region population dashboard. **Awaiting owner review.** Current stage revision uses PSA-aligned, offline regional geometry with static synthetic signals; main promotion still requires explicit owner approval.
-7. `TASK-007` - Optional local AI-service contract.
-8. `TASK-008` - Optional CT/CXR adapter spike.
-9. `TASK-009` - Final motion, accessibility, and QA sweep. Core TASK-001 orientation motion was added as an owner-requested revision and remains subject to TASK-001 approval.
+7. `TASK-007` - Clinician encounter dashboard and local screening record selection. **Awaiting owner review.**
+8. `TASK-008` - Optional local AI-service contract.
+9. `TASK-009` - Optional CT/CXR adapter spike.
+10. `TASK-010` - Final motion, accessibility, and QA sweep. Core TASK-001 orientation motion was added as an owner-requested revision and remains subject to TASK-001 approval.

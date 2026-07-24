@@ -18,6 +18,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
+import { EncounterDashboard } from "./components/EncounterDashboard";
+import { storeScreeningSnapshot } from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
@@ -215,6 +217,7 @@ export default function App() {
 
   const saveScreeningDraft = () => {
     localStorage.setItem(screeningDraftKey, JSON.stringify({ data: screeningDraft, savedAt: new Date().toISOString() }));
+    storeScreeningSnapshot(screeningDraft);
     setDraftStatus("Screening draft saved on this device.");
   };
 
@@ -237,6 +240,7 @@ export default function App() {
   };
 
   const startScreening = () => {
+    setScreeningDraft(emptyScreeningDraft);
     setScreeningStep(1);
     setDraftStatus("");
     navigateTo("screening");
@@ -847,6 +851,16 @@ export default function App() {
       )}
 
       {view === "ready" && (
+        <EncounterDashboard
+          clinicianId={bhwId || defaultBhwId}
+          onStartScreening={startScreening}
+          onEditScreening={(draft) => { setScreeningDraft({ ...emptyScreeningDraft, ...draft }); setScreeningStep(1); setDraftStatus("Local screening loaded for clinician review."); navigateTo("screening"); }}
+          onViewTemporaryRecord={() => navigateTo("temporary-record")}
+          onEndSession={() => { sessionStorage.removeItem("idea-demo-clinician"); navigateTo("consent"); resetEncounter(); }}
+        />
+      )}
+
+      {false && view === "ready" && (
         <section className="ready-layout" aria-labelledby="ready-title">
           <div className="ready-icon"><CircleCheckBig size={34} /></div>
           <p className="eyebrow">Workspace ready</p>

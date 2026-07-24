@@ -1,5 +1,12 @@
 # Model provenance
 
+## TASK-007
+
+- Modality: no model, image, or inference input is used.
+- Source/version: browser-local screening-draft history and optional clinician-selected JSON update only.
+- Status: local demo state only.
+- Limitation: this is not a patient registry, upload service, or matching system; it cannot establish patient identity or reconcile records.
+
 ## TASK-001
 
 No model or model fixture is used in this feature.

@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-007 - Clinician encounter dashboard and local record selection
+
+- Status: awaiting owner review
+- Replaced the post-login one-action landing screen with a clinician workspace that separates starting a new screening, opening temporary data, ending a session, and reopening a prior local screening for edits.
+- Saving a screening now keeps a capped browser-local non-identifying snapshot list keyed by field reference; this is an offline demo convenience, not a patient record system.
+- Added a local JSON update loader that opens data for clinician review in the existing screening form. The file is neither uploaded nor retained after reading.
+
 ## TASK-006 revision - Real Philippines regional boundary model
 
 - Status: awaiting owner review with TASK-006

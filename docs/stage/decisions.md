@@ -153,3 +153,11 @@
 
 - A visual source must be selected before final design QA.
 - Local CT/CXR adapters remain later stretch work and do not block the demo workflow.
+# Stage decisions
+
+## TASK-007 — Local clinician record selection
+
+- Accepted: the post-login screen is a clinician dashboard, not an automatic new-screening redirect.
+- Accepted: saved screening snapshots use only the existing non-identifying field reference and browser-local storage, capped at 12 entries for the demo.
+- Accepted: a `.json` local update may populate the screening form for review, but its file bytes are never uploaded or stored.
+- Deferred: patient identity resolution, cross-device synchronization, external uploads, longitudinal records, and conflict handling require a separate approved task.
