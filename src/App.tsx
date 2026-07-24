@@ -443,7 +443,7 @@ export default function App() {
             <div className="step-indicator"><span>01</span><span aria-hidden="true" /><span>Consent</span></div>
             <p className="card-kicker">Patient participation</p>
             <h2 id="consent-title">Would the patient like to participate in the screening survey?</h2>
-            <p className="helper-text">Explain the purpose in the patient’s preferred language before recording the answer.</p>
+            <p className="helper-text">With permission, this screening information is combined without names with other local responses to help health teams estimate which regions may need more lung-health follow-up. It does not diagnose cancer or decide care for any individual.</p>
 
             {declined ? (
               <div className="declined-state" role="status">
