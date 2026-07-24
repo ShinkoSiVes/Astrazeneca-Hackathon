@@ -279,6 +279,7 @@ button:disabled { cursor: not-allowed; }
 .form-heading > p:last-child { margin: 0; color: #637d83; font-size: 15px; line-height: 1.55; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 31px; }
 .form-grid label { display: grid; gap: 8px; min-width: 0; color: #2a525b; font-size: 14px; font-weight: 800; }
+.form-grid > label { align-self: start; align-content: start; }
 .form-grid input, .form-grid select, .form-grid textarea { width: 100%; border: 1px solid #b9d0ce; border-radius: 11px; padding: 0 13px; color: #173e47; background: #fcfefd; outline: none; font: inherit; font-weight: 500; }
 .form-grid input, .form-grid select { min-height: 50px; }
 .form-grid textarea { min-height: 104px; padding: 12px 13px; resize: vertical; }
