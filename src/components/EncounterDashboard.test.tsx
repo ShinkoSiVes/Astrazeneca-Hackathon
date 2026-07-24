@@ -13,6 +13,7 @@ const renderDashboard = () => {
     clinicianId: "BHW-024",
     onStartScreening: vi.fn(),
     onEditScreening: vi.fn(),
+    onDeleteScreening: vi.fn(),
     onViewTemporaryRecord: vi.fn(),
     onEndSession: vi.fn(),
   };
@@ -40,6 +41,25 @@ describe("TASK-007 clinician encounter dashboard", () => {
     expect(screen.getByText(draft.fieldReference)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /edit screening/i }));
     expect(props.onEditScreening).toHaveBeenCalledWith(draft);
+  });
+
+  it("deletes only the selected previous screening after confirmation", async () => {
+    const secondDraft = { ...draft, fieldReference: "FIELD-2026-015" };
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([
+      { id: draft.fieldReference, savedAt: "2026-07-24T09:30:00.000Z", data: draft },
+      { id: secondDraft.fieldReference, savedAt: "2026-07-24T09:20:00.000Z", data: secondDraft },
+    ]));
+    const user = userEvent.setup();
+    const props = renderDashboard();
+
+    await user.click(screen.getAllByRole("button", { name: /delete local copy/i })[0]);
+    expect(screen.getByRole("dialog", { name: /delete this previous screening/i })).toBeInTheDocument();
+    expect(props.onDeleteScreening).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /delete screening/i }));
+    expect(props.onDeleteScreening).toHaveBeenCalledWith(draft.fieldReference);
+    expect(screen.queryByText(draft.fieldReference)).not.toBeInTheDocument();
+    expect(screen.getByText(secondDraft.fieldReference)).toBeInTheDocument();
   });
 
   it("opens the saved temporary data only when a local temporary record exists", async () => {

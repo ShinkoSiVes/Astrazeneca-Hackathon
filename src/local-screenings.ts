@@ -65,6 +65,12 @@ export const storeScreeningSnapshot = (draft: LocalScreeningDraft) => {
   localStorage.setItem(screeningHistoryKey, JSON.stringify(next));
 };
 
+export const deleteStoredScreening = (screeningId: string) => {
+  const next = readStoredScreenings().filter((screening) => screening.id !== screeningId);
+  localStorage.setItem(screeningHistoryKey, JSON.stringify(next));
+  return next;
+};
+
 export const readTemporaryRecordSummary = (): TemporaryRecordSummary | null => {
   try {
     const parsed = JSON.parse(localStorage.getItem(temporaryRecordKey) ?? "null") as Partial<TemporaryRecordSummary> | null;

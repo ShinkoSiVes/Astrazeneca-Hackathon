@@ -21,7 +21,7 @@ import lungMark from "./assets/hinga-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
 import { TobaccoUseAmount } from "./components/TobaccoUseAmount";
-import { storeScreeningSnapshot } from "./local-screenings";
+import { deleteStoredScreening, storeScreeningSnapshot } from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
@@ -202,6 +202,10 @@ export default function App() {
   const removeImagingFile = (fileId: string) => {
     setImagingMetadata((current) => ({ ...current, imagingFiles: current.imagingFiles.filter((file) => file.id !== fileId) }));
     if (imagingFileInput.current) imagingFileInput.current.value = "";
+  };
+
+  const deleteSavedScreening = (screeningId: string) => {
+    deleteStoredScreening(screeningId);
   };
 
   const openStudyCalendar = () => {
@@ -868,6 +872,7 @@ export default function App() {
           clinicianId={bhwId || defaultBhwId}
           onStartScreening={startScreening}
           onEditScreening={(draft) => { setScreeningDraft({ ...emptyScreeningDraft, ...draft }); setScreeningStep(1); setDraftStatus("Local screening loaded for clinician review."); navigateTo("screening"); }}
+          onDeleteScreening={deleteSavedScreening}
           onViewTemporaryRecord={() => navigateTo("temporary-record")}
           onEndSession={() => { sessionStorage.removeItem("idea-demo-clinician"); navigateTo("consent"); resetEncounter(); }}
         />

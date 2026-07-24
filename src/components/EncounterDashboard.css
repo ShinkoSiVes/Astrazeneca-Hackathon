@@ -130,6 +130,66 @@
   font-size: .88rem;
 }
 
+.screening-history-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .45rem .7rem;
+}
+
+.danger-text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  color: #9c2632;
+}
+
+.screening-delete-confirmation {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(13, 37, 42, .48);
+}
+
+.screening-delete-confirmation__content {
+  width: min(100%, 31rem);
+  border: 1px solid rgba(50, 111, 110, .26);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1.2rem 3rem rgba(13, 37, 42, .24);
+}
+
+.screening-delete-confirmation__content h3,
+.screening-delete-confirmation__content p {
+  margin-top: 0;
+}
+
+.screening-delete-confirmation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: 1rem;
+}
+
+.screening-delete-confirmation__actions .danger-button {
+  border: 1px solid #8b1e2d;
+  border-radius: .65rem;
+  padding: .55rem .75rem;
+  color: #fff;
+  background: #8b1e2d;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.screening-delete-confirmation__actions .danger-button:hover {
+  background: #6d1322;
+}
+
 .encounter-empty-state {
   display: flex;
   align-items: flex-start;
@@ -152,5 +212,9 @@
   .screening-history-item {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .screening-history-item__actions {
+    justify-content: flex-start;
   }
 }

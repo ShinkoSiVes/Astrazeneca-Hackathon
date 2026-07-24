@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { ArchiveRestore, ArrowRight, FilePenLine, FolderClock, LogOut, Plus, Upload } from "lucide-react";
+import { ArchiveRestore, ArrowRight, FilePenLine, FolderClock, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import {
   normaliseScreeningDraft,
   readStoredScreenings,
@@ -14,6 +14,7 @@ type EncounterDashboardProps = {
   clinicianId: string;
   onStartScreening: () => void;
   onEditScreening: (draft: LocalScreeningDraft) => void;
+  onDeleteScreening: (screeningId: string) => void;
   onViewTemporaryRecord: () => void;
   onEndSession: () => void;
 };
@@ -24,10 +25,12 @@ const timeLabel = (value: string) => new Intl.DateTimeFormat("en-PH", {
 
 const hasAnyScreeningField = (draft: LocalScreeningDraft) => Object.values(draft).some((value) => value.trim() !== "");
 
-export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreening, onViewTemporaryRecord, onEndSession }: EncounterDashboardProps) {
+export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreening, onDeleteScreening, onViewTemporaryRecord, onEndSession }: EncounterDashboardProps) {
   const [screenings, setScreenings] = useState<StoredScreening[]>([]);
   const [temporaryRecord, setTemporaryRecord] = useState<TemporaryRecordSummary | null>(null);
   const [importMessage, setImportMessage] = useState("");
+  const [screeningPendingDeletion, setScreeningPendingDeletion] = useState<StoredScreening | null>(null);
+  const [screeningDeletionMessage, setScreeningDeletionMessage] = useState("");
   const importInput = useRef<HTMLInputElement>(null);
 
   const refresh = () => {
@@ -63,6 +66,14 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
     };
     reader.onerror = () => setImportMessage("The local update could not be read on this device.");
     reader.readAsText(updateFile);
+  };
+
+  const deleteScreening = () => {
+    if (!screeningPendingDeletion) return;
+    onDeleteScreening(screeningPendingDeletion.id);
+    setScreenings((current) => current.filter((screening) => screening.id !== screeningPendingDeletion.id));
+    setScreeningDeletionMessage(`Local screening ${screeningPendingDeletion.data.fieldReference || screeningPendingDeletion.id} was deleted from this device.`);
+    setScreeningPendingDeletion(null);
   };
 
   return (
@@ -109,6 +120,7 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
         </div>
         <p className="field-note">Import accepts a local JSON screening update for review only. File bytes are not uploaded or retained. Keep patient identifiers out of demo files.</p>
         {importMessage && <p className="encounter-import-message" role="status">{importMessage}</p>}
+        {screeningDeletionMessage && <p className="encounter-import-message" role="status">{screeningDeletionMessage}</p>}
 
         {screenings.length ? (
           <div className="screening-history-list">
@@ -119,7 +131,10 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
                   <h3>{screening.data.fieldReference || "Unlabelled local draft"}</h3>
                   <p>Last saved {timeLabel(screening.savedAt)} · {screening.data.barangay || "Location not recorded"}{screening.data.province ? `, ${screening.data.province}` : ""}</p>
                 </div>
-                <button className="secondary-button" type="button" onClick={() => onEditScreening(screening.data)}><FilePenLine size={17} /> Edit screening</button>
+                <div className="screening-history-item__actions">
+                  <button className="secondary-button" type="button" onClick={() => onEditScreening(screening.data)}><FilePenLine size={17} /> Edit screening</button>
+                  <button className="text-button danger-text-button" type="button" onClick={() => { setScreeningPendingDeletion(screening); setScreeningDeletionMessage(""); }}><Trash2 size={16} /> Delete local copy</button>
+                </div>
               </article>
             ))}
           </div>
@@ -127,6 +142,19 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
           <div className="encounter-empty-state">
             <FilePenLine size={22} aria-hidden="true" />
             <p>No saved screenings on this device yet. Start a screening, then use Save local draft to make it available here.</p>
+          </div>
+        )}
+        {screeningPendingDeletion && (
+          <div className="screening-delete-confirmation" role="dialog" aria-modal="true" aria-labelledby="delete-screening-title">
+            <div className="screening-delete-confirmation__content">
+              <p className="eyebrow">Delete local copy</p>
+              <h3 id="delete-screening-title">Delete this previous screening?</h3>
+              <p>This removes only the selected local screening from this device. It does not affect temporary imaging data.</p>
+              <div className="screening-delete-confirmation__actions">
+                <button className="danger-button" type="button" onClick={deleteScreening}>Delete screening</button>
+                <button className="secondary-button" type="button" onClick={() => setScreeningPendingDeletion(null)}>Cancel</button>
+              </div>
+            </div>
           </div>
         )}
       </section>
