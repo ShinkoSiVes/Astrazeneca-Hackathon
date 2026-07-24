@@ -37,4 +37,4 @@ Step 2 of the local screening draft now groups the related tobacco-use fields:
 
 ## Proposed promotion commit(s)
 
-`Pending stage commit for TASK-008B.`
+`ba02288 feat(task-008b): connect tobacco use inputs`
