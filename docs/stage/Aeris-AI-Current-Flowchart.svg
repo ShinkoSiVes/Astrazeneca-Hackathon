@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1850" viewBox="0 0 2400 1850" role="img" aria-labelledby="title desc">
+  <title id="title">Aeris AI current clinician workflow</title>
+  <desc id="desc">Standalone flowchart for the Aeris AI screening, local risk-support, temporary record and population insight workflow.</desc>
+  <defs>
+    <linearGradient id="page" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2fbf9"/><stop offset=".55" stop-color="#f7fbfc"/><stop offset="1" stop-color="#e7f4f5"/></linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b6b72"/><stop offset="1" stop-color="#154b5a"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="11" flood-color="#1a5962" flood-opacity=".13"/></filter>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11z" fill="#1a6b73"/></marker>
+    <marker id="arrow-dashed" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0,0 L11,5.5 L0,11z" fill="#78989a"/></marker>
+    <style>
+      .title{font-family:Arial,sans-serif;font-size:48px;font-weight:700;fill:#173f48}.subtitle{font-family:Arial,sans-serif;font-size:20px;fill:#4a6d73}.section{font-family:Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;fill:#0b6b72}.node{fill:#fff;stroke:#9ac7c8;stroke-width:2}.node-teal{fill:url(#teal);stroke:#0b6b72;stroke-width:2}.node-future{fill:#f6fafb;stroke:#7f9da2;stroke-width:2;stroke-dasharray:8 7}.decision{fill:#fff9e8;stroke:#d39a2f;stroke-width:2}.data{fill:#edf8f8;stroke:#76b9bb;stroke-width:2}.note{fill:#fdf5e5;stroke:#dfb966;stroke-width:1.5}.dark{font-family:Arial,sans-serif;font-size:20px;font-weight:700;fill:#173f48}.body{font-family:Arial,sans-serif;font-size:16px;fill:#3e6269}.small{font-family:Arial,sans-serif;font-size:14px;fill:#56757b}.light{font-family:Arial,sans-serif;font-size:20px;font-weight:700;fill:#fff}.lightbody{font-family:Arial,sans-serif;font-size:15px;fill:#d9f2f1}.arrow{fill:none;stroke:#1a6b73;stroke-width:3;marker-end:url(#arrow)}.dash{fill:none;stroke:#78989a;stroke-width:3;stroke-dasharray:10 9;marker-end:url(#arrow-dashed)}.line-label{font-family:Arial,sans-serif;font-size:15px;font-weight:700;fill:#1a6b73}.pill{fill:#d9efec}.pilltext{font-family:Arial,sans-serif;font-size:13px;font-weight:700;fill:#0b6b72}
+    </style>
+  </defs>
+  <rect width="2400" height="1850" fill="url(#page)"/>
+  <path d="M0 170 C380 65 630 260 1000 145 S1640 85 2400 225" fill="none" stroke="#cce8e6" stroke-width="2"/>
+  <path d="M0 178 C380 73 630 268 1000 153 S1640 93 2400 233" fill="none" stroke="#dcefed" stroke-width="2"/>
+  <text class="title" x="88" y="90">Aeris AI — Current Clinician Workflow</text>
+  <text class="subtitle" x="90" y="126">Standalone stage diagram · Rural lung-cancer profiling and population-insight demo · July 2026</text>
+  <rect x="1850" y="63" width="435" height="84" rx="19" fill="#fff" stroke="#b6d8d6"/>
+  <circle cx="1888" cy="95" r="10" fill="#0b6b72"/><text class="small" x="1910" y="101">Solid: current local demo workflow</text>
+  <line x1="1878" y1="125" x2="1900" y2="125" stroke="#78989a" stroke-width="3" stroke-dasharray="6 5"/><text class="small" x="1910" y="131">Dashed: future / model-gated capability</text>
+
+  <text class="section" x="105" y="225">01 · CONSENT &amp; CLINICIAN WORKSPACE</text>
+  <text class="section" x="785" y="225">02 · SCREENING &amp; RISK-SUPPORT PATH</text>
+  <text class="section" x="1575" y="225">03 · DE-IDENTIFIED POPULATION INSIGHT</text>
+
+  <!-- Entry lane -->
+  <g filter="url(#shadow)">
+    <rect class="node-teal" x="105" y="260" width="400" height="88" rx="20"/>
+    <text class="light" x="139" y="300">Door-to-door profiling mission</text><text class="lightbody" x="139" y="327">Medical professional begins the encounter.</text>
+  </g>
+  <path class="arrow" d="M305 348 V385"/>
+  <path class="decision" d="M305 385 L460 468 L305 551 L150 468 Z"/>
+  <text class="dark" text-anchor="middle" x="305" y="458">Patient agrees to</text><text class="dark" text-anchor="middle" x="305" y="483">screening survey?</text>
+  <path class="arrow" d="M460 468 H590"/><text class="line-label" x="500" y="452">No</text>
+  <rect class="node" x="590" y="420" width="190" height="96" rx="18"/><text class="dark" text-anchor="middle" x="685" y="461">End encounter</text><text class="small" text-anchor="middle" x="685" y="487">No screening record</text>
+  <path class="arrow" d="M305 551 V588"/><text class="line-label" x="321" y="578">Yes</text>
+  <rect class="node" x="130" y="590" width="350" height="94" rx="18" filter="url(#shadow)"/><text class="dark" text-anchor="middle" x="305" y="630">Demo clinician login</text><text class="small" text-anchor="middle" x="305" y="656">Role and local clinician ID</text>
+  <path class="arrow" d="M305 684 V722"/>
+  <rect class="node" x="105" y="724" width="400" height="130" rx="20" filter="url(#shadow)"/><text class="dark" text-anchor="middle" x="305" y="766">Clinician workspace</text><text class="body" text-anchor="middle" x="305" y="795">Start a new screening · edit a saved local</text><text class="body" text-anchor="middle" x="305" y="818">screening · open or delete temporary data</text>
+  <path class="arrow" d="M505 789 H670 V951 H785"/><text class="line-label" x="548" y="775">New / edited screening</text>
+  <path class="dash" d="M505 823 H610 V1106 H785"/><text class="small" x="524" y="848">Resume temporary record</text>
+
+  <!-- Screening lane -->
+  <rect class="node" x="785" y="850" width="490" height="205" rx="24" filter="url(#shadow)"/>
+  <rect class="pill" x="811" y="874" width="114" height="28" rx="14"/><text class="pilltext" x="834" y="893">4-STEP FORM</text>
+  <text class="dark" x="812" y="936">Local screening draft</text>
+  <text class="body" x="812" y="968">1. Profile and Philippine location</text>
+  <text class="body" x="812" y="994">2. Tobacco, exposures, lung / TB history</text>
+  <text class="body" x="812" y="1020">3. Symptoms and oxygen saturation</text>
+  <text class="body" x="812" y="1046">4. Previous-survey history and notes</text>
+  <path class="arrow" d="M1030 1055 V1096"/>
+  <path class="decision" d="M1030 1096 L1190 1180 L1030 1264 L870 1180 Z"/>
+  <text class="dark" text-anchor="middle" x="1030" y="1170">Required screening</text><text class="dark" text-anchor="middle" x="1030" y="1195">information complete?</text>
+  <path class="arrow" d="M870 1180 H765 V1338 H530"/><text class="line-label" x="789" y="1162">No</text>
+  <rect class="data" x="105" y="1280" width="425" height="120" rx="22" filter="url(#shadow)"/><text class="dark" text-anchor="middle" x="318" y="1325">Saved local screening draft</text><text class="body" text-anchor="middle" x="318" y="1354">Restore or edit later from workspace.</text><text class="small" text-anchor="middle" x="318" y="1378">Data remains on this device in the demo.</text>
+  <path class="arrow" d="M1030 1264 V1304"/><text class="line-label" x="1047" y="1290">Yes</text>
+  <rect class="node" x="820" y="1306" width="420" height="115" rx="20" filter="url(#shadow)"/><text class="dark" text-anchor="middle" x="1030" y="1350">Static screening risk-support preview</text><text class="body" text-anchor="middle" x="1030" y="1379">Profile-only demo calculation; not a diagnosis.</text>
+  <path class="arrow" d="M1240 1363 H1338"/>
+  <path class="decision" d="M1490 1279 L1642 1363 L1490 1447 L1338 1363 Z"/>
+  <text class="dark" text-anchor="middle" x="1490" y="1353">Separate AI risk-</text><text class="dark" text-anchor="middle" x="1490" y="1378">support consent?</text>
+  <path class="arrow" d="M1490 1447 V1525 H1278"/><text class="line-label" x="1505" y="1483">No</text>
+  <rect class="data" x="855" y="1480" width="423" height="98" rx="20"/><text class="dark" text-anchor="middle" x="1066" y="1520">Final screening data</text><text class="small" text-anchor="middle" x="1066" y="1546">No imaging or AI temporary record created.</text>
+  <path class="arrow" d="M1642 1363 H1720 V1012 H1810"/><text class="line-label" x="1668" y="1347">Yes</text>
+
+  <!-- imaging / clinician review -->
+  <rect class="node" x="1810" y="835" width="450" height="178" rx="22" filter="url(#shadow)"/>
+  <text class="dark" x="1840" y="880">Local imaging metadata</text>
+  <text class="body" x="1840" y="913">CT / CXR study reference and date</text>
+  <text class="body" x="1840" y="940">Multiple local files; optional per-file date</text>
+  <text class="small" x="1840" y="977">No image pixels are interpreted in this demo.</text>
+  <path class="arrow" d="M2035 1013 V1054"/>
+  <path class="decision" d="M2035 1054 L2190 1138 L2035 1222 L1880 1138 Z"/>
+  <text class="dark" text-anchor="middle" x="2035" y="1128">Enough local study</text><text class="dark" text-anchor="middle" x="2035" y="1153">details for review?</text>
+  <path class="arrow" d="M2190 1138 H2300 V1302 H2210"/><text class="line-label" x="2214" y="1121">No</text>
+  <rect class="data" x="1860" y="1250" width="350" height="111" rx="20" filter="url(#shadow)"/><text class="dark" text-anchor="middle" x="2035" y="1293">Temporary local record</text><text class="body" text-anchor="middle" x="2035" y="1320">Await more imaging details.</text><text class="small" text-anchor="middle" x="2035" y="1344">Return to workspace / update later.</text>
+  <path class="dash" d="M1880 1138 H1760 V1190 H1718"/><text class="line-label" x="1844" y="1121">Yes</text>
+  <rect class="node-future" x="1338" y="1132" width="380" height="144" rx="22" filter="url(#shadow)"/>
+  <text class="dark" x="1368" y="1174">Clinician review gate</text><text class="body" x="1368" y="1204">Current: metadata-only support packet.</text><text class="small" x="1368" y="1233">Future: evaluated CT/CXR adapter, clinician-led.</text>
+  <path class="arrow" d="M1528 1276 V1294"/>
+  <path class="decision" d="M1528 1294 L1665 1374 L1528 1454 L1391 1374 Z"/>
+  <text class="dark" text-anchor="middle" x="1528" y="1364">Clinician accepts</text><text class="dark" text-anchor="middle" x="1528" y="1389">reviewed pathway?</text>
+  <path class="arrow" d="M1665 1374 H1765 V1306 H1860"/><text class="line-label" x="1692" y="1358">Needs info</text>
+  <path class="dash" d="M1528 1454 V1504 H1660"/><text class="line-label" x="1545" y="1486">Accepted / forced with caveat</text>
+
+  <!-- population lane -->
+  <path class="arrow" d="M1278 1529 H1550 V1520 H1660"/>
+  <rect class="data" x="1660" y="1440" width="500" height="128" rx="24" filter="url(#shadow)"/>
+  <text class="dark" x="1690" y="1482">Aggregation check</text><text class="body" x="1690" y="1513">Combine permitted screening / reviewed-path signals</text><text class="small" x="1690" y="1544">with public, environmental and hospital baselines.</text>
+  <path class="arrow" d="M1910 1568 V1612"/>
+  <rect class="node-teal" x="1660" y="1614" width="500" height="110" rx="24" filter="url(#shadow)"/>
+  <text class="light" x="1692" y="1657">De-identified population data</text><text class="lightbody" x="1692" y="1687">Remove direct and local record details before aggregation.</text>
+  <path class="arrow" d="M1660 1668 H1500 V1750 H1200"/>
+  <rect class="node" x="720" y="1703" width="480" height="96" rx="21" filter="url(#shadow)"/>
+  <text class="dark" text-anchor="middle" x="960" y="1741">18-region population dashboard</text><text class="small" text-anchor="middle" x="960" y="1768">Interactive Philippines map · static baseline / local app-screening views</text>
+  <path class="dash" d="M2160 1668 H2278 V1749 H2370"/>
+  <rect class="node-future" x="1980" y="1734" width="350" height="77" rx="18"/>
+  <text class="dark" text-anchor="middle" x="2155" y="1765">Governed external sharing</text><text class="small" text-anchor="middle" x="2155" y="1790">Future only; not enabled in demo.</text>
+
+  <!-- callout and footer -->
+  <rect class="note" x="90" y="1490" width="620" height="157" rx="22"/>
+  <text class="dark" x="120" y="1530">Safety boundary</text>
+  <text class="body" x="120" y="1563">Aeris AI is a clinician-led workflow prototype. Static profile risk support</text>
+  <text class="body" x="120" y="1589">does not diagnose cancer, interpret imaging, or replace clinical judgment.</text>
+  <text class="small" x="120" y="1622">The dashed model pathway remains subject to evaluation, governance and validation.</text>
+  <text class="small" x="90" y="1830">Source alignment: current Aeris AI stage implementation + shared “Astra Flowchart” Miro board. Prepared as a standalone documentation asset.</text>
+</svg>
