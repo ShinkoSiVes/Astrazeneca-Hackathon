@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/hinga-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
+import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
 import { storeScreeningSnapshot } from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
@@ -567,8 +568,12 @@ export default function App() {
                   <label>Field reference<input value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. BHW-024-001" /></label>
                   <label>Age range<select value={screeningDraft.ageRange} onChange={(event) => updateDraft("ageRange", event.target.value)}><option value="">Select range</option><option>Under 40</option><option>40-49</option><option>50-59</option><option>60-69</option><option>70 or older</option></select></label>
                   <label>Sex at birth<select value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
-                  <label>Barangay / municipality<input value={screeningDraft.barangay} onChange={(event) => updateDraft("barangay", event.target.value)} placeholder="Local area" /></label>
-                  <label className="wide-field">Province / region<input value={screeningDraft.province} onChange={(event) => updateDraft("province", event.target.value)} placeholder="Province or region" /></label>
+                  <ScreeningLocationFields
+                    region={screeningDraft.province}
+                    locality={screeningDraft.barangay}
+                    onRegionChange={(region) => setScreeningDraft((current) => ({ ...current, province: region, barangay: "" }))}
+                    onLocalityChange={(locality) => updateDraft("barangay", locality)}
+                  />
                 </div>
                 </>
               )}

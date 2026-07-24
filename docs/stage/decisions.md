@@ -1,5 +1,11 @@
 # Stage decisions
 
+## TASK-008 — Offline location directory
+
+- Accepted: use a static offline directory with all 18 Philippine regions and representative locality choices so the demo remains lightweight and usable without internet.
+- Accepted: region selection is required before locality selection; choosing another region clears the old locality.
+- Deferred: a complete official barangay registry, current PSGC synchronization, municipality/province hierarchy, and location validation require a separately approved data-sourcing task.
+
 ## Accepted - Offline PSA-aligned regional geometry with synthetic signals
 
 - TASK-006 may use a locally bundled, open-license 2023 province-boundary snapshot to render selectable Philippine administrative-region geometry.

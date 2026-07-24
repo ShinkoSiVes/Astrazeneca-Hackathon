@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-008 - Dependent searchable region and locality selectors
+
+- Status: awaiting owner review
+- Replaced free-text region and barangay/municipality inputs with type-to-filter dropdown selectors in screening step 1.
+- The 18-region offline demo directory filters the locality menu to the selected region and clears an old locality when the region changes.
+- The bundled locality options are representative municipality/city choices for the hackathon demo, not a complete or authoritative barangay registry.
+
 ## TASK-007 - Clinician encounter dashboard and local record selection
 
 - Status: awaiting owner review
