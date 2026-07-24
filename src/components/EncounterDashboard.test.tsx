@@ -43,7 +43,7 @@ describe("TASK-007 clinician encounter dashboard", () => {
     expect(props.onEditScreening).toHaveBeenCalledWith(draft);
   });
 
-  it("deletes only the selected previous screening after confirmation", async () => {
+  it("deletes only the selected screening record after confirmation", async () => {
     const secondDraft = { ...draft, fieldReference: "FIELD-2026-015" };
     localStorage.setItem(screeningHistoryKey, JSON.stringify([
       { id: draft.fieldReference, savedAt: "2026-07-24T09:30:00.000Z", data: draft },
@@ -53,7 +53,7 @@ describe("TASK-007 clinician encounter dashboard", () => {
     const props = renderDashboard();
 
     await user.click(screen.getAllByRole("button", { name: /delete local copy/i })[0]);
-    expect(screen.getByRole("dialog", { name: /delete this previous screening/i })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /delete this screening record/i })).toBeInTheDocument();
     expect(props.onDeleteScreening).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: /delete screening/i }));

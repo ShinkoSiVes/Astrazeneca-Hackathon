@@ -110,7 +110,7 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
         <div className="encounter-history__header">
           <div>
             <p className="eyebrow">Local device records</p>
-            <h2 id="saved-screenings-title">Previous screenings</h2>
+            <h2 id="saved-screenings-title">Screening records</h2>
           </div>
           <div className="encounter-history__tools">
             <input ref={importInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={importLocalUpdate} />
@@ -148,7 +148,7 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
           <div className="screening-delete-confirmation" role="dialog" aria-modal="true" aria-labelledby="delete-screening-title">
             <div className="screening-delete-confirmation__content">
               <p className="eyebrow">Delete local copy</p>
-              <h3 id="delete-screening-title">Delete this previous screening?</h3>
+              <h3 id="delete-screening-title">Delete this screening record?</h3>
               <p>This removes only the selected local screening from this device. It does not affect temporary imaging data.</p>
               <div className="screening-delete-confirmation__actions">
                 <button className="danger-button" type="button" onClick={deleteScreening}>Delete screening</button>
