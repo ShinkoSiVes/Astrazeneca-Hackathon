@@ -466,6 +466,7 @@ button:disabled { cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+  .topbar, .topbar.is-visible { transition-duration: 860ms, 640ms, 0ms !important; }
   .landscape-slide { animation: none; opacity: 0; }
   .landscape-sagada { opacity: 1; }
   .landscape-ripple { display: none; }
