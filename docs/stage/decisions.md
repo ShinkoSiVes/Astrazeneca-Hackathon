@@ -1,5 +1,12 @@
 # Stage decisions
 
+## Accepted - Offline PSA-aligned regional geometry with synthetic signals
+
+- TASK-006 may use a locally bundled, open-license 2023 province-boundary snapshot to render selectable Philippine administrative-region geometry.
+- The dashboard's labels must align to the PSA's current 18-region roster. The Negros Island Region is assembled from Negros Occidental, Negros Oriental, and Siquijor source polygons.
+- The geometry is for demo orientation only; it must not be described as an authoritative operational GIS layer, used for patient location, or combined with a clinical-risk claim.
+- Every colour, follow-up signal, record count, and coverage value remains static synthetic UI data. External sharing remains disabled.
+
 ## Accepted - Stylized map interaction without GIS attribution
 
 - TASK-006 may use a native SVG, 3D-styled Philippines-shaped selection surface for the 18 numbered synthetic fixtures.

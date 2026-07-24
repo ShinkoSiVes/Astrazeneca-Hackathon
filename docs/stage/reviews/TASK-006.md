@@ -1,5 +1,46 @@
 # TASK-006 review pack
 
+## TASK-006 revision — Real regional boundary model
+
+### Goal
+
+Replace the illustrative numbered shapes with a recognizable, interactive Philippines map while preserving the dashboard's synthetic-data safety boundary.
+
+### User-visible effect
+
+- The map now renders real Philippine province outlines, grouped into the current 18 administrative regions.
+- Each region is independently clickable and keyboard-selectable; its selection raises the regional geometry and updates the detail panel.
+- The map now names the chosen administrative region, including the Negros Island Region (NIR), rather than showing arbitrary numbered blocks.
+- Every displayed follow-up signal, count, and coverage value remains static synthetic demo data. Local de-identified fixtures remain unmapped and sharing remains disabled.
+
+### Boundary provenance
+
+- Geometry: 2023 Philippine province GeoJSON snapshot from `faeldon/philippines-json-maps`, retained locally under its MIT license in `src/assets/philippines-regions/SOURCE-LICENSE-MIT.txt`.
+- Current regional roster: Philippine Statistics Authority (PSA) PSGC, which lists 18 regions. The NIR group is assembled from the source snapshot's Negros Occidental, Negros Oriental, and Siquijor province polygons.
+- This is an offline visual-reference snapshot, not an authoritative survey, live GIS service, boundary adjudication tool, or clinical map.
+
+### Showcase
+
+1. Open **Heatmap status** from the front page.
+2. Confirm the real regional/province outlines and the static-synthetic safeguard copy.
+3. Select **Negros Island Region (NIR)** on the model.
+4. Confirm that its detail panel updates while still identifying the signal as synthetic.
+
+![PSA-aligned Philippines region map](assets/task-006-psa-regional-boundaries.png)
+
+### Verification
+
+- `npm.cmd run build` passed.
+- Browser visual review passed: real boundary outlines render locally; NIR selection updates the named detail panel; no live-data claims were introduced.
+- Focused map coverage passed: `src/components/PhilippinesRegionMap.test.tsx` verifies all 18 keyboard-selectable boundaries.
+- Full suite scan: 9 passed / 5 failed in pre-existing screening-workflow assertions that still expect the older optional-field and no-local-file path. The new regional-dashboard assertion passed; no map-test failure was found.
+
+### Limitations
+
+- Boundary geometry is a bundled 2023 snapshot; it must be reviewed/replaced with an authorized current operational GIS source before any deployment or regional reporting.
+- The 3D effect, colors, synthetic record counts, and follow-up labels are presentation fixtures only. They do not represent incidence, prevalence, care priority, clinical risk, or a prediction.
+- No patient location has been mapped. External sharing remains disabled.
+
 ## Goal
 
 Provide a useful, visually clear 18-region population-dashboard interaction without representing synthetic UI fixtures as live clinical or geographic data.
@@ -68,4 +109,5 @@ Provide a useful, visually clear 18-region population-dashboard interaction with
 - Proposed promotion: `8e01ac8` — `feat(task-006): add synthetic regional dashboard`.
 - Proposed TASK-006 revision: `af45d66` — `feat(task-006): add interactive map surface`.
 - Proposed TASK-006 revision: `fcf01d4` — `feat(task-006): connect map to population fixtures`.
+- Proposed TASK-006 boundary revision: `619ebbc` — `feat(task-006): use real regional boundaries`.
 - Approval command: `Approve TASK-006 for main`.

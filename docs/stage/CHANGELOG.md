@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-006 revision - Real Philippines regional boundary model
+
+- Status: awaiting owner review with TASK-006
+- Replaced numbered illustrative map blocks with locally bundled Philippine province geometry grouped into the PSA's current 18-region roster, including Negros Island Region.
+- Kept every signal, count, and coverage value explicitly synthetic; regional geometry is a visual reference only and local population fixtures remain unmapped.
+- Added local source-license retention, provenance notes, real-map keyboard coverage, and a stage showcase screenshot.
+
 ## TASK-006 revision - Interactive Philippines map surface
 
 - Status: awaiting owner review with TASK-006

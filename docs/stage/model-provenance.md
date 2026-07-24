@@ -31,9 +31,9 @@ No model or model fixture is used in this feature.
 ## TASK-006
 
 - Modality: no model or geographic inference is used.
-- Source/version: 18 static, synthetic UI fixtures generated in the browser bundle.
-- Status: local visual dashboard only; local population-fixture count is deliberately unmapped.
-- Limitation: the signal colors and values are illustrative interface data, not clinical risk, incidence, prevalence, or regional attribution.
+- Source/version: real 2023 provincial boundary geometry from `faeldon/philippines-json-maps` (MIT; local source license retained), grouped to the PSA's current 18-region roster. The current roster reference is PSA PSGC.
+- Status: locally bundled, offline visual dashboard; local population-fixture count is deliberately unmapped. Negros Island Region is formed from Negros Occidental, Negros Oriental, and Siquijor source polygons.
+- Limitation: the geometry is a static visual-reference snapshot, not an authoritative operational GIS layer. Signal colors and values are illustrative interface data, not clinical risk, incidence, prevalence, or regional attribution.
 - Clinician review: not applicable to synthetic fixtures; real population data remains governed by the TASK-005 gate.
 
 ## Future adapter boundary
