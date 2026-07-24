@@ -216,19 +216,22 @@ button:disabled { cursor: not-allowed; }
 .map-panel-copy { max-width: 570px; margin: 12px 0 0; color: #607d82; font-size: 12px; line-height: 1.55; }
 .philippines-map-stage { position: relative; margin-top: 16px; overflow: hidden; border: 1px solid #c9e2db; border-radius: 18px; background: #e8f5f1; }
 .philippines-map-stage::before { position: absolute; inset: -20% auto auto -15%; width: 55%; aspect-ratio: 1; border-radius: 50%; background: rgb(255 255 255 / 58%); content: ""; filter: blur(8px); }
-.philippines-region-map { position: relative; display: block; width: min(100%, 520px); height: auto; margin: 0 auto; }
+.philippines-region-map { position: relative; display: block; width: min(100%, 560px); height: auto; margin: 0 auto; }
 .map-water { fill: url(#map-water); }
 .map-contour-lines path { fill: none; stroke: #c1e2da; stroke-width: 2; stroke-dasharray: 4 9; opacity: .72; }
 .map-region-group { --map-surface: #b1ddd3; --map-edge: #4d9d94; --map-depth: #6aaba1; cursor: pointer; outline: none; transform-box: fill-box; transform-origin: center; }
 .map-region-group.signal-moderate { --map-surface: #ead799; --map-edge: #c0983d; --map-depth: #bf9c4c; }
 .map-region-group.signal-higher { --map-surface: #e4aa87; --map-edge: #b66b49; --map-depth: #ad7253; }
 .map-region-extrusion { fill: var(--map-depth); opacity: .8; }
-.map-region-shape { fill: var(--map-surface); stroke: var(--map-edge); stroke-width: 2.3; stroke-linejoin: round; transition: transform 180ms cubic-bezier(.2, .8, .2, 1), fill 180ms ease, stroke-width 180ms ease; transform-box: fill-box; transform-origin: center; }
+.map-region-surface { transform-box: fill-box; transform-origin: center; transition: transform 180ms cubic-bezier(.2, .8, .2, 1); }
+.map-region-shape { fill: var(--map-surface); stroke: var(--map-edge); stroke-width: 1.35; stroke-linejoin: round; transition: fill 180ms ease, stroke-width 180ms ease; }
 .map-region-label { fill: #17474c; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 900; letter-spacing: .03em; pointer-events: none; transition: fill 180ms ease, transform 180ms ease; }
-.map-region-group:hover .map-region-shape, .map-region-group:focus .map-region-shape { stroke-width: 4; transform: translateY(-5px); }
+.map-region-group:hover .map-region-shape, .map-region-group:focus .map-region-shape { stroke-width: 2.5; }
+.map-region-group:hover .map-region-surface, .map-region-group:focus .map-region-surface { transform: translateY(-5px); }
 .map-region-group:hover .map-region-label, .map-region-group:focus .map-region-label { transform: translateY(-5px); }
 .map-region-group:focus .map-region-shape { filter: drop-shadow(0 0 0.7rem rgb(13 129 121 / 48%)); }
-.map-region-group.selected .map-region-shape { fill: #167c73; stroke: #0a5d58; stroke-width: 4; transform: translateY(-7px); }
+.map-region-group.selected .map-region-shape { fill: #167c73; stroke: #0a5d58; stroke-width: 2.5; }
+.map-region-group.selected .map-region-surface { transform: translateY(-7px); }
 .map-region-group.selected .map-region-extrusion { fill: #0d5d59; opacity: 1; }
 .map-region-group.selected .map-region-label { fill: #fff; transform: translateY(-7px); }
 .map-compass { fill: #55817d; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 900; letter-spacing: .11em; }
@@ -240,6 +243,7 @@ button:disabled { cursor: not-allowed; }
 .map-depth-key .signal-lower { background: #b1ddd3; }
 .map-depth-key .signal-moderate { background: #ead799; }
 .map-depth-key .signal-higher { background: #e4aa87; }
+.map-source-note { margin: 11px 2px 0; color: #6b8588; font-size: 11px; line-height: 1.5; }
 .regional-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; padding: 15px; border: 1px solid #d5e6e1; border-radius: 18px; background: linear-gradient(135deg, #f4faf8, #eef8f5); }
 .regional-cell { display: grid; gap: 5px; min-height: 82px; border: 1px solid #d4e4e0; border-radius: 11px; padding: 10px 8px; color: #1d5058; background: #e8f4f0; text-align: left; transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
 .regional-cell:hover, .regional-cell.selected { border-color: #167c73; box-shadow: 0 9px 18px rgb(13 104 97 / 12%); transform: translateY(-2px); }

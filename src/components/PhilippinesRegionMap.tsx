@@ -1,4 +1,21 @@
 import type { KeyboardEvent } from "react";
+import regionI from "../assets/philippines-regions/region-100000000.json";
+import regionII from "../assets/philippines-regions/region-200000000.json";
+import regionIII from "../assets/philippines-regions/region-300000000.json";
+import calabarzon from "../assets/philippines-regions/region-400000000.json";
+import bicol from "../assets/philippines-regions/region-500000000.json";
+import westernVisayas from "../assets/philippines-regions/region-600000000.json";
+import centralVisayas from "../assets/philippines-regions/region-700000000.json";
+import easternVisayas from "../assets/philippines-regions/region-800000000-full.json";
+import zamboanga from "../assets/philippines-regions/region-900000000.json";
+import northernMindanao from "../assets/philippines-regions/region-1000000000.json";
+import davao from "../assets/philippines-regions/region-1100000000.json";
+import soccsksargen from "../assets/philippines-regions/region-1200000000.json";
+import ncr from "../assets/philippines-regions/region-1300000000.json";
+import car from "../assets/philippines-regions/region-1400000000.json";
+import caraga from "../assets/philippines-regions/region-1600000000.json";
+import mimaropa from "../assets/philippines-regions/region-1700000000.json";
+import barmm from "../assets/philippines-regions/region-1900000000.json";
 
 type SyntheticRegion = {
   id: string;
@@ -6,32 +23,78 @@ type SyntheticRegion = {
   signalLevel: string;
 };
 
-type MapRegionShape = {
-  path: string;
-  x: number;
-  y: number;
+type Position = [number, number];
+
+type BoundaryFeature = {
+  properties: { adm2_psgc?: number; adm2_en?: string };
+  geometry: {
+    type: "Polygon" | "MultiPolygon";
+    coordinates: Position[][] | Position[][][];
+  };
 };
 
-const mapRegionShapes: MapRegionShape[] = [
-  { path: "M252 32 282 44 292 78 276 102 246 94 232 70Z", x: 262, y: 67 },
-  { path: "M178 86 218 96 226 132 204 157 166 143 154 112Z", x: 190, y: 121 },
-  { path: "M284 112 324 126 330 166 306 190 268 174 264 140Z", x: 298, y: 151 },
-  { path: "M210 174 252 186 260 228 238 252 194 238 184 204Z", x: 221, y: 213 },
-  { path: "M300 204 348 218 354 260 324 286 282 270 278 232Z", x: 316, y: 246 },
-  { path: "M142 254 192 264 206 304 182 334 136 322 122 286Z", x: 163, y: 294 },
-  { path: "M238 278 286 292 294 332 268 360 224 346 216 310Z", x: 255, y: 320 },
-  { path: "M334 296 376 310 382 350 358 374 318 360 312 326Z", x: 347, y: 335 },
-  { path: "M176 350 222 362 234 404 210 430 168 416 158 380Z", x: 196, y: 393 },
-  { path: "M274 374 320 388 330 430 304 456 262 442 254 404Z", x: 292, y: 417 },
-  { path: "M362 386 402 400 408 438 384 462 346 450 340 414Z", x: 374, y: 426 },
-  { path: "M214 456 262 470 272 514 246 542 202 528 194 486Z", x: 233, y: 499 },
-  { path: "M316 470 366 486 374 530 346 558 300 542 294 502Z", x: 334, y: 514 },
-  { path: "M132 540 180 550 194 592 168 620 124 606 116 568Z", x: 155, y: 581 },
-  { path: "M238 556 284 568 294 610 270 638 228 624 218 586Z", x: 256, y: 599 },
-  { path: "M344 556 390 570 398 612 374 638 330 624 322 584Z", x: 360, y: 599 },
-  { path: "M196 642 244 654 252 690 230 712 188 700 180 666Z", x: 216, y: 678 },
-  { path: "M292 648 342 662 348 700 322 722 278 708 270 672Z", x: 309, y: 686 },
+type BoundaryCollection = {
+  features: BoundaryFeature[];
+};
+
+type MapRegionBoundary = {
+  id: string;
+  features: BoundaryFeature[];
+};
+
+const collection = (value: unknown) => value as BoundaryCollection;
+const featureList = (value: unknown) => collection(value).features;
+const excludedNirProvinces = new Set([604500000, 704600000, 706100000]);
+
+/**
+ * Static regional geometry for the offline demo. The underlying 2023 province
+ * outlines are grouped to the PSA's current 18-region roster; NIR uses Negros
+ * Occidental, Negros Oriental, and Siquijor.
+ */
+const mapRegionBoundaries: MapRegionBoundary[] = [
+  { id: "region-i", features: featureList(regionI) },
+  { id: "region-ii", features: featureList(regionII) },
+  { id: "region-iii", features: featureList(regionIII) },
+  { id: "region-iva", features: featureList(calabarzon) },
+  { id: "region-v", features: featureList(bicol) },
+  { id: "region-vi", features: featureList(westernVisayas).filter((feature) => !excludedNirProvinces.has(feature.properties.adm2_psgc ?? 0)) },
+  { id: "nir", features: [...featureList(westernVisayas), ...featureList(centralVisayas)].filter((feature) => excludedNirProvinces.has(feature.properties.adm2_psgc ?? 0)) },
+  { id: "region-vii", features: featureList(centralVisayas).filter((feature) => !excludedNirProvinces.has(feature.properties.adm2_psgc ?? 0)) },
+  { id: "region-viii", features: featureList(easternVisayas) },
+  { id: "region-ix", features: featureList(zamboanga) },
+  { id: "region-x", features: featureList(northernMindanao) },
+  { id: "region-xi", features: featureList(davao) },
+  { id: "region-xii", features: featureList(soccsksargen) },
+  { id: "ncr", features: featureList(ncr) },
+  { id: "car", features: featureList(car) },
+  { id: "caraga", features: featureList(caraga) },
+  { id: "mimaropa", features: featureList(mimaropa) },
+  { id: "barmm", features: featureList(barmm) },
 ];
+
+const longitudeBounds = { min: 116.85, max: 126.7 };
+const latitudeBounds = { min: 4.35, max: 21.4 };
+const viewport = { width: 680, height: 780, horizontalPadding: 40, verticalPadding: 24 };
+
+const project = ([longitude, latitude]: Position): [number, number] => {
+  const usableWidth = viewport.width - viewport.horizontalPadding * 2;
+  const usableHeight = viewport.height - viewport.verticalPadding * 2;
+  const x = viewport.horizontalPadding + ((longitude - longitudeBounds.min) / (longitudeBounds.max - longitudeBounds.min)) * usableWidth;
+  const y = viewport.verticalPadding + ((latitudeBounds.max - latitude) / (latitudeBounds.max - latitudeBounds.min)) * usableHeight;
+  return [Number(x.toFixed(2)), Number(y.toFixed(2))];
+};
+
+const ringPath = (ring: Position[]) => ring.map((point, index) => {
+  const [x, y] = project(point);
+  return `${index === 0 ? "M" : "L"}${x} ${y}`;
+}).join(" ") + " Z";
+
+const featurePath = (feature: BoundaryFeature) => {
+  const polygons = feature.geometry.type === "Polygon"
+    ? [feature.geometry.coordinates as Position[][]]
+    : feature.geometry.coordinates as Position[][][];
+  return polygons.map((polygon) => polygon.map(ringPath).join(" ")).join(" ");
+};
 
 type PhilippinesRegionMapProps = {
   regions: SyntheticRegion[];
@@ -40,36 +103,38 @@ type PhilippinesRegionMapProps = {
 };
 
 export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: PhilippinesRegionMapProps) {
+  const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
+
   return (
     <section className="philippines-map-panel" aria-labelledby="region-map-title">
       <div className="map-panel-heading">
         <div>
-          <p className="card-kicker">Interactive selection surface</p>
+          <p className="card-kicker">Interactive regional geometry</p>
           <h2 id="region-map-title">Philippines model</h2>
         </div>
-        <span>18 synthetic fixtures</span>
+        <span>18 regions</span>
       </div>
-      <p className="map-panel-copy">Choose a numbered illustrative area to inspect its local demo fixture. These placeholders do not represent administrative boundaries or a clinical-risk map.</p>
+      <p className="map-panel-copy">Choose a real administrative-region outline to inspect its static demo fixture. Province lines are shown for orientation; the follow-up signal remains synthetic.</p>
       <div className="philippines-map-stage">
-        <svg className="philippines-region-map" viewBox="0 0 520 750" role="group" aria-label="Interactive Philippines model with 18 synthetic region fixtures">
+        <svg className="philippines-region-map" viewBox={`0 0 ${viewport.width} ${viewport.height}`} role="group" aria-label="Interactive Philippines model with 18 selectable administrative regions">
           <defs>
             <linearGradient id="map-water" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#eef8f6" />
-              <stop offset="1" stopColor="#dbeee9" />
+              <stop offset="0" stopColor="#eff9f7" />
+              <stop offset="1" stopColor="#d8eee9" />
             </linearGradient>
-            <filter id="map-soft-shadow" x="-30%" y="-20%" width="160%" height="170%">
-              <feDropShadow dx="0" dy="10" stdDeviation="8" floodColor="#0f5f61" floodOpacity=".18" />
+            <filter id="map-soft-shadow" x="-25%" y="-15%" width="150%" height="160%">
+              <feDropShadow dx="0" dy="11" stdDeviation="8" floodColor="#0f5f61" floodOpacity=".19" />
             </filter>
           </defs>
-          <rect className="map-water" x="12" y="12" width="496" height="726" rx="48" />
+          <rect className="map-water" x="8" y="8" width={viewport.width - 16} height={viewport.height - 16} rx="48" />
           <g className="map-contour-lines" aria-hidden="true">
-            <path d="M82 168c72-56 120-48 170-4 56 48 108 56 176 5" />
-            <path d="M72 372c68-47 126-42 179 2 58 47 123 52 197-4" />
-            <path d="M80 562c76-50 135-43 181 1 58 52 120 54 175 12" />
+            <path d="M72 170c95-52 158-44 228-2 73 45 156 51 272 3" />
+            <path d="M74 405c92-50 161-44 232 2 76 47 163 50 270-4" />
+            <path d="M78 637c98-45 171-39 235 4 80 49 160 51 257 9" />
           </g>
           <g filter="url(#map-soft-shadow)">
-            {regions.slice(0, mapRegionShapes.length).map((region, index) => {
-              const shape = mapRegionShapes[index];
+            {regions.map((region) => {
+              const paths = (boundariesById.get(region.id) ?? []).map(featurePath);
               const isSelected = selectedRegionId === region.id;
               const selectFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -84,21 +149,24 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: Ph
                   key={region.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.label}, ${region.signalLevel} synthetic signal`}
+                  aria-label={`${region.label}, ${region.signalLevel} synthetic demo signal`}
                   aria-pressed={isSelected}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={selectFromKeyboard}
                 >
-                  <path className="map-region-extrusion" d={shape.path} transform="translate(0 11)" />
-                  <path className="map-region-shape" d={shape.path} />
-                  <text className="map-region-label" x={shape.x} y={shape.y} textAnchor="middle" dominantBaseline="middle" aria-hidden="true">{String(index + 1).padStart(2, "0")}</text>
+                  <g className="map-region-depth" aria-hidden="true">
+                    {paths.map((path, index) => <path className="map-region-extrusion" d={path} fillRule="evenodd" key={`${region.id}-depth-${index}`} transform="translate(0 10)" />)}
+                  </g>
+                  <g className="map-region-surface">
+                    {paths.map((path, index) => <path className="map-region-shape" d={path} fillRule="evenodd" key={`${region.id}-shape-${index}`} />)}
+                  </g>
                 </g>
               );
             })}
           </g>
-          <text className="map-compass" x="462" y="62" textAnchor="middle" aria-hidden="true">N</text>
-          <path className="map-compass-line" d="M462 74v38" aria-hidden="true" />
-          <circle className="map-compass-dot" cx="462" cy="116" r="3" aria-hidden="true" />
+          <text className="map-compass" x="622" y="58" textAnchor="middle" aria-hidden="true">N</text>
+          <path className="map-compass-line" d="M622 70v38" aria-hidden="true" />
+          <circle className="map-compass-dot" cx="622" cy="112" r="3" aria-hidden="true" />
         </svg>
         <div className="map-depth-key" aria-label="Synthetic signal key">
           <span><i className="signal-lower" /> Lower</span>
@@ -106,6 +174,7 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect }: Ph
           <span><i className="signal-higher" /> Higher</span>
         </div>
       </div>
+      <p className="map-source-note">Boundary geometry: 2023 provincial snapshot, grouped to the PSA’s current 18-region roster. Static, offline, and for demo orientation only.</p>
     </section>
   );
 }

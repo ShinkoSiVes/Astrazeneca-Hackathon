@@ -9,12 +9,33 @@ export type SyntheticRegion = {
 const signalLevels: SyntheticRegion["signalLevel"][] = ["Lower", "Moderate", "Higher"];
 
 /**
- * UI-only fixture data for TASK-006. These numbered regions are intentionally
- * not attributed to real administrative boundaries or live health data.
+ * UI-only fixture data for TASK-006. Region labels align to the PSA's current
+ * 18-region roster, while every signal and count remains static demo data.
  */
-export const syntheticRegions: SyntheticRegion[] = Array.from({ length: 18 }, (_, index) => ({
-  id: `region-${index + 1}`,
-  label: `Region ${String(index + 1).padStart(2, "0")}`,
+const officialRegions = [
+  ["region-i", "Region I — Ilocos Region"],
+  ["region-ii", "Region II — Cagayan Valley"],
+  ["region-iii", "Region III — Central Luzon"],
+  ["region-iva", "Region IV-A — CALABARZON"],
+  ["region-v", "Region V — Bicol Region"],
+  ["region-vi", "Region VI — Western Visayas"],
+  ["nir", "Negros Island Region (NIR)"],
+  ["region-vii", "Region VII — Central Visayas"],
+  ["region-viii", "Region VIII — Eastern Visayas"],
+  ["region-ix", "Region IX — Zamboanga Peninsula"],
+  ["region-x", "Region X — Northern Mindanao"],
+  ["region-xi", "Region XI — Davao Region"],
+  ["region-xii", "Region XII — SOCCSKSARGEN"],
+  ["ncr", "National Capital Region (NCR)"],
+  ["car", "Cordillera Administrative Region (CAR)"],
+  ["caraga", "Region XIII — Caraga"],
+  ["mimaropa", "MIMAROPA Region"],
+  ["barmm", "Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)"],
+] as const;
+
+export const syntheticRegions: SyntheticRegion[] = officialRegions.map(([id, label], index) => ({
+  id,
+  label,
   signalLevel: signalLevels[index % signalLevels.length],
   syntheticRecords: 24 + ((index * 13) % 57),
   coverage: `${62 + ((index * 7) % 31)}%`,

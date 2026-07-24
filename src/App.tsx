@@ -510,17 +510,17 @@ export default function App() {
               <ChevronLeft size={17} /> Back to screening
             </button>
             <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
-            <h1 id="heatmap-status-title">Synthetic regional follow-up dashboard.</h1>
-            <p>This demo contains 18 illustrative regional fixtures. It is not a live patient map, clinical risk estimate, or external public-health feed.</p>
+            <h1 id="heatmap-status-title">Regional follow-up dashboard.</h1>
+            <p>This demo uses real Philippine regional boundary geometry with static synthetic follow-up fixtures. It is not a live patient map, clinical risk estimate, or external public-health feed.</p>
           </div>
 
           <div className="heatmap-status-card">
             <div className="heatmap-status-topline">
-              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> Synthetic demo data</span>
+              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> Static synthetic demo data</span>
               <span>{populationRecordCount} local de-identified fixture{populationRecordCount === 1 ? "" : "s"} not mapped</span>
             </div>
             <div className="dashboard-summary-grid">
-              <article><strong>18 regions</strong><span>Illustrative regional fixtures</span></article>
+              <article><strong>18 regions</strong><span>PSA-aligned regional geometry</span></article>
               <article><strong>Synthetic only</strong><span>No real patient records</span></article>
               <article><strong>Review-gated</strong><span>Local population fixtures only</span></article>
               <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
@@ -529,7 +529,7 @@ export default function App() {
               <PhilippinesRegionMap regions={syntheticRegions} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} />
               {(() => {
                 const selectedRegion: SyntheticRegion = syntheticRegions.find((region) => region.id === selectedRegionId) || syntheticRegions[0];
-                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected synthetic region</p><h2>{selectedRegion.label}</h2><p>This is an illustrative fixture only; it does not identify a location with elevated clinical risk.</p><dl><div><dt>Follow-up signal</dt><dd>{selectedRegion.signalLevel} (synthetic)</dd></div><div><dt>Demo records</dt><dd>{selectedRegion.syntheticRecords} generated</dd></div><div><dt>Fixture coverage</dt><dd>{selectedRegion.coverage} illustrative</dd></div></dl><small>Local aggregation fixtures stay separate until a future, governed regional-mapping task. External sharing remains disabled.</small></aside>;
+                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>The boundary is a static geographic reference; its signal is a synthetic fixture and does not identify a location with elevated clinical risk.</p><dl><div><dt>Follow-up signal</dt><dd>{selectedRegion.signalLevel} (synthetic)</dd></div><div><dt>Demo records</dt><dd>{selectedRegion.syntheticRecords} generated</dd></div><div><dt>Fixture coverage</dt><dd>{selectedRegion.coverage} illustrative</dd></div></dl><small>Local aggregation fixtures stay separate until a future, governed regional-mapping task. External sharing remains disabled.</small></aside>;
               })()}
             </div>
           </div>
