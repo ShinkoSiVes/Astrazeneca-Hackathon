@@ -49,4 +49,4 @@ Screening step 1 now uses type-to-filter dropdowns instead of free-text location
 
 ## Proposed promotion commit(s)
 
-`Pending stage commit for TASK-008.`
+`5b4034d feat(task-008): add dependent location selectors`
