@@ -107,7 +107,6 @@ const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: ""
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const exposureChecklistOptions = ["Dust / mining / construction", "Smoke / biomass fuel", "Chemical exposure", "None reported", "Unknown"];
 const lungHistoryChecklistOptions = ["TB history", "COPD / asthma", "Other lung condition", "None reported", "Unknown"];
-const exclusiveChecklistOptions = new Set(["None reported", "Unknown"]);
 
 const viewLabels: Record<View, string> = {
   consent: "Field start", login: "Secure login", ready: "Clinician workspace", about: "About Aeris AI", "heatmap-status": "Population dashboard", screening: "Screening", "ai-consent": "AI consent", "imaging-metadata": "Imaging metadata", "temporary-record": "Temporary record", "screening-complete": "Screening complete", "nodule-review": "Clinician review", aggregation: "Aggregation",
@@ -200,16 +199,12 @@ export default function App() {
   const selectedChecklistOptions = (value: string) => value ? value.split(" | ") : [];
 
   const toggleChecklistOption = (field: "occupationalExposure" | "lungHistory", option: string, options: string[]) => {
-    const selected = new Set(selectedChecklistOptions(screeningDraft[field]));
-    if (exclusiveChecklistOptions.has(option)) {
-      selected.clear();
-      selected.add(option);
-    } else {
-      exclusiveChecklistOptions.forEach((exclusiveOption) => selected.delete(exclusiveOption));
+    setScreeningDraft((current) => {
+      const selected = new Set(selectedChecklistOptions(current[field]));
       if (selected.has(option)) selected.delete(option);
       else selected.add(option);
-    }
-    updateDraft(field, options.filter((item) => selected.has(item)).join(" | "));
+      return { ...current, [field]: options.filter((item) => selected.has(item)).join(" | ") };
+    });
   };
 
   const updateImagingMetadata = (field: Exclude<keyof ImagingMetadata, "imagingFiles">, value: string) => {
