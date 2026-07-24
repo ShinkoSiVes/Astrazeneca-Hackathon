@@ -4,19 +4,25 @@ import { vi } from "vitest";
 import App from "./App";
 
 describe("TASK-001 consent and demo login", () => {
-  it("reveals the floating navigation while scrolling and hides it at the top", () => {
+  it("keeps navigation active on page changes and tucks it away only while scrolling down", async () => {
     Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
     const { container } = render(<App />);
     const navigation = container.querySelector("header");
 
-    expect(navigation).not.toHaveClass("is-visible");
+    expect(navigation).toHaveClass("is-visible");
     Object.defineProperty(window, "scrollY", { configurable: true, value: 120 });
+    fireEvent.scroll(window);
+    expect(navigation).not.toHaveClass("is-visible");
+
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 80 });
     fireEvent.scroll(window);
     expect(navigation).toHaveClass("is-visible");
 
     Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
     fireEvent.scroll(window);
-    expect(navigation).not.toHaveClass("is-visible");
+    await userEvent.setup().click(screen.getByRole("button", { name: /about/i }));
+    await screen.findByText(/people behind the prototype/i);
+    expect(navigation).toHaveClass("is-visible");
   });
 
   it("ends a declined encounter without creating a screening record", async () => {

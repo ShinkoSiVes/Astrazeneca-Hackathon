@@ -135,11 +135,12 @@ export default function App() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
   const [activeBackdrop, setActiveBackdrop] = useState(0);
-  const [isScrollHeaderVisible, setIsScrollHeaderVisible] = useState(false);
+  const [isScrollHeaderVisible, setIsScrollHeaderVisible] = useState(true);
   const [isLeavingView, setIsLeavingView] = useState(false);
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
   const navigationTimer = useRef<number | undefined>(undefined);
   const screeningStepTimer = useRef<number | undefined>(undefined);
+  const previousScrollY = useRef(0);
   const imagingFileInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -155,11 +156,16 @@ export default function App() {
     if (screeningStepTimer.current !== undefined) window.clearTimeout(screeningStepTimer.current);
   }, []);
   useEffect(() => {
-    const updateScrollHeader = () => setIsScrollHeaderVisible(window.scrollY > 56);
-    updateScrollHeader();
+    previousScrollY.current = window.scrollY;
+    setIsScrollHeaderVisible(true);
+    const updateScrollHeader = () => {
+      const currentScrollY = window.scrollY;
+      setIsScrollHeaderVisible(currentScrollY <= 56 || currentScrollY < previousScrollY.current);
+      previousScrollY.current = currentScrollY;
+    };
     window.addEventListener("scroll", updateScrollHeader, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollHeader);
-  }, []);
+  }, [view]);
 
   const [draftStatus, setDraftStatus] = useState("");
 
