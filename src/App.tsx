@@ -105,6 +105,9 @@ const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 const clinicianReviewKey = "aeris-clinician-nodule-review-v1";
 const emptyImagingMetadata: ImagingMetadata = { modality: "", studyReference: "", studyDate: "", sourceStatus: "", facility: "", imagingFiles: [] };
 const calendarMonths = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const viewLabels: Record<View, string> = {
+  consent: "Field start", login: "Secure login", ready: "Clinician workspace", about: "About Aeris AI", "heatmap-status": "Population dashboard", screening: "Screening", "ai-consent": "AI consent", "imaging-metadata": "Imaging metadata", "temporary-record": "Temporary record", "screening-complete": "Screening complete", "nodule-review": "Clinician review", aggregation: "Aggregation",
+};
 
 const dateValueFor = (year: number, month: number, day: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 const calendarCellsFor = (year: number, month: number) => Array.from({ length: new Date(year, month + 1, 0).getDate() + new Date(year, month, 1).getDay() }, (_, index) => {
@@ -132,6 +135,7 @@ export default function App() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
   const [activeBackdrop, setActiveBackdrop] = useState(0);
+  const [isScrollHeaderVisible, setIsScrollHeaderVisible] = useState(false);
   const [isLeavingView, setIsLeavingView] = useState(false);
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
   const navigationTimer = useRef<number | undefined>(undefined);
@@ -150,6 +154,13 @@ export default function App() {
     if (navigationTimer.current !== undefined) window.clearTimeout(navigationTimer.current);
     if (screeningStepTimer.current !== undefined) window.clearTimeout(screeningStepTimer.current);
   }, []);
+  useEffect(() => {
+    const updateScrollHeader = () => setIsScrollHeaderVisible(window.scrollY > 56);
+    updateScrollHeader();
+    window.addEventListener("scroll", updateScrollHeader, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrollHeader);
+  }, []);
+
   const [draftStatus, setDraftStatus] = useState("");
 
   const navigateTo = (nextView: View) => {
@@ -357,7 +368,7 @@ export default function App() {
         ))}
         <span className="landscape-ripple" key={activeBackdrop} />
       </div>
-      <header className="topbar">
+      <header className={`topbar ${isScrollHeaderVisible ? "is-visible" : ""}`} aria-label="Aeris AI navigation">
         <a className="brand" href="#top" aria-label="Aeris AI home" onClick={() => navigateTo("consent")}>
           <img className="brand-mark" src={lungMark} alt="" aria-hidden="true" />
           <span>
@@ -366,6 +377,7 @@ export default function App() {
           </span>
         </a>
         <div className="topbar-actions">
+          <span className="topbar-view-label">{viewLabels[view]}</span>
           {view === "consent" && (
             <button className="nav-link" type="button" onClick={() => navigateTo("about")}>
               <Info size={16} /> About

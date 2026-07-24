@@ -1,9 +1,24 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import App from "./App";
 
 describe("TASK-001 consent and demo login", () => {
+  it("reveals the floating navigation while scrolling and hides it at the top", () => {
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+    const { container } = render(<App />);
+    const navigation = container.querySelector("header");
+
+    expect(navigation).not.toHaveClass("is-visible");
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 120 });
+    fireEvent.scroll(window);
+    expect(navigation).toHaveClass("is-visible");
+
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+    fireEvent.scroll(window);
+    expect(navigation).not.toHaveClass("is-visible");
+  });
+
   it("ends a declined encounter without creating a screening record", async () => {
     const user = userEvent.setup();
     render(<App />);
