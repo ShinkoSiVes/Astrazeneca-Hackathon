@@ -1,5 +1,11 @@
 # Stage decisions
 
+## TASK-008B - Connected tobacco-use amount control
+
+- Accepted: display tobacco-use frequency directly above estimated packs as one connected input group.
+- Accepted: require a frequency before a non-zero pack estimate can be entered.
+- Accepted: preserve `Not a smoker` as an explicit no-use state with a zero estimate, avoiding contradictory input.
+
 ## TASK-008 revision - Full offline PSGC location directory
 
 - Accepted: replace the representative fixture after the owner identified that it was incomplete.

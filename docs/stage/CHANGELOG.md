@@ -1,5 +1,12 @@
 # Stage changelog
 
+## TASK-008B - Connected tobacco-use amount control
+
+- Status: awaiting owner review
+- Replaced the separate tobacco-use frequency and estimated-pack fields with one connected control in screening step 2.
+- Frequency is placed first; estimated packs stays unavailable until the clinician selects a period, then the interface confirms the combined reading (for example, `1.5 packs per day`).
+- Selecting `Not a smoker` records a zero amount and prevents an inconsistent pack estimate.
+
 ## TASK-008 revision - Full offline PSGC location directory
 
 - Status: awaiting owner review

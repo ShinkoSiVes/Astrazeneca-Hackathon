@@ -284,6 +284,12 @@ button:disabled { cursor: not-allowed; }
 .form-grid textarea { min-height: 104px; padding: 12px 13px; resize: vertical; }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #0e8179; box-shadow: 0 0 0 4px rgb(14 129 121 / 12%); }
 .wide-field { grid-column: 1 / -1; }
+.tobacco-use-group { display: grid; gap: 10px; align-content: start; margin: 0; min-width: 0; border: 1px solid rgb(89 151 144 / 38%); border-radius: 14px; background: linear-gradient(145deg, rgb(243 251 248 / 94%), rgb(255 255 255 / 86%)); padding: 14px; }
+.tobacco-use-group__heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #174b54; font-size: 14px; font-weight: 800; }
+.tobacco-use-group__step { border-radius: 999px; background: rgb(20 126 118 / 10%); color: #0d706b; padding: 4px 8px; font-size: 11px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
+.tobacco-use-group__connector { display: flex; align-items: center; gap: 8px; color: #4a7779; font-size: 12px; font-weight: 700; }
+.tobacco-use-group__connector::before { width: 1px; height: 14px; background: #79afa8; content: ""; }
+.tobacco-use-group__summary { margin: 0; color: #52767c; font-size: 12px; line-height: 1.4; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 .imaging-file-field { display: grid; gap: 8px; }
 .imaging-dropzone { border: 1px dashed #85bdb4; border-radius: 14px; padding: 14px; background: rgb(244 251 248 / 82%); transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease; }

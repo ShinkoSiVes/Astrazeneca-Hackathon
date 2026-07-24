@@ -20,6 +20,7 @@ import {
 import lungMark from "./assets/hinga-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
+import { TobaccoUseAmount } from "./components/TobaccoUseAmount";
 import { storeScreeningSnapshot } from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
@@ -586,8 +587,12 @@ export default function App() {
                 <div className="form-heading"><p className="card-kicker">Step 2 of 3</p><h2>Exposure and relevant history</h2><p>Record the clinician's screening observations. All fields are optional in this demo.</p></div>
                 <div className="form-grid">
                   <label>Smoking status<select value={screeningDraft.smokingStatus} onChange={(event) => updateDraft("smokingStatus", event.target.value)}><option value="">Select option</option><option>Never smoked</option><option>Former smoker</option><option>Current smoker</option><option>Not recorded</option></select></label>
-                  <label>Tobacco-use frequency<select value={screeningDraft.packFrequency} onChange={(event) => updateDraft("packFrequency", event.target.value)}><option value="">Select period first</option><option>Per day</option><option>Per week</option><option>Per month</option><option>Per year</option></select></label>
-                  <label>Estimated packs<input value={screeningDraft.packYears} onChange={(event) => updateDraft("packYears", event.target.value)} inputMode="decimal" placeholder="e.g. 1.5" /></label>
+                  <TobaccoUseAmount
+                    frequency={screeningDraft.packFrequency}
+                    packs={screeningDraft.packYears}
+                    onFrequencyChange={(frequency) => updateDraft("packFrequency", frequency)}
+                    onPacksChange={(packs) => updateDraft("packYears", packs)}
+                  />
                   <label>Household smoke exposure<select value={screeningDraft.householdSmoke} onChange={(event) => updateDraft("householdSmoke", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
                   <label>Occupational/environment exposure<select value={screeningDraft.occupationalExposure} onChange={(event) => updateDraft("occupationalExposure", event.target.value)}><option value="">Select option</option><option>Dust / mining / construction</option><option>Smoke / biomass fuel</option><option>Chemical exposure</option><option>None reported</option><option>Unknown</option></select></label>
                   <label>Lung or TB history<select value={screeningDraft.lungHistory} onChange={(event) => updateDraft("lungHistory", event.target.value)}><option value="">Select option</option><option>TB history</option><option>COPD / asthma</option><option>Other lung condition</option><option>None reported</option><option>Unknown</option></select></label>
