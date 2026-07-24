@@ -1,5 +1,13 @@
 # Stage changelog
 
+## TASK-008 revision - Full offline PSGC location directory
+
+- Status: awaiting owner review
+- Replaced the representative locality fixture with a bundled hierarchy of all 18 regions, 1,655 cities/municipalities, and 42,010 barangay entries.
+- The screening flow is now Region -> City / municipality -> Barangay. Each downstream dropdown is unavailable until its parent is selected and is filtered only to that parent.
+- The 697 KB normalized directory is loaded from the local stage build; field screening sends no geography lookup over the network.
+- The snapshot applies the PSA's first-quarter 2026 Calaca merger count correction. It is an offline reference snapshot, not a live synchronization service.
+
 ## TASK-008 - Dependent searchable region and locality selectors
 
 - Status: awaiting owner review

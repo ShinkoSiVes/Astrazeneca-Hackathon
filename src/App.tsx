@@ -48,6 +48,7 @@ type ScreeningDraft = {
   ageRange: string;
   sexAtBirth: string;
   barangay: string;
+  municipality: string;
   province: string;
   smokingStatus: string;
   packFrequency: string;
@@ -95,7 +96,7 @@ type PopulationRecord = {
 };
 
 const emptyScreeningDraft: ScreeningDraft = {
-  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
+  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", oxygenSaturation: "", clinicianNotes: "",
 };
 
 const screeningDraftKey = "aeris-screening-draft-v1";
@@ -570,9 +571,11 @@ export default function App() {
                   <label>Sex at birth<select value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
                   <ScreeningLocationFields
                     region={screeningDraft.province}
-                    locality={screeningDraft.barangay}
-                    onRegionChange={(region) => setScreeningDraft((current) => ({ ...current, province: region, barangay: "" }))}
-                    onLocalityChange={(locality) => updateDraft("barangay", locality)}
+                    municipality={screeningDraft.municipality}
+                    barangay={screeningDraft.barangay}
+                    onRegionChange={(region) => setScreeningDraft((current) => ({ ...current, province: region, municipality: "", barangay: "" }))}
+                    onMunicipalityChange={(municipality) => setScreeningDraft((current) => ({ ...current, municipality, barangay: "" }))}
+                    onBarangayChange={(barangay) => updateDraft("barangay", barangay)}
                   />
                 </div>
                 </>

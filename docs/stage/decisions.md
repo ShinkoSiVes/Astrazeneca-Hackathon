@@ -1,5 +1,13 @@
 # Stage decisions
 
+## TASK-008 revision - Full offline PSGC location directory
+
+- Accepted: replace the representative fixture after the owner identified that it was incomplete.
+- Accepted: bundle the normalized directory and load it only in the screening flow, keeping field selection available without a live lookup.
+- Accepted: use the explicit Region -> City / municipality -> Barangay hierarchy so all barangay choices have an unambiguous parent locality.
+- Accepted: include 18 regions, 1,655 cities/municipalities, and 42,010 barangay entries in this stage snapshot.
+- Deferred: a scheduled refresh mechanism and later PSA naming corrections require a separately approved dataset-update task; no silent data refresh will occur.
+
 ## TASK-008 — Offline location directory
 
 - Accepted: use a static offline directory with all 18 Philippine regions and representative locality choices so the demo remains lightweight and usable without internet.

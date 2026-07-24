@@ -1,34 +1,66 @@
+import { useEffect, useMemo, useState } from "react";
 import { SearchableSelect } from "./SearchableSelect";
-import { localitiesForRegion, regionLocationDirectory } from "../philippines-locations";
+import { localityOptionLabel, regionNames, type OfflinePSGCDirectory } from "../philippines-locations";
 
 type ScreeningLocationFieldsProps = {
   region: string;
-  locality: string;
+  municipality: string;
+  barangay: string;
   onRegionChange: (region: string) => void;
-  onLocalityChange: (locality: string) => void;
+  onMunicipalityChange: (municipality: string) => void;
+  onBarangayChange: (barangay: string) => void;
 };
 
-export function ScreeningLocationFields({ region, locality, onRegionChange, onLocalityChange }: ScreeningLocationFieldsProps) {
+export function ScreeningLocationFields({ region, municipality, barangay, onRegionChange, onMunicipalityChange, onBarangayChange }: ScreeningLocationFieldsProps) {
+  const [directory, setDirectory] = useState<OfflinePSGCDirectory | null>(null);
+  const [directoryError, setDirectoryError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void import("../data/psgc-2026-01-13.json")
+      .then((module) => {
+        if (active) setDirectory(module.default as OfflinePSGCDirectory);
+      })
+      .catch(() => {
+        if (active) setDirectoryError(true);
+      });
+    return () => { active = false; };
+  }, []);
+
+  const selectedRegion = useMemo(() => directory?.regions.find((entry) => entry.name === region), [directory, region]);
+  const localities = selectedRegion?.localities ?? [];
+  const localityOptions = localities.map(localityOptionLabel);
+  const selectedLocality = localities.find((entry) => localityOptionLabel(entry) === municipality);
+
   return (
     <div className="screening-location-fields wide-field">
       <SearchableSelect
         label="Region"
         value={region}
-        options={regionLocationDirectory.map((entry) => entry.region)}
+        options={[...regionNames]}
         placeholder="Search the 18 regions"
         emptyMessage="No matching region"
         onChange={onRegionChange}
       />
       <SearchableSelect
-        label="Barangay / municipality"
-        value={locality}
-        options={localitiesForRegion(region)}
-        placeholder={region ? "Search locations in this region" : "Select a region first"}
-        emptyMessage={region ? "No matching location in this region" : "Select a region first"}
-        disabled={!region}
-        onChange={onLocalityChange}
+        label="City / municipality"
+        value={municipality}
+        options={localityOptions}
+        placeholder={!region ? "Select a region first" : !directory ? "Loading offline directory…" : "Search a city or municipality"}
+        emptyMessage={directoryError ? "Offline directory could not load" : "No matching city or municipality in this region"}
+        disabled={!region || !directory}
+        onChange={onMunicipalityChange}
       />
-      <p className="field-note wide-field">Offline demo directory: 18 regions with representative municipality/city options. Select a region first; locality choices are filtered to that region only.</p>
+      <SearchableSelect
+        label="Barangay"
+        value={barangay}
+        options={selectedLocality?.barangays ?? []}
+        placeholder={!municipality ? "Select a city or municipality first" : "Search barangays in this locality"}
+        emptyMessage={selectedLocality ? "No matching barangay in this locality" : "Select a city or municipality first"}
+        disabled={!selectedLocality}
+        onChange={onBarangayChange}
+      />
+      <p className="field-note wide-field">Offline PSGC directory: all 18 regions, then the matching city/municipality, then the barangays recorded for that locality. The directory is bundled with this stage build; no network request is made while screening.</p>
     </div>
   );
 }
