@@ -49,4 +49,4 @@ Screening step 1 now uses type-to-filter, parent-dependent dropdowns instead of 
 
 ## Proposed promotion commit(s)
 
-`5b4034d feat(task-008): add dependent location selectors` plus the pending TASK-008 revision commit.
+`5b4034d feat(task-008): add dependent location selectors` and `bdc556f feat(task-008): bundle offline PSGC directory`.
