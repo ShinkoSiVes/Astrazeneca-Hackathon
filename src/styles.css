@@ -167,6 +167,14 @@ button:disabled { cursor: not-allowed; }
 .login-card select { cursor: pointer; }
 .login-card input:hover, .login-card select:hover { border-color: #8fb7b2; background-color: #fff; }
 .login-card input:focus, .login-card select:focus { border-color: #0e8179; background-color: #fff; box-shadow: 0 0 0 4px rgb(14 129 121 / 12%); }
+.login-mode-field { display: grid; gap: 9px; margin: 22px 0 0; border: 0; padding: 0; }
+.login-mode-field legend { padding: 0; color: #2a525b; font-size: 14px; font-weight: 800; }
+.login-mode-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; border: 1px solid #b9d0ce; border-radius: 13px; padding: 5px; background: #eef7f4; }
+.login-mode-switch button { min-height: 48px; border: 1px solid transparent; border-radius: 9px; padding: 8px 11px; color: #55757a; background: transparent; font: inherit; font-size: 13px; font-weight: 800; line-height: 1.25; cursor: pointer; transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+.login-mode-switch button:hover { color: #174e55; background: rgb(255 255 255 / 62%); }
+.login-mode-switch button.active { border-color: #78afa8; color: #0d625f; background: #fff; box-shadow: 0 3px 9px rgb(18 100 95 / 10%); }
+.login-mode-switch button:focus-visible { outline: 3px solid rgb(14 129 121 / 20%); outline-offset: 2px; }
+.login-mode-note { margin: 0; color: #647f84; font-size: 12px; line-height: 1.45; }
 .field-note, .saved-strip, .stage-note { display: flex; gap: 8px; align-items: center; color: #5c777c; font-size: 13px; line-height: 1.45; }
 .field-note { margin: 20px 0; }
 .saved-strip { width: fit-content; margin-top: 26px; border: 1px solid #cde2de; border-radius: 999px; padding: 9px 12px; color: #0c6d66; background: #eaf5f2; font-weight: 750; animation: confirmation-enter 440ms 260ms both; }
@@ -558,6 +566,7 @@ button:disabled { cursor: not-allowed; }
   .network-status svg { margin: 0; }
   .button-row, .ready-actions { display: grid; grid-template-columns: 1fr; }
   .button-row .secondary-button { order: 2; }
+  .login-mode-switch { grid-template-columns: 1fr; }
   .faq-section { margin-bottom: 54px; padding: 25px 20px; border-radius: 20px; }
   .hero-grid { padding: 25px 20px; border-radius: 22px; }
   .about-layout { margin-bottom: 60px; }

@@ -43,15 +43,30 @@ describe("TASK-001 consent and demo login", () => {
 
     const enterButton = await screen.findByRole("button", { name: /enter screening workspace/i });
     expect(enterButton).toBeDisabled();
-    await user.selectOptions(screen.getByLabelText(/health professional role/i), "Radiologist");
+    const healthCenterMode = screen.getByRole("button", { name: /health care center mode/i });
+    const cancerRegistryMode = screen.getByRole("button", { name: /cancer registry mode/i });
+    const professionalId = screen.getByLabelText(/health professional id/i);
+    expect(healthCenterMode).toHaveAttribute("aria-pressed", "true");
+    expect(cancerRegistryMode).toHaveAttribute("aria-pressed", "false");
+    expect(professionalId).toHaveValue("HCC-024");
+    await user.clear(professionalId);
+    await user.type(professionalId, "HCC-731");
+    await user.click(cancerRegistryMode);
+    expect(healthCenterMode).toHaveAttribute("aria-pressed", "false");
+    expect(cancerRegistryMode).toHaveAttribute("aria-pressed", "true");
+    expect(professionalId).toHaveValue("CR-731");
+    await user.click(healthCenterMode);
+    expect(professionalId).toHaveValue("HCC-731");
+    await user.click(cancerRegistryMode);
+    expect(professionalId).toHaveValue("CR-731");
     await user.type(screen.getByLabelText(/demo passcode/i), "1234");
     await user.click(enterButton);
 
     await screen.findByText(/consent is recorded for this encounter/i);
 
-    expect(screen.getByRole("heading", { name: /radiologist.*clinician-024/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /health professional.*cr-731/i })).toBeInTheDocument();
     expect(screen.getByRole("main")).toHaveClass("view-ready");
-    expect(sessionStorage.getItem("idea-demo-clinician")).toBe("CLINICIAN-024");
+    expect(sessionStorage.getItem("idea-demo-clinician")).toBe("CR-731");
   });
 
   it("opens the static About view and returns to the consent screen", async () => {

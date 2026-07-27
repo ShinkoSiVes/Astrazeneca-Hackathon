@@ -1,5 +1,12 @@
 # Stage changelog
 
+## Confirm-clinician workspace mode switch
+
+- Status: behavior pending
+- Replaced the health-professional role dropdown with a two-option switch for Health Care Center Mode and Cancer Registry Mode.
+- Health Care Center IDs use the `HCC-024` format and Cancer Registry IDs use `CR-024`; switching modes updates the prefix while preserving the numeric suffix.
+- This change establishes the selectable login interface only; mode-specific routing, permissions, and workspace behavior remain deferred.
+
 ## Screening workflow order
 
 - Status: awaiting owner review

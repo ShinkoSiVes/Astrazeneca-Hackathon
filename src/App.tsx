@@ -41,8 +41,13 @@ import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "risk-estimate" | "aggregation";
+type WorkspaceMode = "health-center" | "cancer-registry";
 
-const defaultClinicianId = "CLINICIAN-024";
+const defaultClinicianId = "HCC-024";
+const clinicianIdForMode = (mode: WorkspaceMode, currentId: string) => {
+  const suffix = currentId.match(/(\d+)\s*$/)?.[1] ?? "024";
+  return `${mode === "health-center" ? "HCC" : "CR"}-${suffix}`;
+};
 
 const landscapeSlides = [
   "landscape-sagada",
@@ -206,7 +211,7 @@ export default function App() {
   const [view, setView] = useState<View>("consent");
   const [hasConsent, setHasConsent] = useState(false);
   const [clinicianId, setClinicianId] = useState(defaultClinicianId);
-  const [professionalRole, setProfessionalRole] = useState("Health professional");
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("health-center");
   const [passcode, setPasscode] = useState("");
   const [offline, setOffline] = useState(true);
   const [screeningStep, setScreeningStep] = useState(1);
@@ -329,6 +334,11 @@ export default function App() {
   const enterDemo = () => {
     sessionStorage.setItem("idea-demo-clinician", clinicianId || defaultClinicianId);
     navigateTo("ready");
+  };
+
+  const changeWorkspaceMode = (mode: WorkspaceMode) => {
+    setWorkspaceMode(mode);
+    setClinicianId((current) => clinicianIdForMode(mode, current));
   };
 
   const resetEncounter = () => {
@@ -1289,20 +1299,31 @@ export default function App() {
           <form className="login-card" onSubmit={(event) => { event.preventDefault(); enterDemo(); }}>
             <p className="card-kicker">Demo access</p>
             <h2 id="login-title">Secure field login</h2>
-            <label>
-              Health professional role
-              <select value={professionalRole} onChange={(event) => setProfessionalRole(event.target.value)}>
-                <option>Health professional</option>
-                <option>Doctor</option>
-                <option>Nurse</option>
-                <option>Radiologist</option>
-                <option>Barangay health worker</option>
-                <option>Other health professional</option>
-              </select>
-            </label>
+            <fieldset className="login-mode-field">
+              <legend>Workspace mode</legend>
+              <div className="login-mode-switch" role="group" aria-label="Workspace mode">
+                <button
+                  type="button"
+                  className={workspaceMode === "health-center" ? "active" : ""}
+                  aria-pressed={workspaceMode === "health-center"}
+                  onClick={() => changeWorkspaceMode("health-center")}
+                >
+                  Health Care Center Mode
+                </button>
+                <button
+                  type="button"
+                  className={workspaceMode === "cancer-registry" ? "active" : ""}
+                  aria-pressed={workspaceMode === "cancer-registry"}
+                  onClick={() => changeWorkspaceMode("cancer-registry")}
+                >
+                  Cancer Registry Mode
+                </button>
+              </div>
+              <p className="login-mode-note">Choose the workspace context. Mode-specific behavior will be added separately.</p>
+            </fieldset>
             <label>
               Health professional ID
-              <input value={clinicianId} onChange={(event) => setClinicianId(event.target.value)} placeholder="e.g. CLINICIAN-024" autoComplete="username" />
+              <input value={clinicianId} onChange={(event) => setClinicianId(event.target.value)} placeholder={`e.g. ${workspaceMode === "health-center" ? "HCC-024" : "CR-024"}`} autoComplete="username" />
             </label>
             <label>
               Demo passcode
@@ -1319,7 +1340,7 @@ export default function App() {
 
       {view === "ready" && (
         <EncounterDashboard
-            clinicianId={`${professionalRole} · ${clinicianId || defaultClinicianId}`}
+            clinicianId={`Health professional · ${clinicianId || defaultClinicianId}`}
             onStartScreening={startScreening}
             onEditScreening={editSavedScreening}
             onDeleteScreening={deleteSavedScreening}
@@ -1333,7 +1354,7 @@ export default function App() {
         <section className="ready-layout" aria-labelledby="ready-title">
           <div className="ready-icon"><CircleCheckBig size={34} /></div>
           <p className="eyebrow">Workspace ready</p>
-          <h1 id="ready-title">You’re signed in as {professionalRole} · {clinicianId || defaultClinicianId}.</h1>
+          <h1 id="ready-title">You’re signed in as Health professional · {clinicianId || defaultClinicianId}.</h1>
           <p>Consent is recorded for this encounter. Continue with the clinician-led screening draft.</p>
           <div className="ready-actions">
             <button className="primary-button" type="button" onClick={startScreening}>Start screening <ArrowRight size={18} /></button>
