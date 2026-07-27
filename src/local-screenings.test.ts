@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readStoredScreenings, screeningHistoryKey, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
+import { emptyLocalScreeningDraft, normaliseScreeningDraft, readStoredScreenings, screeningHistoryKey, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
 
 const baseDraft = {
-  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", weightLossAmount: "", oxygenSaturation: "97", clinicianNotes: "Demo entry",
+  ...emptyLocalScreeningDraft,
+  fieldReference: "FIELD-2026-014", age: "56", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", occupation: "Teacher", smokingStatus: "Former smoker", packFrequency: "Pack-years", packYears: "12", yearsSinceQuitting: "4", householdSmoke: "No", occupationalExposure: "None reported", previousTuberculosis: "No", copd: "No", asthma: "No", previousMalignancy: "No", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", chestPain: "No", weightLoss: "No", hoarseness: "No", fatigue: "No", previousSurveyResponse: "No", oxygenSaturation: "97", chestXrayAvailable: "No", physicalExamFindings: "Normal examination", clinicianNotes: "Demo entry",
 } as LocalScreeningDraft;
 
 afterEach(() => {
@@ -32,5 +33,18 @@ describe("local screening records", () => {
     const [record] = readStoredScreenings();
     expect(record.updates).toHaveLength(1);
     expect(record.updates[0].data.fieldReference).toBe(baseDraft.fieldReference);
+  });
+
+  it("retains new profile variables and migrates legacy secondhand-smoke exposure", () => {
+    const profile = normaliseScreeningDraft({
+      fieldReference: "FIELD-NEW",
+      occupation: "Miner",
+      householdSmoke: "Yes",
+      physicalExamFindings: "Crackles (rales) | Digital clubbing",
+    });
+
+    expect(profile.occupation).toBe("Miner");
+    expect(profile.occupationalExposure).toBe("Secondhand smoke");
+    expect(profile.physicalExamFindings).toContain("Digital clubbing");
   });
 });

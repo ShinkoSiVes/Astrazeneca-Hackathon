@@ -72,7 +72,7 @@
 
 * { box-sizing: border-box; }
 body { min-width: 320px; min-height: 100vh; margin: 0; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
@@ -163,8 +163,10 @@ button:disabled { cursor: not-allowed; }
 .login-card .card-kicker { margin-top: 0; }
 .login-card form { display: grid; }
 .login-card label { display: grid; gap: 8px; margin-top: 22px; color: #2a525b; font-size: 14px; font-weight: 800; }
-.login-card input { width: 100%; min-height: 50px; border: 1px solid #b9d0ce; border-radius: 11px; padding: 0 13px; color: #173e47; background: #fcfefd; outline: none; }
-.login-card input:focus { border-color: #0e8179; box-shadow: 0 0 0 4px rgb(14 129 121 / 12%); }
+.login-card input, .login-card select { width: 100%; min-height: 50px; border: 1px solid #b9d0ce; border-radius: 11px; padding: 0 13px; color: #173e47; background-color: #fcfefd; outline: none; transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+.login-card select { cursor: pointer; }
+.login-card input:hover, .login-card select:hover { border-color: #8fb7b2; background-color: #fff; }
+.login-card input:focus, .login-card select:focus { border-color: #0e8179; background-color: #fff; box-shadow: 0 0 0 4px rgb(14 129 121 / 12%); }
 .field-note, .saved-strip, .stage-note { display: flex; gap: 8px; align-items: center; color: #5c777c; font-size: 13px; line-height: 1.45; }
 .field-note { margin: 20px 0; }
 .saved-strip { width: fit-content; margin-top: 26px; border: 1px solid #cde2de; border-radius: 999px; padding: 9px 12px; color: #0c6d66; background: #eaf5f2; font-weight: 750; animation: confirmation-enter 440ms 260ms both; }
@@ -373,15 +375,12 @@ button:disabled { cursor: not-allowed; }
 .screening-checklist legend { padding: 0 4px; color: #2a525b; font-size: 14px; font-weight: 800; }
 .screening-checklist > p { margin: 0; color: #678087; font-size: 12px; line-height: 1.4; }
 .screening-checklist__options { display: grid; gap: 7px; }
+.screening-checklist__options--columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .screening-checklist__options label { display: flex; align-items: center; gap: 9px; color: #244d56; font-size: 13px; font-weight: 650; line-height: 1.35; cursor: pointer; }
 .screening-checklist__options input { width: 17px; height: 17px; min-height: 0; margin: 0; accent-color: #0e8179; }
+.form-section-heading { margin-top: 8px; border-bottom: 1px solid rgb(89 151 144 / 28%); padding-bottom: 8px; }
+.form-section-heading h3 { margin: 0; color: #174b54; font-size: 18px; letter-spacing: -.015em; }
 .weight-loss-field { display: grid; gap: 10px; align-content: start; }
-.symptom-form-grid:has(.weight-loss-field.has-detail) { grid-template-areas: "cough breath" "blood weight" "oxygen weight"; }
-.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-cough { grid-area: cough; }
-.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-breath { grid-area: breath; }
-.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-blood { grid-area: blood; }
-.symptom-form-grid:has(.weight-loss-field.has-detail) .weight-loss-field { grid-area: weight; }
-.symptom-form-grid:has(.weight-loss-field.has-detail) .symptom-oxygen { grid-area: oxygen; align-self: start; }
 .tobacco-use-group { display: grid; grid-column: 1 / -1; gap: 10px; align-content: start; margin: 0; min-width: 0; border: 1px solid rgb(89 151 144 / 38%); border-radius: 14px; background: linear-gradient(145deg, rgb(243 251 248 / 94%), rgb(255 255 255 / 86%)); padding: 14px; }
 .tobacco-use-group__heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #174b54; font-size: 14px; font-weight: 800; }
 .tobacco-use-group__step { border-radius: 999px; background: rgb(20 126 118 / 10%); color: #0d706b; padding: 4px 8px; font-size: 11px; font-weight: 800; letter-spacing: .02em; white-space: nowrap; }
@@ -560,7 +559,7 @@ button:disabled { cursor: not-allowed; }
   .risk-inputs { grid-template-columns: 1fr; }
   .heatmap-frame, .heatmap-frame > img, .scan-placeholder { min-height: 300px; height: 300px; }
   .form-grid { grid-template-columns: 1fr; }
-  .symptom-form-grid:has(.weight-loss-field.has-detail) { grid-template-areas: none; }
+  .screening-checklist__options--columns { grid-template-columns: 1fr; }
   .tobacco-use-group { grid-column: auto; }
   .wide-field { grid-column: auto; }
   .imaging-file-empty { grid-template-columns: auto 1fr; }
