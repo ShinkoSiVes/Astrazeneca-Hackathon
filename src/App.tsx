@@ -22,8 +22,21 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/aeris-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
+import { ScreeningChoiceField } from "./components/ScreeningChoiceField";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
-import { deleteStoredScreening, emptyLocalScreeningDraft, normaliseScreeningDraft, readStoredScreenings, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
+import {
+  deleteStoredScreening,
+  emptyLocalScreeningDraft,
+  normaliseScreeningDraft,
+  normaliseScreeningInputEvidence,
+  normaliseScreeningInputMode,
+  readStoredScreenings,
+  storeScreeningSnapshot,
+  type LocalScreeningDraft,
+  type ScreeningAlternativeField,
+  type ScreeningInputEvidence,
+  type ScreeningInputMode,
+} from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
@@ -198,6 +211,8 @@ export default function App() {
   const [offline, setOffline] = useState(true);
   const [screeningStep, setScreeningStep] = useState(1);
   const [screeningDraft, setScreeningDraft] = useState<ScreeningDraft>(emptyScreeningDraft);
+  const [screeningInputMode, setScreeningInputMode] = useState<ScreeningInputMode>("structured");
+  const [screeningInputEvidence, setScreeningInputEvidence] = useState<ScreeningInputEvidence>({});
   const [aiConsent, setAiConsent] = useState<boolean | null>(null);
   const [imagingMetadata, setImagingMetadata] = useState<ImagingMetadata>(emptyImagingMetadata);
   const [localImagingFiles, setLocalImagingFiles] = useState<LocalImagingFile[]>([]);
@@ -232,6 +247,25 @@ export default function App() {
   const screeningIsComplete = requiredScreeningFields.every((field) => screeningDraft[field].trim() !== "");
   const firstIncompleteField = requiredScreeningFields.find((field) => !screeningDraft[field].trim());
   const missingFieldClass = (field: keyof ScreeningDraft) => showIncompleteFields && requiredScreeningFields.includes(field) && !screeningDraft[field].trim() ? "is-required-missing" : "";
+  const renderScreeningChoice = (
+    field: ScreeningAlternativeField,
+    label: string,
+    options: readonly string[],
+    onChange: (value: string) => void = (value) => setScreeningDraft((current) => ({ ...current, [field]: value })),
+    className = "",
+  ) => (
+    <ScreeningChoiceField
+      field={field}
+      label={label}
+      value={screeningDraft[field]}
+      options={options}
+      mode={screeningInputMode}
+      evidence={screeningInputEvidence[field]}
+      className={`${className} ${missingFieldClass(field)}`.trim()}
+      onChange={onChange}
+      onEvidenceChange={(evidence) => setScreeningInputEvidence((current) => ({ ...current, [field]: evidence }))}
+    />
+  );
   const prototypeRiskScore = useMemo(() => scorePrototypeRisk(screeningDraft), [screeningDraft]);
   const uploadedPreview = imagingMetadata.imagingFiles.find((file) => file.previewUrl)?.previewUrl;
   const prototypeRiskBand = prototypeRiskScore >= 50 ? "Elevated triage signal" : prototypeRiskScore >= 25 ? "Intermediate triage signal" : "Lower triage signal";
@@ -419,8 +453,13 @@ export default function App() {
   };
 
   const saveScreeningDraft = () => {
-    localStorage.setItem(screeningDraftKey, JSON.stringify({ data: screeningDraft, savedAt: new Date().toISOString() }));
-    storeScreeningSnapshot(screeningDraft);
+    localStorage.setItem(screeningDraftKey, JSON.stringify({
+      data: screeningDraft,
+      inputMode: screeningInputMode,
+      inputEvidence: screeningInputEvidence,
+      savedAt: new Date().toISOString(),
+    }));
+    storeScreeningSnapshot(screeningDraft, screeningInputEvidence, screeningInputMode);
     setAppScreeningProfiles(readStoredScreenings().map((screening) => screening.data));
     setDraftStatus("Screening draft saved on this device.");
   };
@@ -433,9 +472,11 @@ export default function App() {
     }
 
     try {
-      const parsed = JSON.parse(savedDraft) as { data?: ScreeningDraft };
+      const parsed = JSON.parse(savedDraft) as { data?: ScreeningDraft; inputMode?: unknown; inputEvidence?: unknown };
       if (parsed.data) {
         setScreeningDraft(normaliseScreeningDraft(parsed.data));
+        setScreeningInputMode(normaliseScreeningInputMode(parsed.inputMode));
+        setScreeningInputEvidence(normaliseScreeningInputEvidence(parsed.inputEvidence));
         setDraftStatus("Saved screening draft restored on this device.");
       }
     } catch {
@@ -445,13 +486,21 @@ export default function App() {
 
   const startScreening = () => {
     setScreeningDraft(emptyScreeningDraft);
+    setScreeningInputMode("structured");
+    setScreeningInputEvidence({});
     setScreeningStep(1);
     setDraftStatus("");
     navigateTo("screening");
   };
 
-  const editSavedScreening = (draft: LocalScreeningDraft) => {
+  const editSavedScreening = (
+    draft: LocalScreeningDraft,
+    inputEvidence: ScreeningInputEvidence = {},
+    inputMode: ScreeningInputMode = "structured",
+  ) => {
     setScreeningDraft(normaliseScreeningDraft(draft));
+    setScreeningInputEvidence(normaliseScreeningInputEvidence(inputEvidence));
+    setScreeningInputMode(normaliseScreeningInputMode(inputMode));
     setScreeningStep(1);
     setDraftStatus("Local screening loaded for clinician review.");
     navigateTo("screening");
@@ -490,6 +539,8 @@ export default function App() {
       aiConsent: true,
       imaging: imagingMetadata,
       screening: screeningDraft,
+      screeningInputMode,
+      screeningInputEvidence,
     }));
     setTemporaryRecordReady(readyForReview);
     navigateTo("temporary-record");
@@ -860,6 +911,18 @@ export default function App() {
             <p className="eyebrow"><ShieldCheck size={16} /> Local screening draft</p>
             <h1 id="screening-title">Record the screening information step by step.</h1>
             <p>This clinician-only form keeps its demo draft on this device. Fields marked optional do not block completion; do not enter names or other direct identifiers.</p>
+            <label className="screening-input-mode-toggle">
+              <span>
+                <strong>Text interpretation</strong>
+                <small>Replace screening dropdowns with locally interpreted text.</small>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={screeningInputMode === "text"}
+                onChange={(event) => setScreeningInputMode(event.target.checked ? "text" : "structured")}
+              />
+            </label>
             <div className="screening-steps" aria-label={`Screening step ${screeningStep} of 4`}>
               {["Profile", "Exposure", "Symptoms", "Survey history"].map((label, index) => (
                 <div className={screeningStep >= index + 1 ? "active" : ""} key={label}>
@@ -877,7 +940,7 @@ export default function App() {
                 <div className="form-grid">
                   <label className={missingFieldClass("fieldReference")}>Field reference<input name="fieldReference" value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. FIELD-024-001" /></label>
                   <label className={missingFieldClass("age")}>Age<input name="age" type="number" min="0" max="120" inputMode="numeric" value={screeningDraft.age} onChange={(event) => updateAge(event.target.value)} placeholder="Age in years" /></label>
-                  <label className={missingFieldClass("sexAtBirth")}>Sex at birth<select name="sexAtBirth" value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
+                  {renderScreeningChoice("sexAtBirth", "Sex at birth", ["Female", "Male", "Intersex", "Prefer not to record"])}
                   <label className={missingFieldClass("occupation")}>Occupation<input name="occupation" value={screeningDraft.occupation} onChange={(event) => updateDraft("occupation", event.target.value)} placeholder="Current or primary occupation" /></label>
                   <ScreeningLocationFields
                     region={screeningDraft.province}
@@ -899,7 +962,7 @@ export default function App() {
                 <div className="form-heading"><p className="card-kicker">Step 2 of 4</p><h2>Smoking, exposure, and medical history</h2><p>Record each history item separately and use “Unknown” when the information is unavailable.</p></div>
                 <div className="form-grid">
                   <div className="form-section-heading wide-field"><h3>Smoking history</h3></div>
-                  <label className={missingFieldClass("smokingStatus")}>Smoking status<select name="smokingStatus" value={screeningDraft.smokingStatus} onChange={(event) => updateSmokingStatus(event.target.value)}><option value="">Select option</option><option>Current smoker</option><option>Former smoker</option><option>Never smoker</option></select></label>
+                  {renderScreeningChoice("smokingStatus", "Smoking status", ["Current smoker", "Former smoker", "Never smoker"], updateSmokingStatus)}
                   <label className={missingFieldClass("packYears")}>Pack-years<input name="packYears" type="number" min="0" step="0.1" inputMode="decimal" value={screeningDraft.packYears} disabled={screeningDraft.smokingStatus === "Never smoker"} onChange={(event) => updateDraft("packYears", event.target.value)} placeholder="e.g. 12.5" /></label>
                   <label className={missingFieldClass("yearsSinceQuitting")}>Years since quitting<input name="yearsSinceQuitting" type={screeningDraft.smokingStatus === "Former smoker" ? "number" : "text"} min={screeningDraft.smokingStatus === "Former smoker" ? "0" : undefined} inputMode={screeningDraft.smokingStatus === "Former smoker" ? "numeric" : undefined} value={screeningDraft.yearsSinceQuitting} disabled={screeningDraft.smokingStatus !== "Former smoker"} onChange={(event) => updateDraft("yearsSinceQuitting", event.target.value)} placeholder={screeningDraft.smokingStatus === "Former smoker" ? "Years" : "Not applicable"} /></label>
                   <div className="form-section-heading wide-field"><h3>Occupational or environmental exposure</h3></div>
@@ -912,11 +975,11 @@ export default function App() {
                   </fieldset>
                   {selectedChecklistOptions(screeningDraft.occupationalExposure).includes("Other") && <label className={missingFieldClass("occupationalExposureOther")}>Other exposure (specify)<input name="occupationalExposureOther" value={screeningDraft.occupationalExposureOther} onChange={(event) => updateDraft("occupationalExposureOther", event.target.value)} /></label>}
                   <div className="form-section-heading wide-field"><h3>Medical history</h3></div>
-                  <label className={missingFieldClass("previousTuberculosis")}>Previous tuberculosis<select name="previousTuberculosis" value={screeningDraft.previousTuberculosis} onChange={(event) => updateDraft("previousTuberculosis", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={missingFieldClass("copd")}>COPD<select name="copd" value={screeningDraft.copd} onChange={(event) => updateDraft("copd", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={missingFieldClass("asthma")}>Asthma<select name="asthma" value={screeningDraft.asthma} onChange={(event) => updateDraft("asthma", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={missingFieldClass("previousMalignancy")}>Previous malignancy<select name="previousMalignancy" value={screeningDraft.previousMalignancy} onChange={(event) => updateDraft("previousMalignancy", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={missingFieldClass("familyHistory")}>Family lung-cancer history<select name="familyHistory" value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  {renderScreeningChoice("previousTuberculosis", "Previous case of tuberculosis", responseOptions)}
+                  {renderScreeningChoice("copd", "COPD", responseOptions)}
+                  {renderScreeningChoice("asthma", "Asthma", responseOptions)}
+                  {renderScreeningChoice("previousMalignancy", "Previous case of malignancy", responseOptions)}
+                  {renderScreeningChoice("familyHistory", "Does family have history of lung cancer?", responseOptions)}
                 </div>
                 </>
               )}
@@ -926,20 +989,20 @@ export default function App() {
                 <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Symptoms and clinical assessment</h2><p>This is not a diagnosis. Record symptoms and relevant examination findings; use “Unknown” when appropriate.</p></div>
                 <div className="form-grid symptom-form-grid">
                   <div className="form-section-heading wide-field"><h3>Symptoms</h3></div>
-                  <label className={`symptom-cough ${missingFieldClass("persistentCough")}`}>Persistent cough (&gt;2–3 weeks)<select name="persistentCough" value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={`symptom-breath ${missingFieldClass("breathlessness")}`}>Dyspnea<select name="breathlessness" value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={`symptom-blood ${missingFieldClass("bloodInSputum")}`}>Hemoptysis<select name="bloodInSputum" value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={missingFieldClass("chestPain")}>Chest pain<select name="chestPain" value={screeningDraft.chestPain} onChange={(event) => updateDraft("chestPain", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  {renderScreeningChoice("persistentCough", "Persistent cough (>2–3 weeks)", responseOptions, undefined, "symptom-cough")}
+                  {renderScreeningChoice("breathlessness", "Dyspnea", responseOptions, undefined, "symptom-breath")}
+                  {renderScreeningChoice("bloodInSputum", "Hemoptysis", responseOptions, undefined, "symptom-blood")}
+                  {renderScreeningChoice("chestPain", "Chest pain", responseOptions)}
                   <div className={`weight-loss-field ${screeningDraft.weightLoss === "Yes" ? "has-detail" : ""} ${missingFieldClass("weightLoss")}`}>
-                    <label>Weight loss<select name="weightLoss" value={screeningDraft.weightLoss} onChange={(event) => updateWeightLoss(event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                    {renderScreeningChoice("weightLoss", "Weight loss", responseOptions, updateWeightLoss)}
                     {screeningDraft.weightLoss === "Yes" && <label>How much weight did the patient lose? (optional)<input value={screeningDraft.weightLossAmount} onChange={(event) => updateDraft("weightLossAmount", event.target.value)} placeholder="e.g. 5 kg or 11 lb" /></label>}
                   </div>
-                  <label className={missingFieldClass("hoarseness")}>Hoarseness<select name="hoarseness" value={screeningDraft.hoarseness} onChange={(event) => updateDraft("hoarseness", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
-                  <label className={missingFieldClass("fatigue")}>Fatigue<select name="fatigue" value={screeningDraft.fatigue} onChange={(event) => updateDraft("fatigue", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  {renderScreeningChoice("hoarseness", "Hoarseness", responseOptions)}
+                  {renderScreeningChoice("fatigue", "Fatigue", responseOptions)}
                   <div className="form-section-heading wide-field"><h3>Initial clinical assessment</h3></div>
                   <label>Vital signs (optional)<input name="vitalSigns" value={screeningDraft.vitalSigns} onChange={(event) => updateDraft("vitalSigns", event.target.value)} placeholder="e.g. BP 120/80, pulse 76, temperature 36.8 °C" /></label>
                   <label className="symptom-oxygen">Oxygen saturation (optional)<input name="oxygenSaturation" value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="e.g. 97%" /></label>
-                  <label className={missingFieldClass("chestXrayAvailable")}>Chest X-ray available<select name="chestXrayAvailable" value={screeningDraft.chestXrayAvailable} onChange={(event) => updateDraft("chestXrayAvailable", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option></select></label>
+                  {renderScreeningChoice("chestXrayAvailable", "Chest X-ray available", ["Yes", "No"])}
                   <div className="form-section-heading wide-field"><h3>Relevant physical examination findings</h3></div>
                   <fieldset className={`screening-checklist wide-field ${missingFieldClass("physicalExamFindings")}`}>
                     <legend>Physical examination findings</legend>
@@ -958,9 +1021,7 @@ export default function App() {
                 <>
                   <div className="form-heading"><p className="card-kicker">Step 4 of 4</p><h2>Previous survey history</h2><p>Confirm whether this patient has answered a screening survey before so the heat map does not count the same participant twice.</p></div>
                   <div className="form-grid">
-                    <label className={`wide-field ${missingFieldClass("previousSurveyResponse")}`}>Has the patient answered any screening surveys in the past?
-                      <select name="previousSurveyResponse" value={screeningDraft.previousSurveyResponse} onChange={(event) => updateDraft("previousSurveyResponse", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option></select>
-                    </label>
+                    {renderScreeningChoice("previousSurveyResponse", "Has the patient answered any screening surveys in the past?", ["Yes", "No"], undefined, "wide-field")}
                     {screeningDraft.previousSurveyResponse === "Yes" && <p className="field-note wide-field">This profile can be saved locally for clinician review, but it will be excluded from the app-screenings heat map to avoid duplicate participants.</p>}
                   </div>
                 </>

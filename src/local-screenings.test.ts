@@ -33,6 +33,24 @@ describe("local screening records", () => {
     const [record] = readStoredScreenings();
     expect(record.updates).toHaveLength(1);
     expect(record.updates[0].data.fieldReference).toBe(baseDraft.fieldReference);
+    expect(record.inputMode).toBe("structured");
+    expect(record.inputEvidence).toEqual({});
+  });
+
+  it("retains source text and confirmation separately for each update", () => {
+    storeScreeningSnapshot(baseDraft, {
+      smokingStatus: {
+        rawText: "used to smoke",
+        suggestedValue: "Former smoker",
+        confirmedValue: "Former smoker",
+      },
+    }, "text");
+
+    const [record] = readStoredScreenings();
+    expect(record.inputMode).toBe("text");
+    expect(record.data.smokingStatus).toBe("Former smoker");
+    expect(record.inputEvidence.smokingStatus?.rawText).toBe("used to smoke");
+    expect(record.updates[0].inputEvidence.smokingStatus?.confirmedValue).toBe("Former smoker");
   });
 
   it("retains new profile variables and migrates legacy secondhand-smoke exposure", () => {

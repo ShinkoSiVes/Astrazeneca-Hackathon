@@ -1,5 +1,13 @@
 # Stage decisions
 
+## Screening alternative input mode
+
+- Accepted: use one global switch for dropdowns in the four-step screening form; existing free-text fields, checklists, offline location selectors, login controls, and imaging controls keep their current input method.
+- Accepted: interpret text locally from field-specific allowed options and aliases. No screening text is transmitted to an external service.
+- Accepted: a suggested value does not become screening data until the clinician explicitly confirms it. Unconfirmed text remains incomplete and cannot affect risk-support or aggregation logic.
+- Accepted: retain the original wording, suggestion, and confirmed canonical value with each browser-local saved update so later clinician review can compare the source text with the value used by the application.
+- Accepted: preserve backward compatibility with local records created before interpretation evidence was introduced.
+
 ## Population dashboard - Layered public and screening overlay
 
 - Accepted: add a third dashboard mode that displays the static public signal as the regional fill and unique local app-screening profiles as a separate hatched overlay.

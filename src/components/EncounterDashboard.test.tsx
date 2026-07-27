@@ -41,8 +41,8 @@ describe("TASK-007 clinician encounter dashboard", () => {
     const props = renderDashboard();
 
     expect(screen.getByText(draft.fieldReference)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /edit screening/i }));
-    expect(props.onEditScreening).toHaveBeenCalledWith(draft);
+    await user.click(screen.getByRole("button", { name: /update screening/i }));
+    expect(props.onEditScreening).toHaveBeenCalledWith(draft, {}, "structured");
   });
 
   it("deletes only the selected screening record after confirmation", async () => {
@@ -82,8 +82,30 @@ describe("TASK-007 clinician encounter dashboard", () => {
 
     await user.upload(screen.getByLabelText(/import local screening or temporary record/i), temporaryRecordFile);
 
-    await waitFor(() => expect(props.onEditScreening).toHaveBeenCalledWith(draft));
+    await waitFor(() => expect(props.onEditScreening).toHaveBeenCalledWith(draft, {}, "structured"));
     expect(screen.getByText(/temporary record loaded/i)).toBeInTheDocument();
+  });
+
+  it("shows retained source text in the update where it was recorded", async () => {
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([{
+      id: draft.fieldReference,
+      savedAt: "2026-07-24T09:30:00.000Z",
+      data: draft,
+      inputMode: "text",
+      inputEvidence: {
+        smokingStatus: {
+          rawText: "used to smoke",
+          suggestedValue: "Former smoker",
+          confirmedValue: "Former smoker",
+        },
+      },
+    }]));
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await user.click(screen.getByText(/review interpreted source text/i));
+    expect(screen.getByText("used to smoke")).toBeInTheDocument();
+    expect(screen.getByText(/confirmed as former smoker/i)).toBeInTheDocument();
   });
 
   it("requires confirmation before deleting a saved temporary record", async () => {

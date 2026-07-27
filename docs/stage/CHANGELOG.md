@@ -1,5 +1,12 @@
 # Stage changelog
 
+## Screening alternative input mode
+
+- Status: awaiting owner review
+- Added one screening-wide switch that replaces the four-step form's dropdowns with plain-language text entry while leaving checklists, location selectors, and existing text fields unchanged.
+- Text is interpreted entirely on the device and must be explicitly confirmed before its canonical value can satisfy completeness checks or affect risk-support and aggregation logic.
+- Every saved local update retains the clinician's original wording beside the confirmed value, and that evidence can be reviewed when the screening is reopened or expanded in record history.
+
 ## Population dashboard - Layered combined overlay
 
 - Status: awaiting owner review
