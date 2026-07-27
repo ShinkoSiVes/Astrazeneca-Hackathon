@@ -140,7 +140,37 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("BHW-024-001");
   });
 
-  it("records tobacco-use frequency before the estimated packs", async () => {
+  it("captures the expanded screening-profile variables", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
+
+    expect(await screen.findByLabelText(/^age$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/occupation/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    expect(await screen.findByLabelText(/^pack-years$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/years since quitting/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/previous tuberculosis/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/previous malignancy/i)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    expect(await screen.findByLabelText(/persistent cough/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/chest pain/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/hoarseness/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/fatigue/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/chest x-ray available/i)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /digital clubbing/i })).toBeInTheDocument();
+  });
+
+  it("records pack-years and conditional years-since-quitting", async () => {
     localStorage.clear();
     const user = userEvent.setup();
     render(<App />);
@@ -156,11 +186,13 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
     expect(document.querySelector(".screening-step-panel")).toHaveClass("is-leaving");
     expect(document.querySelector(".screening-card")).toHaveClass("is-switching");
-    await user.selectOptions(await screen.findByLabelText(/tobacco-use frequency/i), "Per week");
-    await user.type(screen.getByLabelText(/estimated packs/i), "3");
+    await user.selectOptions(await screen.findByLabelText(/smoking status/i), "Former smoker");
+    await user.type(screen.getByLabelText(/^pack-years$/i), "12");
+    await user.type(screen.getByLabelText(/years since quitting/i), "3");
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
 
-    expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packFrequency\":\"Per week");
+    expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packYears\":\"12");
+    expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("yearsSinceQuitting\":\"3");
   });
 
   it("shows an optional weight-loss amount only after a positive symptom response", async () => {
@@ -175,10 +207,10 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(await screen.findByRole("button", { name: /start screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
 
     expect(screen.queryByLabelText(/how much weight did the patient lose/i)).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/unintentional weight loss/i), "Yes");
+    await user.selectOptions(screen.getByLabelText(/^weight loss$/i), "Yes");
     expect(screen.getByLabelText(/how much weight did the patient lose/i)).toBeInTheDocument();
     await user.type(screen.getByLabelText(/how much weight did the patient lose/i), "5 kg");
     expect(screen.getByLabelText(/how much weight did the patient lose/i)).toHaveValue("5 kg");
@@ -195,9 +227,9 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
     await user.click(await screen.findByRole("button", { name: /start screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
     await screen.findByRole("heading", { name: /previous survey history/i });
 
@@ -216,9 +248,9 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
     await user.click(await screen.findByRole("button", { name: /start screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
     await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
     await user.click(await screen.findByRole("button", { name: /no, keep screening only/i }));
 
@@ -238,9 +270,9 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
     await user.click(await screen.findByRole("button", { name: /start screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
     await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
     await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
     const imagingFile = new File(["demo dicom fixture"], "field-ct.dcm", { type: "application/dicom" });
@@ -274,9 +306,9 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
     await user.click(await screen.findByRole("button", { name: /start screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
     await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
     await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
     await user.selectOptions(await screen.findByLabelText(/imaging modality/i), "CT scan");
@@ -307,9 +339,9 @@ describe("TASK-001 consent and demo login", () => {
     await user.type(screen.getByLabelText(/field reference/i), "PRIVATE-024");
     await user.type(screen.getByLabelText(/province \/ region/i), "Benguet");
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /exposure and relevant history/i });
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /symptoms and clinician note/i });
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
     await user.click(await screen.findByRole("button", { name: /finish screening draft/i }));
     await user.click(await screen.findByRole("button", { name: /yes, continue to imaging details/i }));
     await user.selectOptions(await screen.findByLabelText(/imaging modality/i), "CT scan");

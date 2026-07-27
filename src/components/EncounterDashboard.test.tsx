@@ -2,10 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { EncounterDashboard } from "./EncounterDashboard";
-import { screeningHistoryKey, temporaryRecordKey, type LocalScreeningDraft } from "../local-screenings";
+import { emptyLocalScreeningDraft, screeningHistoryKey, temporaryRecordKey, type LocalScreeningDraft } from "../local-screenings";
 
 const draft: LocalScreeningDraft = {
-  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", weightLossAmount: "", previousSurveyResponse: "No", oxygenSaturation: "97", clinicianNotes: "Demo entry",
+  ...emptyLocalScreeningDraft,
+  fieldReference: "FIELD-2026-014", age: "56", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", occupation: "Teacher", smokingStatus: "Former smoker", packFrequency: "Pack-years", packYears: "12", yearsSinceQuitting: "4", householdSmoke: "No", occupationalExposure: "None reported", previousTuberculosis: "No", copd: "No", asthma: "No", previousMalignancy: "No", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", chestPain: "No", weightLoss: "No", hoarseness: "No", fatigue: "No", previousSurveyResponse: "No", oxygenSaturation: "97", chestXrayAvailable: "No", physicalExamFindings: "Normal examination", clinicianNotes: "Demo entry",
 };
 
 const renderDashboard = () => {

@@ -23,8 +23,7 @@ import {
 import lungMark from "./assets/aeris-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
-import { TobaccoUseAmount } from "./components/TobaccoUseAmount";
-import { deleteStoredScreening, readStoredScreenings, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
+import { deleteStoredScreening, emptyLocalScreeningDraft, normaliseScreeningDraft, readStoredScreenings, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
@@ -100,7 +99,7 @@ const appScreeningRegionsFor = (profiles: LocalScreeningDraft[]): SyntheticRegio
 });
 
 const emptyScreeningDraft: ScreeningDraft = {
-  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", weightLossAmount: "", previousSurveyResponse: "", oxygenSaturation: "", clinicianNotes: "",
+  ...emptyLocalScreeningDraft,
 };
 
 const screeningDraftKey = "aeris-screening-draft-v1";
@@ -119,24 +118,45 @@ const calendarCellsFor = (year: number, month: number) => Array.from({ length: n
 });
 
 const screeningFields: (keyof ScreeningDraft)[] = [
-  "fieldReference", "ageRange", "sexAtBirth", "barangay", "municipality", "province", "smokingStatus", "packFrequency", "packYears", "householdSmoke", "occupationalExposure", "lungHistory", "familyHistory", "persistentCough", "breathlessness", "bloodInSputum", "weightLoss", "previousSurveyResponse",
+  "fieldReference", "age", "sexAtBirth", "barangay", "municipality", "province", "occupation",
+  "smokingStatus", "packYears", "yearsSinceQuitting", "occupationalExposure",
+  "previousTuberculosis", "copd", "asthma", "previousMalignancy", "familyHistory",
+  "persistentCough", "breathlessness", "bloodInSputum", "chestPain", "weightLoss", "hoarseness", "fatigue",
+  "chestXrayAvailable", "physicalExamFindings", "previousSurveyResponse",
 ];
 
 const screeningStepForField: Partial<Record<keyof ScreeningDraft, number>> = {
-  fieldReference: 1, ageRange: 1, sexAtBirth: 1, barangay: 1, municipality: 1, province: 1,
-  smokingStatus: 2, packFrequency: 2, packYears: 2, householdSmoke: 2, occupationalExposure: 2, lungHistory: 2, familyHistory: 2,
-  persistentCough: 3, breathlessness: 3, bloodInSputum: 3, weightLoss: 3,
+  fieldReference: 1, age: 1, sexAtBirth: 1, barangay: 1, municipality: 1, province: 1, occupation: 1,
+  smokingStatus: 2, packYears: 2, yearsSinceQuitting: 2, occupationalExposure: 2, occupationalExposureOther: 2,
+  previousTuberculosis: 2, copd: 2, asthma: 2, previousMalignancy: 2, familyHistory: 2,
+  persistentCough: 3, breathlessness: 3, bloodInSputum: 3, chestPain: 3, weightLoss: 3, hoarseness: 3, fatigue: 3,
+  chestXrayAvailable: 3, physicalExamFindings: 3, physicalExamOther: 3,
   previousSurveyResponse: 4,
 };
 
-const exposureChecklistOptions = ["Dust / mining / construction", "Smoke / biomass fuel", "Chemical exposure", "None reported", "Unknown"];
-const lungHistoryChecklistOptions = ["TB history", "COPD / asthma", "Other lung condition", "None reported", "Unknown"];
+const exposureChecklistOptions = ["Mining", "Construction", "Asbestos", "Silica", "Biomass fuel exposure", "Secondhand smoke", "Other", "None reported", "Unknown"];
+const physicalExamOptions = ["Normal examination", "Decreased breath sounds", "Crackles (rales)", "Wheezing", "Rhonchi", "Dullness to percussion", "Increased work of breathing", "Reduced chest expansion", "Digital clubbing", "Cyanosis", "Palpable supraclavicular lymph node", "Other"];
+const responseOptions = ["Yes", "No", "Unknown"];
+const selectedChecklistOptions = (value: string) => value ? value.split(" | ") : [];
+
+const ageRangeFor = (age: string) => {
+  const years = Number.parseInt(age, 10);
+  if (!Number.isFinite(years) || years < 0) return "";
+  if (years <= 17) return "0-17";
+  if (years <= 29) return "18-29";
+  if (years <= 39) return "30-39";
+  if (years <= 49) return "40-49";
+  if (years <= 59) return "50-59";
+  if (years <= 69) return "60-69";
+  return "70 or older";
+};
 
 const scorePrototypeRisk = (screening: ScreeningDraft) => {
   let score = 5;
   score += ({ "0-17": 0, "18-29": 0, "30-39": 0, "40-49": 3, "50-59": 8, "60-69": 15, "70 or older": 21 } as Record<string, number>)[screening.ageRange] || 0;
-  score += ({ "Current smoker": 23, "Former smoker": 13, "Never smoked": 0, "Not recorded": 4 } as Record<string, number>)[screening.smokingStatus] || 0;
-  score += Math.min(Number.parseFloat(screening.packYears) * (screening.packFrequency === "Per day" ? 4 : 1.5) || 0, 15);
+  score += ({ "Current smoker": 23, "Former smoker": 13, "Never smoker": 0, "Never smoked": 0, "Not recorded": 4 } as Record<string, number>)[screening.smokingStatus] || 0;
+  const packYearFactor = screening.packFrequency === "Pack-years" ? 1 : screening.packFrequency === "Per day" ? 4 : 1.5;
+  score += Math.min(Number.parseFloat(screening.packYears) * packYearFactor || 0, 15);
   if (screening.householdSmoke === "Yes") score += 4;
   if (screening.occupationalExposure && !["None reported", "Unknown"].includes(screening.occupationalExposure)) score += 5;
   if (screening.lungHistory && !["None reported", "Unknown"].includes(screening.lungHistory)) score += 5;
@@ -192,9 +212,14 @@ export default function App() {
   const incompleteFieldFocusTimer = useRef<number | undefined>(undefined);
   const previousScrollY = useRef(0);
   const imagingFileInput = useRef<HTMLInputElement | null>(null);
-  const screeningIsComplete = screeningFields.every((field) => screeningDraft[field].trim() !== "");
-  const firstIncompleteField = screeningFields.find((field) => !screeningDraft[field].trim());
-  const missingFieldClass = (field: keyof ScreeningDraft) => showIncompleteFields && !screeningDraft[field].trim() ? "is-required-missing" : "";
+  const conditionalScreeningFields: (keyof ScreeningDraft)[] = [
+    ...(selectedChecklistOptions(screeningDraft.occupationalExposure).includes("Other") ? ["occupationalExposureOther" as const] : []),
+    ...(selectedChecklistOptions(screeningDraft.physicalExamFindings).includes("Other") ? ["physicalExamOther" as const] : []),
+  ];
+  const requiredScreeningFields = [...screeningFields, ...conditionalScreeningFields];
+  const screeningIsComplete = requiredScreeningFields.every((field) => screeningDraft[field].trim() !== "");
+  const firstIncompleteField = requiredScreeningFields.find((field) => !screeningDraft[field].trim());
+  const missingFieldClass = (field: keyof ScreeningDraft) => showIncompleteFields && requiredScreeningFields.includes(field) && !screeningDraft[field].trim() ? "is-required-missing" : "";
   const prototypeRiskScore = useMemo(() => scorePrototypeRisk(screeningDraft), [screeningDraft]);
   const uploadedPreview = imagingMetadata.imagingFiles.find((file) => file.previewUrl)?.previewUrl;
   const prototypeRiskBand = prototypeRiskScore >= 50 ? "Elevated triage signal" : prototypeRiskScore >= 25 ? "Intermediate triage signal" : "Lower triage signal";
@@ -267,15 +292,41 @@ export default function App() {
     setScreeningDraft((current) => ({ ...current, [field]: value }));
   };
 
-  const selectedChecklistOptions = (value: string) => value ? value.split(" | ") : [];
-
-  const toggleChecklistOption = (field: "occupationalExposure" | "lungHistory", option: string, options: string[]) => {
+  const toggleChecklistOption = (field: "occupationalExposure" | "physicalExamFindings", option: string, options: string[]) => {
     setScreeningDraft((current) => {
       const selected = new Set(selectedChecklistOptions(current[field]));
       if (selected.has(option)) selected.delete(option);
-      else selected.add(option);
-      return { ...current, [field]: options.filter((item) => selected.has(item)).join(" | ") };
+      else {
+        if (option === "None reported" || option === "Unknown" || option === "Normal examination") selected.clear();
+        else {
+          selected.delete("None reported");
+          selected.delete("Unknown");
+          selected.delete("Normal examination");
+        }
+        selected.add(option);
+      }
+      const next = { ...current, [field]: options.filter((item) => selected.has(item)).join(" | ") };
+      if (field === "occupationalExposure") {
+        next.householdSmoke = selected.has("Secondhand smoke") ? "Yes" : "No";
+        if (!selected.has("Other")) next.occupationalExposureOther = "";
+      }
+      if (field === "physicalExamFindings" && !selected.has("Other")) next.physicalExamOther = "";
+      return next;
     });
+  };
+
+  const updateAge = (value: string) => {
+    setScreeningDraft((current) => ({ ...current, age: value, ageRange: ageRangeFor(value) }));
+  };
+
+  const updateSmokingStatus = (value: string) => {
+    setScreeningDraft((current) => ({
+      ...current,
+      smokingStatus: value,
+      packFrequency: "Pack-years",
+      packYears: value === "Never smoker" ? "0" : current.packYears,
+      yearsSinceQuitting: value === "Former smoker" ? (current.yearsSinceQuitting === "Not applicable" ? "" : current.yearsSinceQuitting) : "Not applicable",
+    }));
   };
 
   const updateWeightLoss = (value: string) => {
@@ -371,7 +422,7 @@ export default function App() {
     try {
       const parsed = JSON.parse(savedDraft) as { data?: ScreeningDraft };
       if (parsed.data) {
-        setScreeningDraft({ ...emptyScreeningDraft, ...parsed.data });
+        setScreeningDraft(normaliseScreeningDraft(parsed.data));
         setDraftStatus("Saved screening draft restored on this device.");
       }
     } catch {
@@ -387,7 +438,7 @@ export default function App() {
   };
 
   const editSavedScreening = (draft: LocalScreeningDraft) => {
-    setScreeningDraft({ ...emptyScreeningDraft, ...draft });
+    setScreeningDraft(normaliseScreeningDraft(draft));
     setScreeningStep(1);
     setDraftStatus("Local screening loaded for clinician review.");
     navigateTo("screening");
@@ -401,7 +452,7 @@ export default function App() {
 
   const finishScreening = () => {
     if (!screeningIsComplete) {
-      setDraftStatus("Screening is incomplete. Complete all 18 fields before the risk-support eligibility check can run.");
+      setDraftStatus(`Screening is incomplete. Complete all ${requiredScreeningFields.length} required fields before the risk-support eligibility check can run.`);
       return;
     }
     saveScreeningDraft();
@@ -787,7 +838,7 @@ export default function App() {
             </button>
             <p className="eyebrow"><ShieldCheck size={16} /> Local screening draft</p>
             <h1 id="screening-title">Record the screening information step by step.</h1>
-            <p>This clinician-only form keeps its demo draft on this device. All fields are required for the prototype eligibility gate; do not enter names or other direct identifiers.</p>
+            <p>This clinician-only form keeps its demo draft on this device. Fields marked optional do not block completion; do not enter names or other direct identifiers.</p>
             <div className="screening-steps" aria-label={`Screening step ${screeningStep} of 4`}>
               {["Profile", "Exposure", "Symptoms", "Survey history"].map((label, index) => (
                 <div className={screeningStep >= index + 1 ? "active" : ""} key={label}>
@@ -804,8 +855,9 @@ export default function App() {
                 <div className="form-heading"><p className="card-kicker">Step 1 of 4</p><h2>Patient profile and place</h2><p>Use a field reference rather than a patient name.</p></div>
                 <div className="form-grid">
                   <label className={missingFieldClass("fieldReference")}>Field reference<input name="fieldReference" value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. FIELD-024-001" /></label>
-                  <label className={missingFieldClass("ageRange")}>Age range<select name="ageRange" value={screeningDraft.ageRange} onChange={(event) => updateDraft("ageRange", event.target.value)}><option value="">Select range</option><option>0-17</option><option>18-29</option><option>30-39</option><option>40-49</option><option>50-59</option><option>60-69</option><option>70 or older</option></select></label>
+                  <label className={missingFieldClass("age")}>Age<input name="age" type="number" min="0" max="120" inputMode="numeric" value={screeningDraft.age} onChange={(event) => updateAge(event.target.value)} placeholder="Age in years" /></label>
                   <label className={missingFieldClass("sexAtBirth")}>Sex at birth<select name="sexAtBirth" value={screeningDraft.sexAtBirth} onChange={(event) => updateDraft("sexAtBirth", event.target.value)}><option value="">Select option</option><option>Female</option><option>Male</option><option>Intersex</option><option>Prefer not to record</option></select></label>
+                  <label className={missingFieldClass("occupation")}>Occupation<input name="occupation" value={screeningDraft.occupation} onChange={(event) => updateDraft("occupation", event.target.value)} placeholder="Current or primary occupation" /></label>
                   <ScreeningLocationFields
                     region={screeningDraft.province}
                     municipality={screeningDraft.municipality}
@@ -823,18 +875,13 @@ export default function App() {
 
               {screeningStep === 2 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 2 of 4</p><h2>Exposure and relevant history</h2><p>Record the clinician's screening observations. Complete every field to unlock the prototype risk-support check.</p></div>
+                <div className="form-heading"><p className="card-kicker">Step 2 of 4</p><h2>Smoking, exposure, and medical history</h2><p>Record each history item separately and use “Unknown” when the information is unavailable.</p></div>
                 <div className="form-grid">
-                  <label className={missingFieldClass("smokingStatus")}>Smoking status<select name="smokingStatus" value={screeningDraft.smokingStatus} onChange={(event) => updateDraft("smokingStatus", event.target.value)}><option value="">Select option</option><option>Never smoked</option><option>Former smoker</option><option>Current smoker</option><option>Not recorded</option></select></label>
-                  <label className={missingFieldClass("householdSmoke")}>Household smoke exposure<select name="householdSmoke" value={screeningDraft.householdSmoke} onChange={(event) => updateDraft("householdSmoke", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <TobaccoUseAmount
-                    frequency={screeningDraft.packFrequency}
-                    packs={screeningDraft.packYears}
-                    onFrequencyChange={(frequency) => updateDraft("packFrequency", frequency)}
-                    onPacksChange={(packs) => updateDraft("packYears", packs)}
-                    frequencyInvalid={showIncompleteFields && !screeningDraft.packFrequency.trim()}
-                    packsInvalid={showIncompleteFields && !screeningDraft.packYears.trim()}
-                  />
+                  <div className="form-section-heading wide-field"><h3>Smoking history</h3></div>
+                  <label className={missingFieldClass("smokingStatus")}>Smoking status<select name="smokingStatus" value={screeningDraft.smokingStatus} onChange={(event) => updateSmokingStatus(event.target.value)}><option value="">Select option</option><option>Current smoker</option><option>Former smoker</option><option>Never smoker</option></select></label>
+                  <label className={missingFieldClass("packYears")}>Pack-years<input name="packYears" type="number" min="0" step="0.1" inputMode="decimal" value={screeningDraft.packYears} disabled={screeningDraft.smokingStatus === "Never smoker"} onChange={(event) => updateDraft("packYears", event.target.value)} placeholder="e.g. 12.5" /></label>
+                  <label className={missingFieldClass("yearsSinceQuitting")}>Years since quitting<input name="yearsSinceQuitting" type={screeningDraft.smokingStatus === "Former smoker" ? "number" : "text"} min={screeningDraft.smokingStatus === "Former smoker" ? "0" : undefined} inputMode={screeningDraft.smokingStatus === "Former smoker" ? "numeric" : undefined} value={screeningDraft.yearsSinceQuitting} disabled={screeningDraft.smokingStatus !== "Former smoker"} onChange={(event) => updateDraft("yearsSinceQuitting", event.target.value)} placeholder={screeningDraft.smokingStatus === "Former smoker" ? "Years" : "Not applicable"} /></label>
+                  <div className="form-section-heading wide-field"><h3>Occupational or environmental exposure</h3></div>
                   <fieldset className={`screening-checklist ${missingFieldClass("occupationalExposure")}`}>
                     <legend>Occupational/environment exposure</legend>
                     <p>Select all factors that apply.</p>
@@ -842,13 +889,12 @@ export default function App() {
                       {exposureChecklistOptions.map((option) => <label key={option}><input name="occupationalExposure" type="checkbox" checked={selectedChecklistOptions(screeningDraft.occupationalExposure).includes(option)} onChange={() => toggleChecklistOption("occupationalExposure", option, exposureChecklistOptions)} />{option}</label>)}
                     </div>
                   </fieldset>
-                  <fieldset className={`screening-checklist ${missingFieldClass("lungHistory")}`}>
-                    <legend>Lung or TB history</legend>
-                    <p>Select all factors that apply.</p>
-                    <div className="screening-checklist__options">
-                      {lungHistoryChecklistOptions.map((option) => <label key={option}><input name="lungHistory" type="checkbox" checked={selectedChecklistOptions(screeningDraft.lungHistory).includes(option)} onChange={() => toggleChecklistOption("lungHistory", option, lungHistoryChecklistOptions)} />{option}</label>)}
-                    </div>
-                  </fieldset>
+                  {selectedChecklistOptions(screeningDraft.occupationalExposure).includes("Other") && <label className={missingFieldClass("occupationalExposureOther")}>Other exposure (specify)<input name="occupationalExposureOther" value={screeningDraft.occupationalExposureOther} onChange={(event) => updateDraft("occupationalExposureOther", event.target.value)} /></label>}
+                  <div className="form-section-heading wide-field"><h3>Medical history</h3></div>
+                  <label className={missingFieldClass("previousTuberculosis")}>Previous tuberculosis<select name="previousTuberculosis" value={screeningDraft.previousTuberculosis} onChange={(event) => updateDraft("previousTuberculosis", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={missingFieldClass("copd")}>COPD<select name="copd" value={screeningDraft.copd} onChange={(event) => updateDraft("copd", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={missingFieldClass("asthma")}>Asthma<select name="asthma" value={screeningDraft.asthma} onChange={(event) => updateDraft("asthma", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={missingFieldClass("previousMalignancy")}>Previous malignancy<select name="previousMalignancy" value={screeningDraft.previousMalignancy} onChange={(event) => updateDraft("previousMalignancy", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
                   <label className={missingFieldClass("familyHistory")}>Family lung-cancer history<select name="familyHistory" value={screeningDraft.familyHistory} onChange={(event) => updateDraft("familyHistory", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
                 </div>
                 </>
@@ -856,16 +902,32 @@ export default function App() {
 
               {screeningStep === 3 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Symptoms and clinician note</h2><p>This is not a diagnosis. Complete every field with a recorded value; use “Unknown” when appropriate.</p></div>
+                <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Symptoms and clinical assessment</h2><p>This is not a diagnosis. Record symptoms and relevant examination findings; use “Unknown” when appropriate.</p></div>
                 <div className="form-grid symptom-form-grid">
-                  <label className={`symptom-cough ${missingFieldClass("persistentCough")}`}>Persistent cough<select name="persistentCough" value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <label className={`symptom-breath ${missingFieldClass("breathlessness")}`}>Breathlessness<select name="breathlessness" value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
-                  <label className={`symptom-blood ${missingFieldClass("bloodInSputum")}`}>Blood in sputum<select name="bloodInSputum" value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                  <div className="form-section-heading wide-field"><h3>Symptoms</h3></div>
+                  <label className={`symptom-cough ${missingFieldClass("persistentCough")}`}>Persistent cough (&gt;2–3 weeks)<select name="persistentCough" value={screeningDraft.persistentCough} onChange={(event) => updateDraft("persistentCough", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={`symptom-breath ${missingFieldClass("breathlessness")}`}>Dyspnea<select name="breathlessness" value={screeningDraft.breathlessness} onChange={(event) => updateDraft("breathlessness", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={`symptom-blood ${missingFieldClass("bloodInSputum")}`}>Hemoptysis<select name="bloodInSputum" value={screeningDraft.bloodInSputum} onChange={(event) => updateDraft("bloodInSputum", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={missingFieldClass("chestPain")}>Chest pain<select name="chestPain" value={screeningDraft.chestPain} onChange={(event) => updateDraft("chestPain", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
                   <div className={`weight-loss-field ${screeningDraft.weightLoss === "Yes" ? "has-detail" : ""} ${missingFieldClass("weightLoss")}`}>
-                    <label>Unintentional weight loss<select name="weightLoss" value={screeningDraft.weightLoss} onChange={(event) => updateWeightLoss(event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option><option>Unknown</option></select></label>
+                    <label>Weight loss<select name="weightLoss" value={screeningDraft.weightLoss} onChange={(event) => updateWeightLoss(event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
                     {screeningDraft.weightLoss === "Yes" && <label>How much weight did the patient lose? (optional)<input value={screeningDraft.weightLossAmount} onChange={(event) => updateDraft("weightLossAmount", event.target.value)} placeholder="e.g. 5 kg or 11 lb" /></label>}
                   </div>
-                  <label className="symptom-oxygen">Oxygen saturation (if available)<input value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="Optional %" /></label>
+                  <label className={missingFieldClass("hoarseness")}>Hoarseness<select name="hoarseness" value={screeningDraft.hoarseness} onChange={(event) => updateDraft("hoarseness", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <label className={missingFieldClass("fatigue")}>Fatigue<select name="fatigue" value={screeningDraft.fatigue} onChange={(event) => updateDraft("fatigue", event.target.value)}><option value="">Select option</option>{responseOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                  <div className="form-section-heading wide-field"><h3>Initial clinical assessment</h3></div>
+                  <label>Vital signs (optional)<input name="vitalSigns" value={screeningDraft.vitalSigns} onChange={(event) => updateDraft("vitalSigns", event.target.value)} placeholder="e.g. BP 120/80, pulse 76, temperature 36.8 °C" /></label>
+                  <label className="symptom-oxygen">Oxygen saturation (optional)<input name="oxygenSaturation" value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="e.g. 97%" /></label>
+                  <label className={missingFieldClass("chestXrayAvailable")}>Chest X-ray available<select name="chestXrayAvailable" value={screeningDraft.chestXrayAvailable} onChange={(event) => updateDraft("chestXrayAvailable", event.target.value)}><option value="">Select option</option><option>Yes</option><option>No</option></select></label>
+                  <div className="form-section-heading wide-field"><h3>Relevant physical examination findings</h3></div>
+                  <fieldset className={`screening-checklist wide-field ${missingFieldClass("physicalExamFindings")}`}>
+                    <legend>Physical examination findings</legend>
+                    <p>Select all findings that apply.</p>
+                    <div className="screening-checklist__options screening-checklist__options--columns">
+                      {physicalExamOptions.map((option) => <label key={option}><input name="physicalExamFindings" type="checkbox" checked={selectedChecklistOptions(screeningDraft.physicalExamFindings).includes(option)} onChange={() => toggleChecklistOption("physicalExamFindings", option, physicalExamOptions)} />{option}</label>)}
+                    </div>
+                  </fieldset>
+                  {selectedChecklistOptions(screeningDraft.physicalExamFindings).includes("Other") && <label className={`wide-field ${missingFieldClass("physicalExamOther")}`}>Other physical finding (specify)<input name="physicalExamOther" value={screeningDraft.physicalExamOther} onChange={(event) => updateDraft("physicalExamOther", event.target.value)} /></label>}
                   <label className="wide-field">Clinician note<textarea value={screeningDraft.clinicianNotes} onChange={(event) => updateDraft("clinicianNotes", event.target.value)} placeholder="Optional screening note; do not include direct identifiers." rows={4} /></label>
                 </div>
                 </>
@@ -885,7 +947,7 @@ export default function App() {
             </div>
 
             <div className="draft-actions">
-              <div className={`draft-status ${screeningIsComplete ? "is-complete" : ""}`} aria-live="polite">{draftStatus || (screeningIsComplete ? "Screening complete — eligible for prototype risk-support review." : `${screeningFields.filter((field) => !screeningDraft[field].trim()).length} required screening field(s) still need a value.`)}</div>
+              <div className={`draft-status ${screeningIsComplete ? "is-complete" : ""}`} aria-live="polite">{draftStatus || (screeningIsComplete ? "Screening complete — eligible for prototype risk-support review." : `${requiredScreeningFields.filter((field) => !screeningDraft[field].trim()).length} required screening field(s) still need a value.`)}</div>
               <div className="draft-buttons">
                 <button className="text-button" type="button" onClick={restoreScreeningDraft}>Restore local draft</button>
                 <button className="secondary-button" type="button" onClick={saveScreeningDraft}>Save local draft</button>
@@ -1033,7 +1095,7 @@ export default function App() {
               <div className="risk-card-topline"><span>Screening-only estimate</span><span>Static demo</span></div>
               <div className={`risk-score risk-${prototypeRiskScore >= 50 ? "elevated" : prototypeRiskScore >= 25 ? "intermediate" : "lower"}`}><strong>{prototypeRiskScore}<small>/100</small></strong><span>{prototypeRiskBand}</span></div>
               <p>This is a transparent demo calculation, not a cancer probability or a validated clinical score. It does not diagnose or rule out lung cancer.</p>
-              <dl className="risk-inputs"><div><dt>Smoking status</dt><dd>{screeningDraft.smokingStatus}</dd></div><div><dt>Exposure</dt><dd>{screeningDraft.occupationalExposure}</dd></div><div><dt>Symptoms recorded</dt><dd>{symptomSignals.filter(([value]) => value === "Yes").length} positive</dd></div><div><dt>Profile completeness</dt><dd>{screeningFields.length} / {screeningFields.length} complete</dd></div></dl>
+              <dl className="risk-inputs"><div><dt>Smoking status</dt><dd>{screeningDraft.smokingStatus}</dd></div><div><dt>Exposure</dt><dd>{screeningDraft.occupationalExposure}</dd></div><div><dt>Symptoms recorded</dt><dd>{symptomSignals.filter(([value]) => value === "Yes").length} positive</dd></div><div><dt>Profile completeness</dt><dd>{requiredScreeningFields.length} / {requiredScreeningFields.length} complete</dd></div></dl>
               <div className="static-demo-actions"><button className="secondary-button" type="button" onClick={() => navigateTo("screening")}>Review screening profile</button><button className="primary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Continue to local imaging metadata <ArrowRight size={18} /></button></div>
             </article>
             <article className="heatmap-card static-driver-card">

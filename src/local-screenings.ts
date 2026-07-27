@@ -1,24 +1,39 @@
 export type LocalScreeningDraft = {
   fieldReference: string;
+  age: string;
   ageRange: string;
   sexAtBirth: string;
   barangay: string;
   municipality: string;
   province: string;
+  occupation: string;
   smokingStatus: string;
   packFrequency: string;
   packYears: string;
+  yearsSinceQuitting: string;
   householdSmoke: string;
   occupationalExposure: string;
+  occupationalExposureOther: string;
   lungHistory: string;
+  previousTuberculosis: string;
+  copd: string;
+  asthma: string;
+  previousMalignancy: string;
   familyHistory: string;
   persistentCough: string;
   breathlessness: string;
   bloodInSputum: string;
+  chestPain: string;
   weightLoss: string;
   weightLossAmount: string;
+  hoarseness: string;
+  fatigue: string;
   previousSurveyResponse: string;
+  vitalSigns: string;
   oxygenSaturation: string;
+  chestXrayAvailable: string;
+  physicalExamFindings: string;
+  physicalExamOther: string;
   clinicianNotes: string;
 };
 
@@ -45,13 +60,22 @@ export const screeningHistoryKey = "aeris-screening-history-v1";
 export const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 
 export const emptyLocalScreeningDraft: LocalScreeningDraft = {
-  fieldReference: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", smokingStatus: "", packFrequency: "", packYears: "", householdSmoke: "", occupationalExposure: "", lungHistory: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", weightLoss: "", weightLossAmount: "", previousSurveyResponse: "", oxygenSaturation: "", clinicianNotes: "",
+  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
 };
 
-export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | undefined): LocalScreeningDraft => ({
-  ...emptyLocalScreeningDraft,
-  ...Object.fromEntries(Object.entries(value ?? {}).filter(([key, item]) => key in emptyLocalScreeningDraft && typeof item === "string")),
-});
+export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | undefined): LocalScreeningDraft => {
+  const normalised = {
+    ...emptyLocalScreeningDraft,
+    ...Object.fromEntries(Object.entries(value ?? {}).filter(([key, item]) => key in emptyLocalScreeningDraft && typeof item === "string")),
+  };
+
+  if (!normalised.occupationalExposure.includes("Secondhand smoke") && normalised.householdSmoke === "Yes") {
+    normalised.occupationalExposure = [normalised.occupationalExposure, "Secondhand smoke"].filter(Boolean).join(" | ");
+  }
+  if (normalised.smokingStatus === "Never smoked") normalised.smokingStatus = "Never smoker";
+
+  return normalised;
+};
 
 const isRecordLike = (value: unknown): value is { id: unknown; savedAt: unknown; data: unknown; updates?: unknown } => Boolean(value && typeof value === "object" && !Array.isArray(value) && "id" in value && "savedAt" in value && "data" in value);
 
