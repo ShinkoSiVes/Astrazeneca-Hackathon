@@ -120,6 +120,35 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByText(/public data excluded/i)).toBeInTheDocument();
   });
 
+  it("layers public and deduplicated screening data without summing source counts", async () => {
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([
+      {
+        id: "FIELD-001",
+        savedAt: "2026-07-24T09:30:00.000Z",
+        data: { fieldReference: "FIELD-001", province: "Region III — Central Luzon", previousSurveyResponse: "No" },
+      },
+      {
+        id: "field-001",
+        savedAt: "2026-07-24T09:31:00.000Z",
+        data: { fieldReference: "field-001", province: "Region III — Central Luzon", previousSurveyResponse: "No" },
+      },
+    ]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await user.click(await screen.findByRole("button", { name: /combined overlay/i }));
+
+    expect(screen.getByText(/sources layered, never summed/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 duplicate excluded/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /region i.*ilocos region.*0 unique app screening profiles/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /region ii.*cagayan valley.*0 unique app screening profiles/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*static public baseline.*1 unique app screening profile/i }));
+    expect(screen.getByText("50 baseline")).toBeInTheDocument();
+    expect(screen.getByText("1 unique app-screened")).toBeInTheDocument();
+    expect(screen.getByText(/layered, not summed/i)).toBeInTheDocument();
+  });
+
   it("saves a clinician screening draft locally", async () => {
     localStorage.clear();
     const user = userEvent.setup();

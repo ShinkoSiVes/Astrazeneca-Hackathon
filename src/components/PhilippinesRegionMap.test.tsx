@@ -27,3 +27,16 @@ it("includes a full compass rose for map orientation", () => {
 
   expect(screen.getByLabelText(/compass showing north, east, south, and west/i)).toBeInTheDocument();
 });
+
+it("exposes separate public and screening values in combined mode", () => {
+  const screeningRegions = regions.map((region, index) => ({
+    ...region,
+    signalLevel: index === 3 ? "Moderate" : "Lower",
+    syntheticRecords: index === 3 ? 2 : 0,
+  }));
+
+  render(<PhilippinesRegionMap regions={regions} screeningRegions={screeningRegions} selectedRegionId="region-1" onSelect={vi.fn()} dataSource="combined" />);
+
+  expect(screen.getByRole("button", { name: /region 04, lower static public baseline, 2 unique app screening profiles/i })).toBeInTheDocument();
+  expect(screen.getByLabelText(/static public signal and app-screening overlay keys/i)).toBeInTheDocument();
+});
