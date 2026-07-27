@@ -169,6 +169,43 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("BHW-024-001");
   });
 
+  it("confirms locally interpreted dropdown text and retains the original wording", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
+
+    await user.click(await screen.findByRole("switch", { name: /text interpretation/i }));
+    await user.type(screen.getByLabelText(/sex at birth/i), "woman");
+    expect(screen.getByText(/closest local match/i)).toHaveTextContent("Female");
+    await user.click(screen.getByRole("button", { name: /confirm female/i }));
+    await user.click(screen.getByRole("button", { name: /save local draft/i }));
+
+    const saved = JSON.parse(localStorage.getItem("aeris-screening-draft-v1") ?? "{}") as {
+      data?: { sexAtBirth?: string };
+      inputMode?: string;
+      inputEvidence?: { sexAtBirth?: { rawText?: string; confirmedValue?: string } };
+    };
+    expect(saved.data?.sexAtBirth).toBe("Female");
+    expect(saved.inputMode).toBe("text");
+    expect(saved.inputEvidence?.sexAtBirth).toEqual(expect.objectContaining({
+      rawText: "woman",
+      confirmedValue: "Female",
+    }));
+
+    await user.click(screen.getByRole("switch", { name: /text interpretation/i }));
+    await user.selectOptions(screen.getByLabelText(/sex at birth/i), "Male");
+    await user.click(screen.getByRole("button", { name: /restore local draft/i }));
+    expect(screen.getByRole("switch", { name: /text interpretation/i })).toBeChecked();
+    expect(screen.getByLabelText(/sex at birth/i)).toHaveValue("woman");
+    expect(screen.getByText(/confirmed as/i)).toHaveTextContent("Female");
+  });
+
   it("captures the expanded screening-profile variables", async () => {
     localStorage.clear();
     const user = userEvent.setup();
@@ -186,8 +223,8 @@ describe("TASK-001 consent and demo login", () => {
 
     expect(await screen.findByLabelText(/^pack-years$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/years since quitting/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/previous tuberculosis/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/previous malignancy/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/previous case of tuberculosis/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/previous case of malignancy/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
 

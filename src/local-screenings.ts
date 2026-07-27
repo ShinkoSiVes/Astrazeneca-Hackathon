@@ -37,16 +37,48 @@ export type LocalScreeningDraft = {
   clinicianNotes: string;
 };
 
+export const screeningAlternativeFields = [
+  "sexAtBirth",
+  "smokingStatus",
+  "previousTuberculosis",
+  "copd",
+  "asthma",
+  "previousMalignancy",
+  "familyHistory",
+  "persistentCough",
+  "breathlessness",
+  "bloodInSputum",
+  "chestPain",
+  "weightLoss",
+  "hoarseness",
+  "fatigue",
+  "chestXrayAvailable",
+  "previousSurveyResponse",
+] as const;
+
+export type ScreeningAlternativeField = typeof screeningAlternativeFields[number];
+export type ScreeningInputMode = "structured" | "text";
+export type ScreeningInputEvidenceItem = {
+  rawText: string;
+  suggestedValue: string;
+  confirmedValue: string;
+};
+export type ScreeningInputEvidence = Partial<Record<ScreeningAlternativeField, ScreeningInputEvidenceItem>>;
+
 export type ScreeningRecordUpdate = {
   id: string;
   savedAt: string;
   data: LocalScreeningDraft;
+  inputMode: ScreeningInputMode;
+  inputEvidence: ScreeningInputEvidence;
 };
 
 export type StoredScreening = {
   id: string;
   savedAt: string;
   data: LocalScreeningDraft;
+  inputMode: ScreeningInputMode;
+  inputEvidence: ScreeningInputEvidence;
   updates: ScreeningRecordUpdate[];
 };
 
@@ -54,6 +86,8 @@ export type TemporaryRecordSummary = {
   savedAt: string;
   status: string;
   screening?: LocalScreeningDraft;
+  screeningInputMode?: ScreeningInputMode;
+  screeningInputEvidence?: ScreeningInputEvidence;
 };
 
 export const screeningHistoryKey = "aeris-screening-history-v1";
@@ -77,21 +111,67 @@ export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | un
   return normalised;
 };
 
-const isRecordLike = (value: unknown): value is { id: unknown; savedAt: unknown; data: unknown; updates?: unknown } => Boolean(value && typeof value === "object" && !Array.isArray(value) && "id" in value && "savedAt" in value && "data" in value);
+export const normaliseScreeningInputMode = (value: unknown): ScreeningInputMode => value === "text" ? "text" : "structured";
 
-const normaliseStoredScreening = (value: { id: unknown; savedAt: unknown; data: unknown; updates?: unknown }): StoredScreening | null => {
+export const normaliseScreeningInputEvidence = (value: unknown): ScreeningInputEvidence => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const source = value as Record<string, unknown>;
+  return Object.fromEntries(screeningAlternativeFields.flatMap((field) => {
+    const item = source[field];
+    if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+    const candidate = item as Record<string, unknown>;
+    const evidence: ScreeningInputEvidenceItem = {
+      rawText: typeof candidate.rawText === "string" ? candidate.rawText : "",
+      suggestedValue: typeof candidate.suggestedValue === "string" ? candidate.suggestedValue : "",
+      confirmedValue: typeof candidate.confirmedValue === "string" ? candidate.confirmedValue : "",
+    };
+    return evidence.rawText || evidence.suggestedValue || evidence.confirmedValue ? [[field, evidence]] : [];
+  })) as ScreeningInputEvidence;
+};
+
+type RecordLike = {
+  id: unknown;
+  savedAt: unknown;
+  data: unknown;
+  inputMode?: unknown;
+  inputEvidence?: unknown;
+  updates?: unknown;
+};
+
+const isRecordLike = (value: unknown): value is RecordLike => Boolean(value && typeof value === "object" && !Array.isArray(value) && "id" in value && "savedAt" in value && "data" in value);
+
+const normaliseStoredScreening = (value: RecordLike): StoredScreening | null => {
   if (typeof value.id !== "string" || typeof value.savedAt !== "string" || !value.id || !value.savedAt || !value.data || typeof value.data !== "object") return null;
-  const legacySnapshot: ScreeningRecordUpdate = { id: `${value.id}-${value.savedAt}`, savedAt: value.savedAt, data: normaliseScreeningDraft(value.data as Partial<LocalScreeningDraft>) };
+  const legacySnapshot: ScreeningRecordUpdate = {
+    id: `${value.id}-${value.savedAt}`,
+    savedAt: value.savedAt,
+    data: normaliseScreeningDraft(value.data as Partial<LocalScreeningDraft>),
+    inputMode: normaliseScreeningInputMode(value.inputMode),
+    inputEvidence: normaliseScreeningInputEvidence(value.inputEvidence),
+  };
   const updates = Array.isArray(value.updates)
     ? value.updates
-      .filter((update): update is { id: unknown; savedAt: unknown; data: unknown } => Boolean(update && typeof update === "object" && "id" in update && "savedAt" in update && "data" in update))
+      .filter((update): update is RecordLike => Boolean(update && typeof update === "object" && "id" in update && "savedAt" in update && "data" in update))
       .filter((update) => typeof update.id === "string" && typeof update.savedAt === "string" && Boolean(update.id) && Boolean(update.savedAt) && Boolean(update.data) && typeof update.data === "object")
-      .map((update) => ({ id: update.id as string, savedAt: update.savedAt as string, data: normaliseScreeningDraft(update.data as Partial<LocalScreeningDraft>) }))
+      .map((update) => ({
+        id: update.id as string,
+        savedAt: update.savedAt as string,
+        data: normaliseScreeningDraft(update.data as Partial<LocalScreeningDraft>),
+        inputMode: normaliseScreeningInputMode(update.inputMode),
+        inputEvidence: normaliseScreeningInputEvidence(update.inputEvidence),
+      }))
       .sort((a, b) => b.savedAt.localeCompare(a.savedAt))
     : [];
   const recordUpdates = updates.length ? updates : [legacySnapshot];
   const latest = recordUpdates[0];
-  return { id: value.id, savedAt: latest.savedAt, data: latest.data, updates: recordUpdates };
+  return {
+    id: value.id,
+    savedAt: latest.savedAt,
+    data: latest.data,
+    inputMode: latest.inputMode,
+    inputEvidence: latest.inputEvidence,
+    updates: recordUpdates,
+  };
 };
 
 export const readStoredScreenings = (): StoredScreening[] => {
@@ -108,16 +188,28 @@ export const readStoredScreenings = (): StoredScreening[] => {
   }
 };
 
-export const storeScreeningSnapshot = (draft: LocalScreeningDraft) => {
+export const storeScreeningSnapshot = (
+  draft: LocalScreeningDraft,
+  inputEvidence: ScreeningInputEvidence = {},
+  inputMode: ScreeningInputMode = "structured",
+) => {
   const savedAt = new Date().toISOString();
   const reference = draft.fieldReference.trim() || `local-${savedAt}`;
   const history = readStoredScreenings();
-  const snapshot: ScreeningRecordUpdate = { id: `${reference}-${savedAt}`, savedAt, data: normaliseScreeningDraft(draft) };
+  const snapshot: ScreeningRecordUpdate = {
+    id: `${reference}-${savedAt}`,
+    savedAt,
+    data: normaliseScreeningDraft(draft),
+    inputMode: normaliseScreeningInputMode(inputMode),
+    inputEvidence: normaliseScreeningInputEvidence(inputEvidence),
+  };
   const existingRecord = history.find((item) => item.id === reference);
   const record: StoredScreening = {
     id: reference,
     savedAt,
     data: snapshot.data,
+    inputMode: snapshot.inputMode,
+    inputEvidence: snapshot.inputEvidence,
     updates: [snapshot, ...(existingRecord?.updates ?? [])].slice(0, 20),
   };
   const next = [record, ...history.filter((item) => item.id !== reference)].slice(0, 12);
@@ -134,7 +226,13 @@ export const readTemporaryRecordSummary = (): TemporaryRecordSummary | null => {
   try {
     const parsed = JSON.parse(localStorage.getItem(temporaryRecordKey) ?? "null") as Partial<TemporaryRecordSummary> | null;
     if (!parsed || typeof parsed.savedAt !== "string" || typeof parsed.status !== "string") return null;
-    return { savedAt: parsed.savedAt, status: parsed.status, screening: normaliseScreeningDraft(parsed.screening) };
+    return {
+      savedAt: parsed.savedAt,
+      status: parsed.status,
+      screening: normaliseScreeningDraft(parsed.screening),
+      screeningInputMode: normaliseScreeningInputMode(parsed.screeningInputMode),
+      screeningInputEvidence: normaliseScreeningInputEvidence(parsed.screeningInputEvidence),
+    };
   } catch {
     return null;
   }
