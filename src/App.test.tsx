@@ -221,19 +221,19 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByLabelText(/occupation/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
-    expect(await screen.findByLabelText(/^pack-years$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/years since quitting/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/previous case of tuberculosis/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/previous case of malignancy/i)).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^continue$/i }));
-
     expect(await screen.findByLabelText(/persistent cough/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/chest pain/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/hoarseness/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/fatigue/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/chest x-ray available/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /digital clubbing/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    expect(await screen.findByLabelText(/^pack-years$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/years since quitting/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/previous case of tuberculosis/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/previous case of malignancy/i)).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
   });
 
   it("records pack-years and conditional years-since-quitting", async () => {
@@ -246,12 +246,15 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByLabelText(/demo passcode/i);
     await user.type(screen.getByLabelText(/demo passcode/i), "1234");
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
-    await screen.findByRole("button", { name: /start screening/i });
-    await user.click(screen.getByRole("button", { name: /start screening/i }));
+    await screen.findByRole("button", { name: /new screening/i });
+    await user.click(screen.getByRole("button", { name: /new screening/i }));
     await screen.findByRole("button", { name: /^continue$/i });
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
     expect(document.querySelector(".screening-step-panel")).toHaveClass("is-leaving");
     expect(document.querySelector(".screening-card")).toHaveClass("is-switching");
+    await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.selectOptions(await screen.findByLabelText(/smoking status/i), "Former smoker");
     await user.type(screen.getByLabelText(/^pack-years$/i), "12");
     await user.type(screen.getByLabelText(/years since quitting/i), "3");
@@ -270,8 +273,7 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
     await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
-    await user.click(await screen.findByRole("button", { name: /start screening/i }));
-    await user.click(await screen.findByRole("button", { name: /^continue$/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
     await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
 
@@ -291,11 +293,11 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
     await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
-    await user.click(await screen.findByRole("button", { name: /start screening/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
     await user.click(await screen.findByRole("button", { name: /^continue$/i }));
-    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
-    await user.click(screen.getByRole("button", { name: /^continue$/i }));
     await screen.findByRole("heading", { name: /symptoms and clinical assessment/i });
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+    await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
     await screen.findByRole("heading", { name: /previous survey history/i });
 

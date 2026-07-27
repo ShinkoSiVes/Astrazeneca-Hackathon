@@ -1,5 +1,11 @@
 # Stage changelog
 
+## Screening workflow order
+
+- Status: awaiting owner review
+- Swapped screening steps 2 and 3 so symptoms and clinical assessment are recorded before smoking, exposure, and medical history.
+- Updated the progress indicator and incomplete-field navigation to follow the same order.
+
 ## Screening alternative input mode
 
 - Status: awaiting owner review
