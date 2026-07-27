@@ -152,10 +152,10 @@ const screeningFields: (keyof ScreeningDraft)[] = [
 
 const screeningStepForField: Partial<Record<keyof ScreeningDraft, number>> = {
   fieldReference: 1, age: 1, sexAtBirth: 1, barangay: 1, municipality: 1, province: 1, occupation: 1,
-  smokingStatus: 2, packYears: 2, yearsSinceQuitting: 2, occupationalExposure: 2, occupationalExposureOther: 2,
-  previousTuberculosis: 2, copd: 2, asthma: 2, previousMalignancy: 2, familyHistory: 2,
-  persistentCough: 3, breathlessness: 3, bloodInSputum: 3, chestPain: 3, weightLoss: 3, hoarseness: 3, fatigue: 3,
-  chestXrayAvailable: 3, physicalExamFindings: 3, physicalExamOther: 3,
+  persistentCough: 2, breathlessness: 2, bloodInSputum: 2, chestPain: 2, weightLoss: 2, hoarseness: 2, fatigue: 2,
+  chestXrayAvailable: 2, physicalExamFindings: 2, physicalExamOther: 2,
+  smokingStatus: 3, packYears: 3, yearsSinceQuitting: 3, occupationalExposure: 3, occupationalExposureOther: 3,
+  previousTuberculosis: 3, copd: 3, asthma: 3, previousMalignancy: 3, familyHistory: 3,
   previousSurveyResponse: 4,
 };
 
@@ -924,7 +924,7 @@ export default function App() {
               />
             </label>
             <div className="screening-steps" aria-label={`Screening step ${screeningStep} of 4`}>
-              {["Profile", "Exposure", "Symptoms", "Survey history"].map((label, index) => (
+              {["Profile", "Symptoms", "Exposure", "Survey history"].map((label, index) => (
                 <div className={screeningStep >= index + 1 ? "active" : ""} key={label}>
                   <span>{index + 1}</span>{label}
                 </div>
@@ -957,9 +957,9 @@ export default function App() {
                 </>
               )}
 
-              {screeningStep === 2 && (
+              {screeningStep === 3 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 2 of 4</p><h2>Smoking, exposure, and medical history</h2><p>Record each history item separately and use “Unknown” when the information is unavailable.</p></div>
+                <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Smoking, exposure, and medical history</h2><p>Record each history item separately and use “Unknown” when the information is unavailable.</p></div>
                 <div className="form-grid">
                   <div className="form-section-heading wide-field"><h3>Smoking history</h3></div>
                   {renderScreeningChoice("smokingStatus", "Smoking status", ["Current smoker", "Former smoker", "Never smoker"], updateSmokingStatus)}
@@ -984,9 +984,9 @@ export default function App() {
                 </>
               )}
 
-              {screeningStep === 3 && (
+              {screeningStep === 2 && (
                 <>
-                <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Symptoms and clinical assessment</h2><p>This is not a diagnosis. Record symptoms and relevant examination findings; use “Unknown” when appropriate.</p></div>
+                <div className="form-heading"><p className="card-kicker">Step 2 of 4</p><h2>Symptoms and clinical assessment</h2><p>This is not a diagnosis. Record symptoms and relevant examination findings; use “Unknown” when appropriate.</p></div>
                 <div className="form-grid symptom-form-grid">
                   <div className="form-section-heading wide-field"><h3>Symptoms</h3></div>
                   {renderScreeningChoice("persistentCough", "Persistent cough (>2–3 weeks)", responseOptions, undefined, "symptom-cough")}
