@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { ArchiveRestore, ArrowRight, Download, FilePenLine, FolderClock, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { ArchiveRestore, ArrowRight, Download, FilePenLine, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import {
   normaliseScreeningDraft,
   readStoredScreenings,
@@ -119,7 +119,6 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
   return (
     <section className="encounter-dashboard" aria-labelledby="encounter-dashboard-title">
       <div className="encounter-dashboard__intro">
-        <div className="ready-icon"><FolderClock size={34} /></div>
         <p className="eyebrow">Clinician workspace</p>
         <h1 id="encounter-dashboard-title">You’re signed in as {clinicianId}.</h1>
         <p>Consent is recorded for this encounter. Choose a local screening record or begin a new clinician-led entry.</p>
