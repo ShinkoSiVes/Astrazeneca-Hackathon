@@ -272,7 +272,7 @@ button:disabled { cursor: not-allowed; }
 .heatmap-status-hero > p:last-child { max-width: 720px; margin: 0; color: #526d74; font-size: 18px; line-height: 1.6; }
 .heatmap-status-card { margin-top: 52px; border: 1px solid #d6e7e2; border-radius: 25px; padding: clamp(25px, 4vw, 42px); background: rgb(255 255 255 / 78%); box-shadow: 0 18px 48px rgb(20 64 69 / 6%); }
 .heatmap-status-topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #688087; font-size: 13px; font-weight: 750; }
-.heatmap-source-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px; padding: 6px; border: 1px solid #cfe1dd; border-radius: 15px; background: #eef7f4; }
+.heatmap-source-switch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 20px; padding: 6px; border: 1px solid #cfe1dd; border-radius: 15px; background: #eef7f4; }
 .heatmap-source-switch button { display: grid; gap: 3px; min-width: 0; border: 1px solid transparent; border-radius: 10px; padding: 11px 13px; color: #55757a; background: transparent; text-align: left; font: inherit; transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
 .heatmap-source-switch button strong { color: inherit; font-size: 13px; }
 .heatmap-source-switch button span { overflow: hidden; font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
@@ -302,6 +302,9 @@ button:disabled { cursor: not-allowed; }
 .map-region-extrusion { fill: var(--map-depth); opacity: .8; }
 .map-region-surface { transform-box: fill-box; transform-origin: center; transition: transform 180ms cubic-bezier(.2, .8, .2, 1); }
 .map-region-shape { fill: var(--map-surface); stroke: var(--map-edge); stroke-width: 1.35; stroke-linejoin: round; transition: fill 180ms ease, stroke-width 180ms ease; }
+.map-screening-overlay { fill: url("#screening-none-pattern"); stroke: #267d78; stroke-width: .8; pointer-events: none; }
+.map-region-group.screening-moderate .map-screening-overlay { fill: url("#screening-moderate-pattern"); stroke-width: 1.25; }
+.map-region-group.screening-higher .map-screening-overlay { fill: url("#screening-higher-pattern"); stroke-width: 1.75; }
 .map-region-label { fill: #17474c; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 900; letter-spacing: .03em; pointer-events: none; transition: fill 180ms ease, transform 180ms ease; }
 .map-region-group:hover .map-region-shape, .map-region-group:focus .map-region-shape { stroke-width: 2.5; }
 .map-region-group:hover .map-region-surface, .map-region-group:focus .map-region-surface { transform: translateY(-5px); }
@@ -322,6 +325,9 @@ button:disabled { cursor: not-allowed; }
 .map-depth-key .signal-lower { background: #b1ddd3; }
 .map-depth-key .signal-moderate { background: #ead799; }
 .map-depth-key .signal-higher { background: #e4aa87; }
+.map-depth-key .screening-none { background: repeating-linear-gradient(135deg, transparent 0 3px, rgb(38 125 120 / 25%) 3px 4px); }
+.map-depth-key .screening-moderate { background: repeating-linear-gradient(135deg, #e8f5f1 0 3px, #0c6865 3px 5px); }
+.map-depth-key .screening-higher { background: repeating-linear-gradient(135deg, #d7ebe7 0 2px, #064f4d 2px 4px); }
 .map-source-note { margin: 11px 2px 0; color: #6b8588; font-size: 11px; line-height: 1.5; }
 .regional-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; padding: 15px; border: 1px solid #d5e6e1; border-radius: 18px; background: linear-gradient(135deg, #f4faf8, #eef8f5); }
 .regional-cell { display: grid; gap: 5px; min-height: 82px; border: 1px solid #d4e4e0; border-radius: 11px; padding: 10px 8px; color: #1d5058; background: #e8f4f0; text-align: left; transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
@@ -551,6 +557,7 @@ button:disabled { cursor: not-allowed; }
   .team-grid { grid-template-columns: 1fr; }
   .heatmap-status-card { padding: 25px 20px; border-radius: 20px; }
   .heatmap-status-topline { align-items: flex-start; flex-direction: column; }
+  .heatmap-source-switch { grid-template-columns: 1fr; }
   .dashboard-summary-grid { grid-template-columns: 1fr; }
   .regional-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .screening-layout { margin-bottom: 60px; }

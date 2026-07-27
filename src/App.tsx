@@ -82,16 +82,28 @@ type PopulationRecord = {
   pathway: "clinician-reviewed";
 };
 
-type HeatmapDataMode = "public" | "app-screenings";
+type HeatmapDataMode = "public" | "app-screenings" | "combined";
 
 const normaliseRegionName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-const appScreeningRegionsFor = (profiles: LocalScreeningDraft[]): SyntheticRegion[] => syntheticRegions.map((region) => {
-  const regionNames = region.label.split("—").map(normaliseRegionName).filter((name) => name.length > 3);
-  const screenedIndividuals = profiles.filter((profile) => {
+const uniqueHeatmapProfiles = (profiles: LocalScreeningDraft[]) => {
+  const seenProfileKeys = new Set<string>();
+
+  return profiles.filter((profile) => {
     if (profile.previousSurveyResponse !== "No") return false;
+    const fieldReference = profile.fieldReference.trim().toLowerCase();
+    const profileKey = fieldReference || JSON.stringify(profile);
+    if (seenProfileKeys.has(profileKey)) return false;
+    seenProfileKeys.add(profileKey);
+    return true;
+  });
+};
+
+const appScreeningRegionsFor = (profiles: LocalScreeningDraft[]): SyntheticRegion[] => syntheticRegions.map((region) => {
+  const regionName = normaliseRegionName(region.label);
+  const screenedIndividuals = profiles.filter((profile) => {
     const geography = normaliseRegionName(profile.province);
-    return regionNames.some((name) => geography.includes(name));
+    return geography === regionName;
   }).length;
   const signalLevel: SyntheticRegion["signalLevel"] = screenedIndividuals === 0 ? "Lower" : screenedIndividuals < 3 ? "Moderate" : "Higher";
 
@@ -223,10 +235,11 @@ export default function App() {
   const prototypeRiskScore = useMemo(() => scorePrototypeRisk(screeningDraft), [screeningDraft]);
   const uploadedPreview = imagingMetadata.imagingFiles.find((file) => file.previewUrl)?.previewUrl;
   const prototypeRiskBand = prototypeRiskScore >= 50 ? "Elevated triage signal" : prototypeRiskScore >= 25 ? "Intermediate triage signal" : "Lower triage signal";
-  const appScreeningRegions = useMemo(() => appScreeningRegionsFor(appScreeningProfiles), [appScreeningProfiles]);
-  const heatmapEligibleProfiles = useMemo(() => appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "No"), [appScreeningProfiles]);
+  const heatmapEligibleProfiles = useMemo(() => uniqueHeatmapProfiles(appScreeningProfiles), [appScreeningProfiles]);
+  const appScreeningRegions = useMemo(() => appScreeningRegionsFor(heatmapEligibleProfiles), [heatmapEligibleProfiles]);
   const priorSurveyProfiles = useMemo(() => appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "Yes"), [appScreeningProfiles]);
-  const heatmapRegions = heatmapDataMode === "public" ? syntheticRegions : appScreeningRegions;
+  const duplicateScreeningProfiles = appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "No").length - heatmapEligibleProfiles.length;
+  const heatmapRegions = heatmapDataMode === "app-screenings" ? appScreeningRegions : syntheticRegions;
   const symptomSignals = [
     [screeningDraft.persistentCough, "Persistent cough"],
     [screeningDraft.breathlessness, "Breathlessness"],
@@ -793,17 +806,18 @@ export default function App() {
             </button>
             <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
             <h1 id="heatmap-status-title">Regional follow-up dashboard.</h1>
-            <p>Switch between the static public baseline and profiles saved in this web app. The two data sources are displayed separately and are never combined.</p>
+            <p>Compare the static public baseline, unique profiles saved in this web app, or a layered view that shows both sources without adding their counts together.</p>
           </div>
 
           <div className="heatmap-status-card">
             <div className="heatmap-status-topline">
-              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> {heatmapDataMode === "public" ? "Static public baseline" : "App screening profiles only"}</span>
-              <span>{heatmapDataMode === "public" ? "Static public data only" : `${heatmapEligibleProfiles.length} heatmap-eligible profile${heatmapEligibleProfiles.length === 1 ? "" : "s"}`}</span>
+              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> {heatmapDataMode === "public" ? "Static public baseline" : heatmapDataMode === "app-screenings" ? "App screening profiles only" : "Public + app layered view"}</span>
+              <span>{heatmapDataMode === "public" ? "Static public data only" : heatmapDataMode === "app-screenings" ? `${heatmapEligibleProfiles.length} heatmap-eligible profile${heatmapEligibleProfiles.length === 1 ? "" : "s"}` : "Sources layered, never summed"}</span>
             </div>
             <div className="heatmap-source-switch" role="group" aria-label="Heat map data source">
               <button className={heatmapDataMode === "public" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "public"} onClick={() => { setHeatmapDataMode("public"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>Public data</strong><span>Static baseline</span></button>
               <button className={heatmapDataMode === "app-screenings" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "app-screenings"} onClick={() => { setHeatmapDataMode("app-screenings"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>App screenings</strong><span>Eligible profiles only</span></button>
+              <button className={heatmapDataMode === "combined" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "combined"} onClick={() => { setHeatmapDataMode("combined"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>Combined overlay</strong><span>Two separate layers</span></button>
             </div>
             <div className="dashboard-summary-grid">
               {heatmapDataMode === "public" ? <>
@@ -811,19 +825,26 @@ export default function App() {
                 <article><strong>Static baseline</strong><span>No app screening profiles</span></article>
                 <article><strong>Separate source</strong><span>Not combined with app data</span></article>
                 <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
-              </> : <>
+              </> : heatmapDataMode === "app-screenings" ? <>
                 <article><strong>{heatmapEligibleProfiles.length}</strong><span>Heatmap-eligible profiles</span></article>
                 <article><strong>Region keyed</strong><span>Uses each profile’s selected region</span></article>
                 <article><strong>{priorSurveyProfiles.length} excluded</strong><span>Previously surveyed participants</span></article>
                 <article><strong>Local storage</strong><span>Records stay on this device</span></article>
+              </> : <>
+                <article><strong>Two layers</strong><span>Public fill + screening hatch</span></article>
+                <article><strong>{heatmapEligibleProfiles.length}</strong><span>Unique eligible app profiles</span></article>
+                <article><strong>{duplicateScreeningProfiles} duplicate{duplicateScreeningProfiles === 1 ? "" : "s"} excluded</strong><span>Matched by field reference</span></article>
+                <article><strong>No summed total</strong><span>Sources cannot double-count each other</span></article>
               </>}
             </div>
             <div className="dashboard-workspace">
-              <PhilippinesRegionMap regions={heatmapRegions} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} dataSource={heatmapDataMode} />
+              <PhilippinesRegionMap regions={heatmapRegions} screeningRegions={heatmapDataMode === "combined" ? appScreeningRegions : undefined} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} dataSource={heatmapDataMode} />
               {(() => {
                 const selectedRegion: SyntheticRegion = heatmapRegions.find((region) => region.id === selectedRegionId) || heatmapRegions[0];
+                const selectedScreeningRegion = appScreeningRegions.find((region) => region.id === selectedRegion.id) || appScreeningRegions[0];
                 const isAppScreeningMode = heatmapDataMode === "app-screenings";
-                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>{isAppScreeningMode ? "This view counts only saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded." : "This boundary uses the static public baseline only. It does not include profiling drafts saved in this web app."}</p><dl><div><dt>{isAppScreeningMode ? "Screened individuals" : "High Risk Areas"}</dt><dd>{isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : `${selectedRegion.signalLevel} (static)`}</dd></div><div><dt>{isAppScreeningMode ? "Region key" : "Public records"}</dt><dd>{isAppScreeningMode ? "Selected profile region" : `${selectedRegion.syntheticRecords} baseline`}</dd></div><div><dt>Data separation</dt><dd>{isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd></div></dl><small>{isAppScreeningMode ? "Profiles marked Yes for a previous survey are excluded. Saving the same field reference again replaces that local profile rather than adding a duplicate." : "Switch to App screenings to view only the profiles saved in this web app."}</small></aside>;
+                const isCombinedMode = heatmapDataMode === "combined";
+                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>{isCombinedMode ? "The static public signal is shown as the region fill, with unique app-screening profiles shown as a hatched overlay. Values remain separate because the sources have no shared participant identifier." : isAppScreeningMode ? "This view counts only unique saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded." : "This boundary uses the static public baseline only. It does not include profiling drafts saved in this web app."}</p><dl>{isCombinedMode && <div><dt>Public signal</dt><dd>{selectedRegion.signalLevel} (static)</dd></div>}<div><dt>{isAppScreeningMode || isCombinedMode ? "Screened individuals" : "High Risk Areas"}</dt><dd>{isCombinedMode ? `${selectedScreeningRegion.syntheticRecords} unique app-screened` : isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : `${selectedRegion.signalLevel} (static)`}</dd></div><div><dt>{isAppScreeningMode ? "Region key" : "Public records"}</dt><dd>{isAppScreeningMode ? "Selected profile region" : `${selectedRegion.syntheticRecords} baseline`}</dd></div><div><dt>{isCombinedMode ? "Combination rule" : "Data separation"}</dt><dd>{isCombinedMode ? "Layered, not summed" : isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd></div></dl><small>{isCombinedMode ? "App profiles are deduplicated by normalized field reference. Cross-source totals are never calculated, preventing the public baseline and app layer from being counted twice." : isAppScreeningMode ? "Profiles marked Yes for a previous survey are excluded. Repeated field references are counted once even if letter casing differs." : "Switch to App screenings to view only the profiles saved in this web app."}</small></aside>;
               })()}
             </div>
           </div>

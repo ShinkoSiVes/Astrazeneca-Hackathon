@@ -1,5 +1,12 @@
 # Stage changelog
 
+## Population dashboard - Layered combined overlay
+
+- Status: awaiting owner review
+- Added a third dashboard switch that overlays unique app-screening activity as hatching on the static public regional signal.
+- Public and screening values remain separately labeled and are never summed because the synthetic public fixture has no participant-level identity for cross-source deduplication.
+- Eligible app profiles are deduplicated by case-insensitive field reference before regional grouping; previously surveyed profiles remain excluded.
+
 ## TASK-008B - Connected tobacco-use amount control
 
 - Status: awaiting owner review
