@@ -747,8 +747,8 @@ export default function App() {
 
           <div className="heatmap-status-card">
             <div className="heatmap-status-topline">
-              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> {heatmapDataMode === "public" ? "Static public baseline" : "App screening profiles only"}</span>
-              <span>{heatmapDataMode === "public" ? "Static public data only" : `${heatmapEligibleProfiles.length} heatmap-eligible profile${heatmapEligibleProfiles.length === 1 ? "" : "s"}`}</span>
+              <span className="status-chip"><span className="status-beacon" aria-hidden="true" /> {heatmapDataMode === "public" ? "LCP Registry 2009–2017" : "App screening profiles only"}</span>
+              <span>{heatmapDataMode === "public" ? "Lung Center of the Philippines public data" : `${heatmapEligibleProfiles.length} heatmap-eligible profile${heatmapEligibleProfiles.length === 1 ? "" : "s"}`}</span>
             </div>
             <div className="heatmap-source-switch" role="group" aria-label="Heat map data source">
               <button className={heatmapDataMode === "public" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "public"} onClick={() => { setHeatmapDataMode("public"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>Public data</strong><span>Static baseline</span></button>
@@ -757,7 +757,7 @@ export default function App() {
             <div className="dashboard-summary-grid">
               {heatmapDataMode === "public" ? <>
                 <article><strong>18 regions</strong><span>PSA-aligned regional geometry</span></article>
-                <article><strong>Static baseline</strong><span>No app screening profiles</span></article>
+                <article><strong>LCP Registry</strong><span>2009–2017 hospital admissions</span></article>
                 <article><strong>Separate source</strong><span>Not combined with app data</span></article>
                 <article><strong>Sharing disabled</strong><span>No external health-network access</span></article>
               </> : <>
@@ -772,7 +772,7 @@ export default function App() {
               {(() => {
                 const selectedRegion: SyntheticRegion = heatmapRegions.find((region) => region.id === selectedRegionId) || heatmapRegions[0];
                 const isAppScreeningMode = heatmapDataMode === "app-screenings";
-                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>{isAppScreeningMode ? "This view counts only saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded." : "This boundary uses the static public baseline only. It does not include profiling drafts saved in this web app."}</p><dl><div><dt>{isAppScreeningMode ? "Screened individuals" : "High Risk Areas"}</dt><dd>{isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : `${selectedRegion.signalLevel} (static)`}</dd></div><div><dt>{isAppScreeningMode ? "Region key" : "Public records"}</dt><dd>{isAppScreeningMode ? "Selected profile region" : `${selectedRegion.syntheticRecords} baseline`}</dd></div><div><dt>Data separation</dt><dd>{isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd></div></dl><small>{isAppScreeningMode ? "Profiles marked Yes for a previous survey are excluded. Saving the same field reference again replaces that local profile rather than adding a duplicate." : "Switch to App screenings to view only the profiles saved in this web app."}</small></aside>;
+                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>{isAppScreeningMode ? "This view counts only saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded." : "This boundary shows public lung cancer data from the Lung Center of the Philippines registry (2009–2017). It does not include profiling drafts saved in this web app."}</p><dl><div><dt>{isAppScreeningMode ? "Screened individuals" : "Risk level"}</dt><dd>{isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : `${selectedRegion.signalLevel}`}</dd></div><div><dt>{isAppScreeningMode ? "Region key" : "Recorded cases"}</dt><dd>{isAppScreeningMode ? "Selected profile region" : selectedRegion.coverage}</dd></div><div><dt>Data separation</dt><dd>{isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd></div></dl><small>{isAppScreeningMode ? "Profiles marked Yes for a previous survey are excluded. Saving the same field reference again replaces that local profile rather than adding a duplicate." : "Source: LCP Lung Cancer Registry, 2009–2017 (cumulative hospital admissions by region of residence). National estimate: 23,728 new cases/year (GLOBOCAN 2022)."}</small></aside>;
               })()}
             </div>
           </div>
