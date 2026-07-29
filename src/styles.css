@@ -15,6 +15,16 @@
 .clinical-warning { display: flex; gap: 10px; align-items: flex-start; max-width: 830px; margin-top: 23px; border: 1px solid #e7d09a; border-radius: 14px; padding: 13px 15px; color: #705325; background: #fff9e9; font-size: 13px; line-height: 1.5; }
 .clinical-warning svg { flex: 0 0 auto; margin-top: 1px; color: #ae7123; }
 .risk-workspace { display: grid; grid-template-columns: minmax(300px, .74fr) minmax(0, 1.26fr); gap: 20px; align-items: stretch; }
+.local-considerations-card { grid-column: 1 / -1; }
+.local-considerations-list { display: grid; gap: 12px; margin-top: 14px; }
+.local-consideration-item { border: 1px solid #cadedd; border-radius: 14px; padding: 14px 16px; background: #f4fbf9; }
+.local-consideration-item[data-priority="high"] { border-color: #e0b07a; background: #fff8ef; }
+.local-consideration-item[data-status="present"][data-priority="high"] { border-color: #d9894a; }
+.local-consideration-topline { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 6px; }
+.local-consideration-topline strong { color: #1f4d55; font-size: 14px; }
+.local-consideration-topline span { color: #5f7f86; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.local-consideration-item p { margin: 0 0 8px; color: #355c64; font-size: 13px; line-height: 1.45; }
+.local-consideration-item small { color: #5f7f86; font-size: 12px; line-height: 1.4; }
 .risk-score-card, .heatmap-card { border: 1px solid #d7e4e6; border-radius: 22px; padding: clamp(22px, 3vw, 32px); background: rgb(255 255 255 / 91%); box-shadow: 0 18px 46px rgb(25 62 74 / 8%); }
 .risk-card-topline { display: flex; justify-content: space-between; gap: 12px; color: #647f86; font-size: 12px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
 .risk-card-topline span { display: inline-flex; align-items: center; gap: 6px; }
@@ -47,8 +57,12 @@
 .risk-inputs dd { margin: 5px 0 0; overflow-wrap: anywhere; color: #214c55; font-size: 13px; font-weight: 750; }
 .heatmap-card { display: grid; align-content: start; gap: 14px; }
 .static-driver-card h2 { margin: 3px 0 0; color: #163f49; font-size: clamp(25px, 2.5vw, 34px); line-height: 1.08; letter-spacing: -.04em; }
-.risk-driver-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 5px 0; }
-.risk-driver-list span { border: 1px solid #cadedd; border-radius: 999px; padding: 8px 10px; color: #285962; background: #edf7f5; font-size: 12px; font-weight: 780; }
+.risk-driver-list { display: grid; gap: 8px; margin: 5px 0; }
+.risk-driver-list span { display: block; border: 1px solid #cadedd; border-radius: 12px; padding: 10px 12px; color: #285962; background: #edf7f5; font-size: 12px; font-weight: 650; line-height: 1.45; }
+.clinical-flags-panel { margin-top: 18px; padding: 14px 16px; border-radius: 14px; background: #fff7e5; border: 1px solid #efd9a8; }
+.clinical-flags-panel strong { display: block; margin-bottom: 8px; color: #7a5416; }
+.clinical-flags-panel ul { margin: 0; padding-left: 18px; color: #6b4d1d; }
+.clinical-flags-panel li[data-severity="urgent"] { font-weight: 700; }
 .heatmap-frame { position: relative; min-height: 390px; overflow: hidden; border: 1px solid #c9d9dc; border-radius: 17px; background: #152b36; isolation: isolate; }
 .heatmap-frame > img { display: block; width: 100%; height: 390px; object-fit: cover; filter: grayscale(1) contrast(1.2) brightness(.86); }
 .heatmap-frame > img.model-attention-map { position: absolute; z-index: 3; inset: 0; width: 100%; height: 100%; filter: none; mix-blend-mode: screen; object-fit: fill; pointer-events: none; }

@@ -39,6 +39,8 @@ import {
   type ScreeningInputMode,
 } from "./local-screenings";
 import { fetchEnvironmentalRiskForLocation, type EnvironmentalRiskSnapshot } from "./environmental-risk";
+import { PLCO_EDUCATION_OPTIONS } from "./plcom2012-norace";
+import { estimateAerisRisk } from "./risk-estimate";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
@@ -150,18 +152,18 @@ const calendarCellsFor = (year: number, month: number) => Array.from({ length: n
 });
 
 const screeningFields: (keyof ScreeningDraft)[] = [
-  "fieldReference", "age", "sexAtBirth", "barangay", "municipality", "province", "occupation",
-  "smokingStatus", "packYears", "yearsSinceQuitting", "occupationalExposure",
+  "fieldReference", "age", "sexAtBirth", "educationLevel", "heightCm", "weightKg", "barangay", "municipality", "province", "occupation",
+  "smokingStatus", "cigarettesPerDay", "yearsSmoked", "yearsSinceQuitting", "occupationalExposure",
   "previousTuberculosis", "copd", "asthma", "previousMalignancy", "familyHistory",
   "persistentCough", "breathlessness", "bloodInSputum", "chestPain", "weightLoss", "hoarseness", "fatigue",
   "chestXrayAvailable", "physicalExamFindings", "previousSurveyResponse",
 ];
 
 const screeningStepForField: Partial<Record<keyof ScreeningDraft, number>> = {
-  fieldReference: 1, age: 1, sexAtBirth: 1, barangay: 1, municipality: 1, province: 1, occupation: 1,
+  fieldReference: 1, age: 1, sexAtBirth: 1, educationLevel: 1, heightCm: 1, weightKg: 1, barangay: 1, municipality: 1, province: 1, occupation: 1,
   persistentCough: 2, breathlessness: 2, bloodInSputum: 2, chestPain: 2, weightLoss: 2, hoarseness: 2, fatigue: 2,
   chestXrayAvailable: 2, physicalExamFindings: 2, physicalExamOther: 2,
-  smokingStatus: 3, packYears: 3, yearsSinceQuitting: 3, occupationalExposure: 3, occupationalExposureOther: 3,
+  smokingStatus: 3, cigarettesPerDay: 3, yearsSmoked: 3, yearsSinceQuitting: 3, occupationalExposure: 3, occupationalExposureOther: 3,
   previousTuberculosis: 3, copd: 3, asthma: 3, previousMalignancy: 3, familyHistory: 3,
   previousSurveyResponse: 4,
 };
@@ -181,20 +183,6 @@ const ageRangeFor = (age: string) => {
   if (years <= 59) return "50-59";
   if (years <= 69) return "60-69";
   return "70 or older";
-};
-
-const scorePrototypeRisk = (screening: ScreeningDraft) => {
-  let score = 5;
-  score += ({ "0-17": 0, "18-29": 0, "30-39": 0, "40-49": 3, "50-59": 8, "60-69": 15, "70 or older": 21 } as Record<string, number>)[screening.ageRange] || 0;
-  score += ({ "Current smoker": 23, "Former smoker": 13, "Never smoker": 0, "Never smoked": 0, "Not recorded": 4 } as Record<string, number>)[screening.smokingStatus] || 0;
-  const packYearFactor = screening.packFrequency === "Pack-years" ? 1 : screening.packFrequency === "Per day" ? 4 : 1.5;
-  score += Math.min(Number.parseFloat(screening.packYears) * packYearFactor || 0, 15);
-  if (screening.householdSmoke === "Yes") score += 4;
-  if (screening.occupationalExposure && !["None reported", "Unknown"].includes(screening.occupationalExposure)) score += 5;
-  if (screening.lungHistory && !["None reported", "Unknown"].includes(screening.lungHistory)) score += 5;
-  if (screening.familyHistory === "Yes") score += 5;
-  score += [screening.persistentCough, screening.breathlessness, screening.bloodInSputum, screening.weightLoss].filter((item) => item === "Yes").length * 6;
-  return Math.max(3, Math.min(92, Math.round(score)));
 };
 
 const modelReferenceFor = (modality: string) => modality === "CT scan" ? {
@@ -277,28 +265,13 @@ export default function App() {
       onEvidenceChange={(evidence) => setScreeningInputEvidence((current) => ({ ...current, [field]: evidence }))}
     />
   );
-  const prototypeRiskScore = useMemo(() => scorePrototypeRisk(screeningDraft), [screeningDraft]);
+  const aerisRiskEstimate = useMemo(() => estimateAerisRisk(screeningDraft, environmentalRisk), [screeningDraft, environmentalRisk]);
   const uploadedPreview = imagingMetadata.imagingFiles.find((file) => file.previewUrl)?.previewUrl;
-  const prototypeRiskBand = prototypeRiskScore >= 50 ? "Elevated triage signal" : prototypeRiskScore >= 25 ? "Intermediate triage signal" : "Lower triage signal";
   const heatmapEligibleProfiles = useMemo(() => uniqueHeatmapProfiles(appScreeningProfiles), [appScreeningProfiles]);
   const appScreeningRegions = useMemo(() => appScreeningRegionsFor(heatmapEligibleProfiles), [heatmapEligibleProfiles]);
   const priorSurveyProfiles = useMemo(() => appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "Yes"), [appScreeningProfiles]);
   const duplicateScreeningProfiles = appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "No").length - heatmapEligibleProfiles.length;
   const heatmapRegions = heatmapDataMode === "app-screenings" ? appScreeningRegions : syntheticRegions;
-  const symptomSignals = [
-    [screeningDraft.persistentCough, "Persistent cough"],
-    [screeningDraft.breathlessness, "Breathlessness"],
-    [screeningDraft.bloodInSputum, "Blood in sputum"],
-    [screeningDraft.weightLoss, "Unintentional weight loss"],
-  ] as const;
-  const profileRiskDrivers = [
-    screeningDraft.smokingStatus === "Current smoker" ? "Current tobacco use" : screeningDraft.smokingStatus === "Former smoker" ? "Previous tobacco use" : "No tobacco-use signal recorded",
-    screeningDraft.householdSmoke === "Yes" ? "Household smoke exposure" : null,
-    screeningDraft.occupationalExposure && !["None reported", "Unknown"].includes(screeningDraft.occupationalExposure) ? screeningDraft.occupationalExposure : null,
-    screeningDraft.lungHistory && !["None reported", "Unknown"].includes(screeningDraft.lungHistory) ? screeningDraft.lungHistory : null,
-    screeningDraft.familyHistory === "Yes" ? "Family lung-cancer history" : null,
-    ...symptomSignals.filter(([value]) => value === "Yes").map(([, label]) => label),
-  ].filter((value): value is string => Boolean(value));
 
   useEffect(() => {
     const rotation = window.setInterval(() => {
@@ -421,9 +394,38 @@ export default function App() {
       ...current,
       smokingStatus: value,
       packFrequency: "Pack-years",
+      cigarettesPerDay: value === "Never smoker" ? "0" : current.cigarettesPerDay === "0" ? "" : current.cigarettesPerDay,
+      yearsSmoked: value === "Never smoker" ? "0" : current.yearsSmoked === "0" ? "" : current.yearsSmoked,
       packYears: value === "Never smoker" ? "0" : current.packYears,
       yearsSinceQuitting: value === "Former smoker" ? (current.yearsSinceQuitting === "Not applicable" ? "" : current.yearsSinceQuitting) : "Not applicable",
     }));
+  };
+
+  const updateSmokingIntensity = (field: "cigarettesPerDay" | "yearsSmoked", value: string) => {
+    setScreeningDraft((current) => {
+      const next = { ...current, [field]: value };
+      const cigarettesPerDay = Number.parseFloat(field === "cigarettesPerDay" ? value : next.cigarettesPerDay);
+      const yearsSmoked = Number.parseFloat(field === "yearsSmoked" ? value : next.yearsSmoked);
+      if (Number.isFinite(cigarettesPerDay) && cigarettesPerDay > 0 && Number.isFinite(yearsSmoked) && yearsSmoked > 0) {
+        next.packYears = String(Math.round((cigarettesPerDay / 20) * yearsSmoked * 10) / 10);
+      }
+      return next;
+    });
+  };
+
+  const updateBodyMeasure = (field: "heightCm" | "weightKg", value: string) => {
+    setScreeningDraft((current) => {
+      const next = { ...current, [field]: value };
+      const heightCm = Number.parseFloat(field === "heightCm" ? value : next.heightCm);
+      const weightKg = Number.parseFloat(field === "weightKg" ? value : next.weightKg);
+      if (Number.isFinite(heightCm) && heightCm > 0 && Number.isFinite(weightKg) && weightKg > 0) {
+        const heightM = heightCm / 100;
+        next.bmi = String(Math.round((weightKg / (heightM * heightM)) * 10) / 10);
+      } else {
+        next.bmi = "";
+      }
+      return next;
+    });
   };
 
   const updateWeightLoss = (value: string) => {
@@ -832,9 +834,15 @@ export default function App() {
             <article className="about-story">
               <p className="card-kicker">Our working purpose</p>
               <h2>Make a careful first step more reachable.</h2>
-              <p>We are designing a lightweight workflow that helps medical professionals document consent, collect structured screening information, and later review risk-support inputs without presenting AI as a diagnosis.</p>
+              <p>We are designing a lightweight workflow that helps medical professionals document consent, collect structured screening information, and review risk-support inputs without presenting AI as a diagnosis.</p>
               <p className="placeholder-note">Project details, partners, and institutional affiliations: [add approved information here].</p>
             </article>
+
+            <section className="about-feature-section" aria-labelledby="attribution-title">
+              <p className="card-kicker">Model attribution</p>
+              <h2 id="attribution-title">Risk estimate credit</h2>
+              <p>The current Risk support percentage uses the Tammemägi <strong>PLCOm2012noRace</strong> model (Ver1-13OCT2016-MT), a published 6-year lung-cancer probability calculator that omits race/ethnicity and is recommended for many non-US populations. Coefficients follow the non-commercial reference calculator by Professor Martin Tammemägi; commercial use requires contacting the author. Aeris does not modify those coefficients. Local Philippine/Asian context factors are shown beside the score for clinician judgment only.</p>
+            </section>
 
             <section className="about-feature-section" aria-labelledby="features-title">
               <p className="card-kicker">Available now</p>
@@ -845,7 +853,7 @@ export default function App() {
                   <p>A four-step screening draft captures location, tobacco and exposure history, symptoms, and past-survey history with clear completeness guidance.</p>
                 </article>
                 <article>
-                  <h3>Private, local temporary records</h3>
+                  <h3>Private, local screening drafts</h3>
                   <p>Screening drafts stay on the device and can be imported, extracted individually, or deleted when they are no longer needed.</p>
                 </article>
                 <article>
@@ -853,8 +861,8 @@ export default function App() {
                   <p>Static public baseline data and profiles screened in this app are shown separately, preventing the two sources from being counted together.</p>
                 </article>
                 <article>
-                  <h3>Review-aware risk support</h3>
-                  <p>The prototype keeps risk and imaging details in a clinician-review workflow, with no automated output presented as a diagnosis.</p>
+                  <h3>PLCOm2012noRace risk support</h3>
+                  <p>Validated ever-smoker probability with separate local clinical considerations (never-smoker gaps, indoor/outdoor air, occupation, TB, EGFR context) — never presented as a diagnosis.</p>
                 </article>
               </div>
             </section>
@@ -863,6 +871,18 @@ export default function App() {
               <p className="card-kicker">Planned next</p>
               <h2 id="future-features-title">Future features</h2>
               <div className="about-feature-grid">
+                <article>
+                  <h3>Local imaging metadata workflow</h3>
+                  <p>Archived for now. A later release will restore local CT/chest X-ray metadata capture, temporary imaging records, and clinician review gates without claiming automated diagnosis.</p>
+                </article>
+                <article>
+                  <h3>Aeris custom risk-estimation calculator</h3>
+                  <p>Our own field-oriented risk index that can incorporate Philippine context modifiers (air quality, exposures, TB, never-smoker patterns) while keeping any validated model output clearly separated.</p>
+                </article>
+                <article>
+                  <h3>Evaluated imaging model support</h3>
+                  <p>Careful clinical evaluation and safe imaging-data integration before any future model-assisted review is considered.</p>
+                </article>
                 <article>
                   <h3>Secure identity and governed sync</h3>
                   <p>Role-aware accounts, secure synchronization, and organization-approved data retention controls for production use.</p>
@@ -874,10 +894,6 @@ export default function App() {
                 <article>
                   <h3>Privacy-reviewed population reporting</h3>
                   <p>Aggregated reporting designed with privacy thresholds and governance review before community-level sharing.</p>
-                </article>
-                <article>
-                  <h3>Evaluated imaging support</h3>
-                  <p>Careful clinical evaluation and safe imaging-data integration before any future model-assisted review is considered.</p>
                 </article>
               </div>
             </section>
@@ -998,6 +1014,15 @@ export default function App() {
                   <label className={missingFieldClass("fieldReference")}>Field reference<input name="fieldReference" value={screeningDraft.fieldReference} onChange={(event) => updateDraft("fieldReference", event.target.value)} placeholder="e.g. FIELD-024-001" /></label>
                   <label className={missingFieldClass("age")}>Age<input name="age" type="number" min="0" max="120" inputMode="numeric" value={screeningDraft.age} onChange={(event) => updateAge(event.target.value)} placeholder="Age in years" /></label>
                   {renderScreeningChoice("sexAtBirth", "Sex at birth", ["Female", "Male", "Intersex", "Prefer not to record"])}
+                  <label className={missingFieldClass("educationLevel")}>Education (PLCOm2012 level)
+                    <select name="educationLevel" value={screeningDraft.educationLevel} onChange={(event) => updateDraft("educationLevel", event.target.value)}>
+                      <option value="">Select highest level obtained</option>
+                      {PLCO_EDUCATION_OPTIONS.map((option) => <option key={option.value} value={String(option.value)}>{option.label}</option>)}
+                    </select>
+                  </label>
+                  <label className={missingFieldClass("heightCm")}>Height (cm)<input name="heightCm" type="number" min="50" max="250" step="0.1" inputMode="decimal" value={screeningDraft.heightCm} onChange={(event) => updateBodyMeasure("heightCm", event.target.value)} placeholder="e.g. 165" /></label>
+                  <label className={missingFieldClass("weightKg")}>Weight (kg)<input name="weightKg" type="number" min="20" max="300" step="0.1" inputMode="decimal" value={screeningDraft.weightKg} onChange={(event) => updateBodyMeasure("weightKg", event.target.value)} placeholder="e.g. 70" /></label>
+                  <label>BMI (auto)<input name="bmi" value={screeningDraft.bmi ? `${screeningDraft.bmi} kg/m²` : "Enter height and weight"} readOnly /></label>
                   <label className={missingFieldClass("occupation")}>Occupation<input name="occupation" value={screeningDraft.occupation} onChange={(event) => updateDraft("occupation", event.target.value)} placeholder="Current or primary occupation" /></label>
                   <ScreeningLocationFields
                     region={screeningDraft.province}
@@ -1024,10 +1049,12 @@ export default function App() {
                 <>
                 <div className="form-heading"><p className="card-kicker">Step 3 of 4</p><h2>Smoking, exposure, and medical history</h2><p>Record each history item separately and use “Unknown” when the information is unavailable.</p></div>
                 <div className="form-grid">
-                  <div className="form-section-heading wide-field"><h3>Smoking history</h3></div>
+                  <div className="form-section-heading wide-field"><h3>Smoking history (PLCOm2012noRace inputs)</h3></div>
                   {renderScreeningChoice("smokingStatus", "Smoking status", ["Current smoker", "Former smoker", "Never smoker"], updateSmokingStatus)}
-                  <label className={missingFieldClass("packYears")}>Pack-years<input name="packYears" type="number" min="0" step="0.1" inputMode="decimal" value={screeningDraft.packYears} disabled={screeningDraft.smokingStatus === "Never smoker"} onChange={(event) => updateDraft("packYears", event.target.value)} placeholder="e.g. 12.5" /></label>
+                  <label className={missingFieldClass("cigarettesPerDay")}>Average cigarettes per day<input name="cigarettesPerDay" type="number" min="0" step="0.1" inputMode="decimal" value={screeningDraft.cigarettesPerDay} disabled={screeningDraft.smokingStatus === "Never smoker"} onChange={(event) => updateSmokingIntensity("cigarettesPerDay", event.target.value)} placeholder="e.g. 20" /></label>
+                  <label className={missingFieldClass("yearsSmoked")}>Years smoked<input name="yearsSmoked" type="number" min="0" step="0.1" inputMode="decimal" value={screeningDraft.yearsSmoked} disabled={screeningDraft.smokingStatus === "Never smoker"} onChange={(event) => updateSmokingIntensity("yearsSmoked", event.target.value)} placeholder="e.g. 30" /></label>
                   <label className={missingFieldClass("yearsSinceQuitting")}>Years since quitting<input name="yearsSinceQuitting" type={screeningDraft.smokingStatus === "Former smoker" ? "number" : "text"} min={screeningDraft.smokingStatus === "Former smoker" ? "0" : undefined} inputMode={screeningDraft.smokingStatus === "Former smoker" ? "numeric" : undefined} value={screeningDraft.yearsSinceQuitting} disabled={screeningDraft.smokingStatus !== "Former smoker"} onChange={(event) => updateDraft("yearsSinceQuitting", event.target.value)} placeholder={screeningDraft.smokingStatus === "Former smoker" ? "Years" : "Not applicable"} /></label>
+                  <label>Pack-years (derived)<input name="packYears" value={screeningDraft.packYears || "—"} readOnly /></label>
                   <div className="form-section-heading wide-field"><h3>Occupational or environmental exposure</h3></div>
                   <fieldset className={`screening-checklist ${missingFieldClass("occupationalExposure")}`}>
                     <legend>Occupational/environment exposure</legend>
@@ -1112,117 +1139,41 @@ export default function App() {
       )}
 
       {view === "ai-consent" && (
-        <section className="ai-path-layout" aria-labelledby="ai-consent-title">
-          <div className="ai-path-context">
-            <button className="back-link" type="button" onClick={() => navigateTo("screening")}><ChevronLeft size={17} /> Back to screening</button>
-            <p className="eyebrow"><ShieldCheck size={16} /> Optional risk-support path</p>
-            <h1 id="ai-consent-title">Would the patient agree to clinician-led AI risk support?</h1>
-            <p>The screening completeness gate has passed. Explain that this optional prototype does not diagnose cancer; a medical professional remains responsible for image interpretation and follow-up.</p>
-          </div>
-          <div className="ai-path-card">
-            <p className="card-kicker">Separate consent</p>
-            <h2>Record the patient’s choice before collecting imaging details.</h2>
-            <p className="helper-text">A local CT, chest X-ray, or DICOM file can be selected. The prototype keeps the file on this device and creates an illustrative triage estimate and attention overlay only; it does not make a diagnosis.</p>
-            <div className="ai-choice-list">
-              <button className="secondary-button" type="button" onClick={() => recordAiConsent(false)}>No, keep screening only</button>
-              <button className="primary-button" type="button" onClick={() => recordAiConsent(true)}>Yes, continue to imaging details <ArrowRight size={18} /></button>
-            </div>
+        <section className="ready-layout temporary-record-layout" aria-labelledby="archived-imaging-title">
+          <div className="ready-icon"><CloudOff size={34} /></div>
+          <p className="eyebrow">Archived for later</p>
+          <h1 id="archived-imaging-title">Local imaging metadata is paused.</h1>
+          <p>This workflow is archived while we pursue imaging support as a future feature. Current risk support uses PLCOm2012noRace only. See About for the planned imaging metadata path and Aeris custom risk calculator.</p>
+          <div className="ready-actions">
+            <button className="secondary-button" type="button" onClick={() => navigateTo("about")}>View future features</button>
+            <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
           </div>
         </section>
       )}
 
       {view === "imaging-metadata" && (
-        <section className="ai-path-layout" aria-labelledby="imaging-metadata-title">
-          <div className="ai-path-context">
-            <button className="back-link" type="button" onClick={() => navigateTo("ai-consent")}><ChevronLeft size={17} /> Back to AI consent</button>
-            <p className="eyebrow"><ShieldCheck size={16} /> Local imaging metadata</p>
-            <h1 id="imaging-metadata-title">Prepare local imaging metadata.</h1>
-            <p>The AI imaging model is still under development. This optional step saves local study details for a future clinician-reviewed model workflow; it does not analyse the scan today.</p>
+        <section className="ready-layout temporary-record-layout" aria-labelledby="archived-imaging-metadata-title">
+          <div className="ready-icon"><CloudOff size={34} /></div>
+          <p className="eyebrow">Archived for later</p>
+          <h1 id="archived-imaging-metadata-title">Local imaging metadata is archived.</h1>
+          <p>CT/chest X-ray metadata capture is not part of the active demo path right now. It remains listed under About → Future features for the next build.</p>
+          <div className="ready-actions">
+            <button className="secondary-button" type="button" onClick={() => navigateTo("about")}>View future features</button>
+            <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
           </div>
-          <form className="ai-path-card imaging-form" onSubmit={(event) => event.preventDefault()}>
-            <p className="card-kicker">Imaging check</p>
-            <h2>Is an imaging study available for future model review?</h2>
-            <div className="form-grid">
-              <label>Imaging modality<select value={imagingMetadata.modality} onChange={(event) => updateImagingMetadata("modality", event.target.value)}><option value="">Select option</option><option>CT scan</option><option>Chest X-ray</option><option>No imaging available</option></select></label>
-              <label>Imaging availability<select value={imagingMetadata.sourceStatus} onChange={(event) => updateImagingMetadata("sourceStatus", event.target.value)}><option value="">Select option</option><option>Available locally</option><option>Patient will return with it</option><option>Not available</option></select></label>
-              <label>Study / facility reference<input value={imagingMetadata.studyReference} onChange={(event) => updateImagingMetadata("studyReference", event.target.value)} placeholder="Non-identifying local reference" /></label>
-              <div className="study-date-picker"><span className="field-label">Study date (if known)</span>
-                <button className="date-picker-trigger" type="button" onClick={openStudyCalendar} aria-label={imagingMetadata.studyDate ? `Selected study date: ${new Date(`${imagingMetadata.studyDate}T00:00:00`).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}` : "Select study date"} aria-expanded={isStudyCalendarOpen} aria-haspopup="dialog">
-                  <span>{imagingMetadata.studyDate ? new Date(`${imagingMetadata.studyDate}T00:00:00`).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "Select study date"}</span><CalendarDays size={18} aria-hidden="true" />
-                </button>
-                {isStudyCalendarOpen && (
-                  <div className="date-picker-popover" role="dialog" aria-label="Study date calendar">
-                    <div className="date-picker-controls">
-                      <label>Study month<select value={calendarMonth} onChange={(event) => setCalendarMonth(Number(event.target.value))}>{calendarMonths.map((month, index) => <option value={index} key={month}>{month}</option>)}</select></label>
-                      <label>Study year<select value={calendarYear} onChange={(event) => setCalendarYear(Number(event.target.value))}>{Array.from({ length: new Date().getFullYear() - 1989 }, (_, index) => new Date().getFullYear() - index).map((year) => <option value={year} key={year}>{year}</option>)}</select></label>
-                    </div>
-                    <div className="calendar-weekdays" aria-hidden="true"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
-                    <div className="calendar-days">{calendarCellsFor(calendarYear, calendarMonth).map((day, index) => day ? <button className={imagingMetadata.studyDate === dateValueFor(calendarYear, calendarMonth, day) ? "selected" : ""} type="button" key={`${calendarYear}-${calendarMonth}-${day}`} onClick={() => selectStudyDate(day)} aria-label={`Choose ${calendarMonths[calendarMonth]} ${day}, ${calendarYear}`}>{day}</button> : <span key={`blank-${index}`} />)}</div>
-                  </div>
-                )}
-              </div>
-              <label className="wide-field">Facility or source (optional)<input value={imagingMetadata.facility} onChange={(event) => updateImagingMetadata("facility", event.target.value)} placeholder="Facility, mobile unit, or source" /></label>
-              <div className="wide-field imaging-file-field">
-                <span id="imaging-file-label" className="field-label">Imaging files (optional)</span>
-                <div
-                  className="imaging-dropzone"
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    recordImagingFiles(event.dataTransfer.files);
-                  }}
-                >
-                  <input
-                    ref={imagingFileInput}
-                    id="imaging-file"
-                    className="visually-hidden"
-                    type="file"
-                    accept=".dcm,.dicom,image/*,application/dicom"
-                    multiple
-                    aria-labelledby="imaging-file-label"
-                    onChange={(event) => {
-                      recordImagingFiles(event.target.files ?? undefined);
-                      event.target.value = "";
-                    }}
-                  />
-                  {imagingMetadata.imagingFiles.length ? (
-                    <div className="imaging-file-list" aria-live="polite">
-                      <div className="imaging-file-list-header"><span><strong>{imagingMetadata.imagingFiles.length} local file{imagingMetadata.imagingFiles.length === 1 ? "" : "s"} selected</strong><small>Assign an optional acquisition date to each file.</small></span><button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Add files</button></div>
-                      {imagingMetadata.imagingFiles.map((file) => (
-                        <article className="imaging-file-selected" key={file.id}>
-                          <span><strong>{file.name}</strong><small>{file.type} · {(file.size / 1024).toFixed(1)} KB · Local demo reference only</small></span>
-                          <label>Acquisition date (optional)<input type="date" aria-label={`Acquisition date for ${file.name}`} value={file.takenOn} onChange={(event) => updateImagingFileDate(file.id, event.target.value)} /></label>
-                          <button className="text-button" type="button" onClick={() => removeImagingFile(file.id)}>Remove file</button>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="imaging-file-empty">
-                      <span aria-hidden="true">↓</span>
-                      <p><strong>Drop CT, CXR, or DICOM files here</strong><small>Image formats can be previewed locally. DICOM is retained as a local reference; this prototype does not parse diagnostic DICOM pixel data.</small></p>
-                      <button className="secondary-button" type="button" onClick={() => imagingFileInput.current?.click()}>Choose local files</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <p className="field-note"><CloudOff size={16} /> The AI model is still under development. Files and metadata stay local in this demo and are not interpreted.</p>
-            <div className="draft-buttons"><button className="primary-button" type="button" onClick={saveTemporaryRecord}>Save temporary local record <Check size={18} /></button></div>
-          </form>
         </section>
       )}
 
       {view === "temporary-record" && (
         <section className="ready-layout temporary-record-layout" aria-labelledby="temporary-record-title">
-          <div className="ready-icon"><ShieldCheck size={34} /></div>
-          <p className="eyebrow">Temporary local record</p>
-          <h1 id="temporary-record-title">{temporaryRecordReady ? "Local imaging metadata has been saved." : "More imaging details can be added later."}</h1>
-          <p>{temporaryRecordReady ? "The AI imaging model is still under development, so no image analysis or additional risk estimate has been generated. The local record is ready for a future clinician-reviewed model workflow." : "This local draft is marked for follow-up. You can return with an available CT or chest X-ray and local study details when ready."}</p>
+          <div className="ready-icon"><CloudOff size={34} /></div>
+          <p className="eyebrow">Archived for later</p>
+          <h1 id="temporary-record-title">Temporary imaging records are archived.</h1>
+          <p>Local imaging temporary records are paused for this release. Screening drafts and PLCOm2012noRace risk support remain available. See About → Future features for the planned return of this path.</p>
           <div className="ready-actions">
-            <button className="secondary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Update imaging details</button>
+            <button className="secondary-button" type="button" onClick={() => navigateTo("about")}>View future features</button>
             <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
           </div>
-          <p className="stage-note">AI imaging model: under development · clinician review is required before any real clinical action.</p>
         </section>
       )}
 
@@ -1230,73 +1181,92 @@ export default function App() {
         <section className="risk-layout" aria-labelledby="risk-estimate-title">
           <div className="risk-intro">
             <button className="back-link" type="button" onClick={() => navigateTo("screening")}><ChevronLeft size={17} /> Edit screening profile</button>
-            <p className="eyebrow"><BrainCircuit size={16} /> Static screening demo</p>
-            <h1 id="risk-estimate-title">Estimated lung-cancer follow-up risk.</h1>
-            <p>This static demonstration reads the completed screening profile only. It weighs recorded habits, environmental exposure, health history, and symptoms to estimate whether follow-up risk is lower, intermediate, or high.</p>
-            <div className="clinical-warning"><AlertTriangle size={19} /><span><strong>Clinician oversight required.</strong> Escalate symptoms or concerning imaging through the appropriate clinical pathway regardless of this prototype display.</span></div>
+            <p className="eyebrow"><BrainCircuit size={16} /> Aeris risk estimate</p>
+            <h1 id="risk-estimate-title">PLCOm2012noRace 6-year lung-cancer probability.</h1>
+            <p>Credit: Tammemägi <strong>PLCOm2012noRace</strong> (Ver1-13OCT2016-MT). The percentage uses only that published calculator. Local Philippine and East/Southeast Asian context factors appear beside it for clinician judgment and are never mixed into the score.</p>
+            <div className="clinical-warning"><AlertTriangle size={19} /><span><strong>Clinician oversight required.</strong> Escalate concerning symptoms through the appropriate clinical pathway regardless of this percentage. A missing or low PLCO score does not clear never-smokers or locally relevant exposures.</span></div>
           </div>
           <div className="risk-workspace">
             <article className="risk-score-card">
-              <div className="risk-card-topline"><span>Screening-only estimate</span><span>Static demo</span></div>
-              <div className={`risk-score risk-${prototypeRiskScore >= 50 ? "elevated" : prototypeRiskScore >= 25 ? "intermediate" : "lower"}`}><strong>{prototypeRiskScore}<small>/100</small></strong><span>{prototypeRiskBand}</span></div>
-              <p>This is a transparent demo calculation, not a cancer probability or a validated clinical score. It does not diagnose or rule out lung cancer.</p>
-              <dl className="risk-inputs"><div><dt>Smoking status</dt><dd>{screeningDraft.smokingStatus}</dd></div><div><dt>Exposure</dt><dd>{screeningDraft.occupationalExposure}</dd></div><div><dt>Symptoms recorded</dt><dd>{symptomSignals.filter(([value]) => value === "Yes").length} positive</dd></div><div><dt>Profile completeness</dt><dd>{requiredScreeningFields.length} / {requiredScreeningFields.length} complete</dd></div></dl>
-              <div className="static-demo-actions"><button className="secondary-button" type="button" onClick={() => navigateTo("screening")}>Review screening profile</button><button className="primary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Continue to local imaging metadata <ArrowRight size={18} /></button></div>
+              <div className="risk-card-topline"><span>{aerisRiskEstimate.modelId}</span><span>{aerisRiskEstimate.band} band</span></div>
+              <div className={`risk-score risk-${aerisRiskEstimate.band === "Elevated" ? "elevated" : aerisRiskEstimate.band === "Intermediate" ? "intermediate" : aerisRiskEstimate.band === "Lower" ? "lower" : "lower"}`}>
+                {aerisRiskEstimate.applicable && aerisRiskEstimate.percent !== null ? (
+                  <>
+                    <strong>{aerisRiskEstimate.percent.toFixed(1)}<small>%</small></strong>
+                    <span>{aerisRiskEstimate.bandLabel}</span>
+                  </>
+                ) : (
+                  <>
+                    <strong>N/A</strong>
+                    <span>{aerisRiskEstimate.unavailableReason}</span>
+                  </>
+                )}
+              </div>
+              <p>{aerisRiskEstimate.methodNote}</p>
+              <p className="field-note">{aerisRiskEstimate.eligibilityNote}</p>
+              <dl className="risk-inputs">
+                <div><dt>Model version</dt><dd>{aerisRiskEstimate.modelVersion}</dd></div>
+                <div><dt>Smoking status</dt><dd>{screeningDraft.smokingStatus || "Not recorded"}</dd></div>
+                <div><dt>Cigarettes / day</dt><dd>{aerisRiskEstimate.inputsSummary.cigarettesPerDay ?? "—"}</dd></div>
+                <div><dt>Years smoked</dt><dd>{aerisRiskEstimate.inputsSummary.yearsSmoked ?? "—"}</dd></div>
+                <div><dt>BMI</dt><dd>{aerisRiskEstimate.inputsSummary.bmi ?? "—"}</dd></div>
+                <div><dt>Education level</dt><dd>{aerisRiskEstimate.inputsSummary.education ?? "—"}</dd></div>
+                <div><dt>Clinical flags</dt><dd>{aerisRiskEstimate.clinicalFlags.length} symptom flag{aerisRiskEstimate.clinicalFlags.length === 1 ? "" : "s"}</dd></div>
+                <div><dt>Pack-years (derived)</dt><dd>{aerisRiskEstimate.inputsSummary.packYearsDerived ?? "—"}</dd></div>
+              </dl>
+              <div className="static-demo-actions"><button className="secondary-button" type="button" onClick={() => navigateTo("screening")}>Review screening profile</button><button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace <ArrowRight size={18} /></button></div>
             </article>
             <article className="heatmap-card static-driver-card">
-              <div className="risk-card-topline"><span>Factors included</span><span>Profile only</span></div>
+              <div className="risk-card-topline"><span>Model predictors</span><span>PLCOm2012noRace only</span></div>
               <h2>What informed this estimate</h2>
-              <p>The static demo considers only the values entered in the screening form. It does not use CT scans, chest X-rays, or a model-generated heatmap.</p>
-              <div className="risk-driver-list">{profileRiskDrivers.map((driver) => <span key={driver}>{driver}</span>)}</div>
-              <p>Imaging review and image-derived heatmaps are intentionally deferred until the next prototype phase.</p>
+              <p>Each row is a published model predictor contribution to the logistic score. Symptoms stay as clinical flags and do not enter the probability.</p>
+              <div className="risk-driver-list">
+                {aerisRiskEstimate.contributions.length > 0 ? aerisRiskEstimate.contributions.map((item) => (
+                  <span key={item.id}>{item.label}: {item.inputValue} → contribution {item.contribution.toFixed(4)}</span>
+                )) : (
+                  <span>No PLCOm2012noRace contributions available for this profile.</span>
+                )}
+              </div>
+              {aerisRiskEstimate.clinicalFlags.length > 0 && (
+                <div className="clinical-flags-panel">
+                  <strong>Clinical flags (not in percentage)</strong>
+                  <ul>
+                    {aerisRiskEstimate.clinicalFlags.map((flag) => <li key={flag.id} data-severity={flag.severity}>{flag.label}</li>)}
+                  </ul>
+                </div>
+              )}
+              <p>Local imaging metadata and image-derived review are archived for a later release — see About → Future features.</p>
+            </article>
+            <article className="heatmap-card local-considerations-card">
+              <div className="risk-card-topline"><span>Local clinical considerations</span><span>Not in PLCO %</span></div>
+              <h2>What the healthcare worker should also weigh</h2>
+              <p>{aerisRiskEstimate.considerationsNote}</p>
+              <div className="local-considerations-list">
+                {aerisRiskEstimate.localConsiderations.map((item) => (
+                  <div key={item.id} className="local-consideration-item" data-status={item.status} data-priority={item.priority}>
+                    <div className="local-consideration-topline">
+                      <strong>{item.title}</strong>
+                      <span>{item.status === "present" ? "Recorded" : item.status === "absent" ? "Not recorded" : item.status === "unknown" ? "Unknown" : "Context only"}</span>
+                    </div>
+                    <p>{item.detail}</p>
+                    <small>{item.recordedSignal}</small>
+                  </div>
+                ))}
+              </div>
             </article>
           </div>
         </section>
       )}
 
       {view === "nodule-review" && (
-        <section className="review-layout" aria-labelledby="nodule-review-title">
-          <div className="review-context">
-            <button className="back-link" type="button" onClick={() => navigateTo("temporary-record")}><ChevronLeft size={17} /> Back to temporary record</button>
-            <p className="eyebrow"><ShieldCheck size={16} /> Clinician review gate</p>
-            <h1 id="nodule-review-title">Review the support packet before it can continue.</h1>
-            <p>Aeris AI does not diagnose cancer. This checkpoint records the clinician’s workflow decision; it does not replace imaging interpretation or clinical judgment.</p>
-          </div>
-          <div className="review-card">
-            <div className="review-card-topline"><span className="status-chip">Static workflow fixture</span><span>Local only</span></div>
-            <h2>Metadata-only review packet</h2>
-            <p className="helper-text">No CT pixels have been uploaded, parsed, or interpreted. This fixture is not a nodule finding, malignancy estimate, or diagnosis.</p>
-            <dl className="review-facts">
-              <div><dt>Modality</dt><dd>{imagingMetadata.modality || "Not recorded"}</dd></div>
-              <div><dt>Availability</dt><dd>{imagingMetadata.sourceStatus || "Not recorded"}</dd></div>
-              <div><dt>Study reference</dt><dd>{imagingMetadata.studyReference || "Not recorded"}</dd></div>
-              <div><dt>Study date</dt><dd>{imagingMetadata.studyDate || "Not recorded"}</dd></div>
-              <div><dt>Local imaging files</dt><dd>{imagingMetadata.imagingFiles.length ? imagingMetadata.imagingFiles.map((file) => `${file.name}${file.takenOn ? ` — taken ${file.takenOn}` : ""}`).join("; ") : "Not attached"}</dd></div>
-            </dl>
-
-            {reviewOutcome === "pending" && (
-              <div className="review-actions">
-                <p><strong>Clinician decision</strong> Is this record sufficiently described to move to a later, clinician-reviewed risk-data path?</p>
-                <button className="primary-button" type="button" onClick={() => saveClinicianReview("accepted")}>Accept as reviewed workflow data <Check size={18} /></button>
-                <button className="secondary-button" type="button" onClick={() => saveClinicianReview("needs-info")}>Request more information</button>
-              </div>
-            )}
-
-            {reviewOutcome === "needs-info" && (
-              <div className="review-resolution" role="status">
-                <strong>More information requested.</strong>
-                <p>The local record is marked for follow-up. Return with more clinical or imaging context, or continue only when the clinician explicitly accepts the caveat.</p>
-                <div className="draft-buttons"><button className="secondary-button" type="button" onClick={() => navigateTo("imaging-metadata")}>Update temporary record</button><button className="primary-button" type="button" onClick={() => saveClinicianReview("forced")}>Force continue with caveat</button></div>
-              </div>
-            )}
-
-            {(reviewOutcome === "accepted" || reviewOutcome === "forced") && (
-              <div className="review-resolution" role="status">
-                <strong>{reviewOutcome === "forced" ? "Forced continuation recorded." : "Clinician review recorded."}</strong>
-                <p>{reviewOutcome === "forced" ? "The local record is clearly marked as forced and remains subject to later clinician and governance review." : "The local record is marked as clinician-reviewed workflow data. It has not been aggregated or shared."}</p>
-                {reviewOutcome === "accepted" ? <div className="draft-buttons"><button className="primary-button" type="button" onClick={openAggregation}>Prepare de-identified population record <ArrowRight size={18} /></button><button className="secondary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button></div> : <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>}
-              </div>
-            )}
+        <section className="ready-layout temporary-record-layout" aria-labelledby="nodule-review-title">
+          <div className="ready-icon"><CloudOff size={34} /></div>
+          <p className="eyebrow">Archived for later</p>
+          <h1 id="nodule-review-title">Clinician imaging review is archived.</h1>
+          <p>The nodule/imaging review gate will return with the local imaging metadata future feature. It is not active in the current demo path.</p>
+          <div className="ready-actions">
+            <button className="secondary-button" type="button" onClick={() => navigateTo("about")}>View future features</button>
+            <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
           </div>
         </section>
       )}
@@ -1420,3 +1390,4 @@ export default function App() {
     </main>
   );
 }
+

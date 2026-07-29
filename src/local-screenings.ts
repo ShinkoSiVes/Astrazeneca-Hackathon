@@ -5,6 +5,10 @@ export type LocalScreeningDraft = {
   age: string;
   ageRange: string;
   sexAtBirth: string;
+  educationLevel: string;
+  heightCm: string;
+  weightKg: string;
+  bmi: string;
   barangay: string;
   municipality: string;
   province: string;
@@ -12,6 +16,8 @@ export type LocalScreeningDraft = {
   smokingStatus: string;
   packFrequency: string;
   packYears: string;
+  cigarettesPerDay: string;
+  yearsSmoked: string;
   yearsSinceQuitting: string;
   householdSmoke: string;
   occupationalExposure: string;
@@ -97,7 +103,7 @@ export const screeningHistoryKey = "aeris-screening-history-v1";
 export const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 
 export const emptyLocalScreeningDraft: LocalScreeningDraft = {
-  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
+  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", educationLevel: "", heightCm: "", weightKg: "", bmi: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", cigarettesPerDay: "", yearsSmoked: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
 };
 
 export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | undefined): LocalScreeningDraft => {
@@ -110,6 +116,19 @@ export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | un
     normalised.occupationalExposure = [normalised.occupationalExposure, "Secondhand smoke"].filter(Boolean).join(" | ");
   }
   if (normalised.smokingStatus === "Never smoked") normalised.smokingStatus = "Never smoker";
+
+  const heightCm = Number.parseFloat(normalised.heightCm);
+  const weightKg = Number.parseFloat(normalised.weightKg);
+  if (Number.isFinite(heightCm) && heightCm > 0 && Number.isFinite(weightKg) && weightKg > 0) {
+    const heightM = heightCm / 100;
+    normalised.bmi = String(Math.round((weightKg / (heightM * heightM)) * 10) / 10);
+  }
+
+  const cigarettesPerDay = Number.parseFloat(normalised.cigarettesPerDay);
+  const yearsSmoked = Number.parseFloat(normalised.yearsSmoked);
+  if (Number.isFinite(cigarettesPerDay) && cigarettesPerDay > 0 && Number.isFinite(yearsSmoked) && yearsSmoked > 0) {
+    normalised.packYears = String(Math.round((cigarettesPerDay / 20) * yearsSmoked * 10) / 10);
+  }
 
   return normalised;
 };
