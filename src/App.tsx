@@ -23,8 +23,10 @@ import {
 import lungMark from "./assets/aeris-mark.svg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
+import { EnvironmentalRiskPanel } from "./components/EnvironmentalRiskPanel";
 import { TobaccoUseAmount } from "./components/TobaccoUseAmount";
 import { deleteStoredScreening, readStoredScreenings, storeScreeningSnapshot, type LocalScreeningDraft } from "./local-screenings";
+import { fetchEnvironmentalRiskForLocation, type EnvironmentalRiskSnapshot } from "./environmental-risk";
 import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
@@ -187,6 +189,10 @@ export default function App() {
   const [isScrollHeaderVisible, setIsScrollHeaderVisible] = useState(true);
   const [isLeavingView, setIsLeavingView] = useState(false);
   const [isSwitchingScreeningStep, setIsSwitchingScreeningStep] = useState(false);
+  const [environmentalRisk, setEnvironmentalRisk] = useState<EnvironmentalRiskSnapshot | null>(null);
+  const [environmentalStatus, setEnvironmentalStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [environmentalError, setEnvironmentalError] = useState("");
+  const [environmentalRefreshKey, setEnvironmentalRefreshKey] = useState(0);
   const navigationTimer = useRef<number | undefined>(undefined);
   const screeningStepTimer = useRef<number | undefined>(undefined);
   const incompleteFieldFocusTimer = useRef<number | undefined>(undefined);
@@ -242,6 +248,40 @@ export default function App() {
     window.addEventListener("scroll", updateScrollHeader, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollHeader);
   }, [view]);
+
+  useEffect(() => {
+    const region = screeningDraft.province.trim();
+    const municipality = screeningDraft.municipality.trim();
+    if (!region || !municipality) {
+      setEnvironmentalRisk(null);
+      setEnvironmentalStatus("idle");
+      setEnvironmentalError("");
+      return;
+    }
+
+    let active = true;
+    setEnvironmentalStatus("loading");
+    setEnvironmentalError("");
+
+    void fetchEnvironmentalRiskForLocation({
+      region: screeningDraft.province,
+      municipality: screeningDraft.municipality,
+      barangay: screeningDraft.barangay,
+    }).then((result) => {
+      if (!active) return;
+      if (result.ok) {
+        setEnvironmentalRisk(result.snapshot);
+        setEnvironmentalStatus("ready");
+        return;
+      }
+      setEnvironmentalRisk(null);
+      setEnvironmentalStatus("error");
+      setEnvironmentalError(result.error);
+    });
+
+    return () => { active = false; };
+  }, [screeningDraft.province, screeningDraft.municipality, screeningDraft.barangay, environmentalRefreshKey]);
+
   const [draftStatus, setDraftStatus] = useState("");
 
   const navigateTo = (nextView: View) => {
@@ -356,7 +396,7 @@ export default function App() {
 
   const saveScreeningDraft = () => {
     localStorage.setItem(screeningDraftKey, JSON.stringify({ data: screeningDraft, savedAt: new Date().toISOString() }));
-    storeScreeningSnapshot(screeningDraft);
+    storeScreeningSnapshot(screeningDraft, environmentalRisk);
     setAppScreeningProfiles(readStoredScreenings().map((screening) => screening.data));
     setDraftStatus("Screening draft saved on this device.");
   };
@@ -383,11 +423,18 @@ export default function App() {
     setScreeningDraft(emptyScreeningDraft);
     setScreeningStep(1);
     setDraftStatus("");
+    setEnvironmentalRisk(null);
+    setEnvironmentalStatus("idle");
+    setEnvironmentalError("");
     navigateTo("screening");
   };
 
   const editSavedScreening = (draft: LocalScreeningDraft) => {
+    const stored = readStoredScreenings().find((record) => record.id === draft.fieldReference.trim());
     setScreeningDraft({ ...emptyScreeningDraft, ...draft });
+    setEnvironmentalRisk(stored?.environmentalRisk ?? null);
+    setEnvironmentalStatus(stored?.environmentalRisk ? "ready" : "idle");
+    setEnvironmentalError("");
     setScreeningStep(1);
     setDraftStatus("Local screening loaded for clinician review.");
     navigateTo("screening");
@@ -816,6 +863,12 @@ export default function App() {
                     onRegionChange={(region) => setScreeningDraft((current) => ({ ...current, province: region, municipality: "", barangay: "" }))}
                     onMunicipalityChange={(municipality) => setScreeningDraft((current) => ({ ...current, municipality, barangay: "" }))}
                     onBarangayChange={(barangay) => updateDraft("barangay", barangay)}
+                  />
+                  <EnvironmentalRiskPanel
+                    status={environmentalStatus}
+                    snapshot={environmentalRisk}
+                    errorMessage={environmentalError}
+                    onRetry={() => setEnvironmentalRefreshKey((current) => current + 1)}
                   />
                 </div>
                 </>

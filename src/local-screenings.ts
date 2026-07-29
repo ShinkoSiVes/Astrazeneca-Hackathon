@@ -1,3 +1,5 @@
+import type { EnvironmentalRiskSnapshot } from "./environmental-risk";
+
 export type LocalScreeningDraft = {
   fieldReference: string;
   ageRange: string;
@@ -33,6 +35,7 @@ export type StoredScreening = {
   savedAt: string;
   data: LocalScreeningDraft;
   updates: ScreeningRecordUpdate[];
+  environmentalRisk?: EnvironmentalRiskSnapshot | null;
 };
 
 export type TemporaryRecordSummary = {
@@ -67,7 +70,7 @@ const normaliseStoredScreening = (value: { id: unknown; savedAt: unknown; data: 
     : [];
   const recordUpdates = updates.length ? updates : [legacySnapshot];
   const latest = recordUpdates[0];
-  return { id: value.id, savedAt: latest.savedAt, data: latest.data, updates: recordUpdates };
+  return { id: value.id, savedAt: latest.savedAt, data: latest.data, updates: recordUpdates, environmentalRisk: "environmentalRisk" in value ? (value.environmentalRisk as EnvironmentalRiskSnapshot | null | undefined) ?? null : null };
 };
 
 export const readStoredScreenings = (): StoredScreening[] => {
@@ -84,7 +87,7 @@ export const readStoredScreenings = (): StoredScreening[] => {
   }
 };
 
-export const storeScreeningSnapshot = (draft: LocalScreeningDraft) => {
+export const storeScreeningSnapshot = (draft: LocalScreeningDraft, environmentalRisk: EnvironmentalRiskSnapshot | null = null) => {
   const savedAt = new Date().toISOString();
   const reference = draft.fieldReference.trim() || `local-${savedAt}`;
   const history = readStoredScreenings();
@@ -95,6 +98,7 @@ export const storeScreeningSnapshot = (draft: LocalScreeningDraft) => {
     savedAt,
     data: snapshot.data,
     updates: [snapshot, ...(existingRecord?.updates ?? [])].slice(0, 20),
+    environmentalRisk: environmentalRisk ?? existingRecord?.environmentalRisk ?? null,
   };
   const next = [record, ...history.filter((item) => item.id !== reference)].slice(0, 12);
   localStorage.setItem(screeningHistoryKey, JSON.stringify(next));

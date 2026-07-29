@@ -167,6 +167,16 @@ button:disabled { cursor: not-allowed; }
 .login-card input:focus { border-color: #0e8179; box-shadow: 0 0 0 4px rgb(14 129 121 / 12%); }
 .field-note, .saved-strip, .stage-note { display: flex; gap: 8px; align-items: center; color: #5c777c; font-size: 13px; line-height: 1.45; }
 .field-note { margin: 20px 0; }
+.environmental-risk-panel { display: grid; gap: 14px; margin: 8px 0 0; padding: 18px 20px; border: 1px solid #d7e4e6; border-radius: 18px; background: rgb(255 255 255 / 88%); box-shadow: 0 12px 28px rgb(25 62 74 / 6%); }
+.environmental-risk-panel--error { color: #6b4d1d; background: #fff8eb; border-color: #efd9a8; }
+.environmental-risk-panel__topline { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.environmental-risk-panel__lead { margin: 0; color: #526d74; line-height: 1.55; }
+.environmental-risk-panel__metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0; }
+.environmental-risk-panel__metrics div { padding: 12px 14px; border-radius: 14px; background: #edf7f4; }
+.environmental-risk-panel__metrics dt { margin: 0 0 4px; color: #648188; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.environmental-risk-panel__metrics dd { margin: 0; color: #145c62; font-size: 18px; font-weight: 800; }
+.environmental-risk-panel__factors ul { margin: 8px 0 0; padding-left: 18px; color: #526d74; line-height: 1.5; }
+.environmental-risk-panel small { color: #648188; line-height: 1.45; }
 .saved-strip { width: fit-content; margin-top: 26px; border: 1px solid #cde2de; border-radius: 999px; padding: 9px 12px; color: #0c6d66; background: #eaf5f2; font-weight: 750; animation: confirmation-enter 440ms 260ms both; }
 
 .ready-layout { width: min(780px, calc(100% - 48px)); margin: clamp(62px, 13vh, 150px) auto; text-align: center; animation: content-enter 600ms both; }
