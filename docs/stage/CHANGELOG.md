@@ -1,5 +1,32 @@
 # Stage changelog
 
+## Confirm-clinician workspace mode switch
+
+- Status: behavior pending
+- Replaced the health-professional role dropdown with a two-option switch for Health Care Center Mode and Cancer Registry Mode.
+- Health Care Center IDs use the `HCC-024` format and Cancer Registry IDs use `CR-024`; switching modes updates the prefix while preserving the numeric suffix.
+- This change establishes the selectable login interface only; mode-specific routing, permissions, and workspace behavior remain deferred.
+
+## Screening workflow order
+
+- Status: awaiting owner review
+- Swapped screening steps 2 and 3 so symptoms and clinical assessment are recorded before smoking, exposure, and medical history.
+- Updated the progress indicator and incomplete-field navigation to follow the same order.
+
+## Screening alternative input mode
+
+- Status: awaiting owner review
+- Added one screening-wide switch that replaces the four-step form's dropdowns with plain-language text entry while leaving checklists, location selectors, and existing text fields unchanged.
+- Text is interpreted entirely on the device and must be explicitly confirmed before its canonical value can satisfy completeness checks or affect risk-support and aggregation logic.
+- Every saved local update retains the clinician's original wording beside the confirmed value, and that evidence can be reviewed when the screening is reopened or expanded in record history.
+
+## Population dashboard - Layered combined overlay
+
+- Status: awaiting owner review
+- Added a third dashboard switch that overlays unique app-screening activity as hatching on the static public regional signal.
+- Public and screening values remain separately labeled and are never summed because the synthetic public fixture has no participant-level identity for cross-source deduplication.
+- Eligible app profiles are deduplicated by case-insensitive field reference before regional grouping; previously surveyed profiles remain excluded.
+
 ## TASK-008B - Connected tobacco-use amount control
 
 - Status: awaiting owner review

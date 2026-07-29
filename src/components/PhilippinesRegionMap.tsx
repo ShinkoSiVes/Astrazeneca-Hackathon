@@ -21,6 +21,7 @@ type SyntheticRegion = {
   id: string;
   label: string;
   signalLevel: string;
+  syntheticRecords?: number;
 };
 
 type Position = [number, number];
@@ -98,13 +99,16 @@ const featurePath = (feature: BoundaryFeature) => {
 
 type PhilippinesRegionMapProps = {
   regions: SyntheticRegion[];
+  screeningRegions?: SyntheticRegion[];
   selectedRegionId: string;
   onSelect: (regionId: string) => void;
-  dataSource?: "public" | "app-screenings";
+  dataSource?: "public" | "app-screenings" | "combined";
 };
 
-export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, dataSource = "public" }: PhilippinesRegionMapProps) {
+export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedRegionId, onSelect, dataSource = "public" }: PhilippinesRegionMapProps) {
   const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
+  const screeningRegionsById = new Map(screeningRegions.map((region) => [region.id, region]));
+  const isCombined = dataSource === "combined";
 
   return (
     <section className="philippines-map-panel" aria-labelledby="region-map-title">
@@ -115,7 +119,7 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, data
         </div>
         <span>18 regions</span>
       </div>
-      <p className="map-panel-copy">{dataSource === "app-screenings" ? "Choose a region to see only saved profiling drafts grouped by their selected region. Public baseline data is excluded." : "Choose a real administrative-region outline to inspect the static public baseline. App screening profiles are excluded."}</p>
+      <p className="map-panel-copy">{isCombined ? "Choose a region to compare its static public fill with the hatched app-screening overlay. The two source values remain separate." : dataSource === "app-screenings" ? "Choose a region to see only saved profiling drafts grouped by their selected region. Public baseline data is excluded." : "Choose a real administrative-region outline to inspect the static public baseline. App screening profiles are excluded."}</p>
       <div className="philippines-map-stage">
         <svg className="philippines-region-map" viewBox={`0 0 ${viewport.width} ${viewport.height}`} role="group" aria-label="Interactive Philippines model with 18 selectable administrative regions">
           <defs>
@@ -126,6 +130,15 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, data
             <filter id="map-soft-shadow" x="-25%" y="-15%" width="150%" height="160%">
               <feDropShadow dx="0" dy="11" stdDeviation="8" floodColor="#0f5f61" floodOpacity=".19" />
             </filter>
+            <pattern id="screening-none-pattern" width="12" height="12" patternUnits="userSpaceOnUse">
+              <path d="M-3 3L3-3M0 12L12 0M9 15L15 9" stroke="#267d78" strokeWidth="1.5" opacity=".12" />
+            </pattern>
+            <pattern id="screening-moderate-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M-2 2L2-2M0 10L10 0M8 12L12 8" stroke="#0c6865" strokeWidth="2" opacity=".68" />
+            </pattern>
+            <pattern id="screening-higher-pattern" width="7" height="7" patternUnits="userSpaceOnUse">
+              <path d="M-2 2L2-2M0 7L7 0M5 9L9 5" stroke="#064f4d" strokeWidth="2.2" opacity=".82" />
+            </pattern>
           </defs>
           <rect className="map-water" x="8" y="8" width={viewport.width - 16} height={viewport.height - 16} rx="48" />
           <g className="map-contour-lines" aria-hidden="true">
@@ -136,6 +149,8 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, data
           <g filter="url(#map-soft-shadow)">
             {regions.map((region) => {
               const paths = (boundariesById.get(region.id) ?? []).map(featurePath);
+              const screeningRegion = screeningRegionsById.get(region.id);
+              const screeningSignal = screeningRegion?.signalLevel.toLowerCase() ?? "lower";
               const isSelected = selectedRegionId === region.id;
               const selectFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -146,11 +161,11 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, data
 
               return (
                 <g
-                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isSelected ? "selected" : ""}`}
+                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""}`}
                   key={region.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.label}, ${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}
+                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningRegion?.syntheticRecords ?? 0} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}`}
                   aria-pressed={isSelected}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={selectFromKeyboard}
@@ -160,6 +175,7 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, data
                   </g>
                   <g className="map-region-surface">
                     {paths.map((path, index) => <path className="map-region-shape" d={path} fillRule="evenodd" key={`${region.id}-shape-${index}`} />)}
+                    {isCombined && paths.map((path, index) => <path className="map-screening-overlay" d={path} fillRule="evenodd" key={`${region.id}-screening-${index}`} />)}
                   </g>
                 </g>
               );
@@ -176,8 +192,15 @@ export function PhilippinesRegionMap({ regions, selectedRegionId, onSelect, data
             <text className="map-compass" x="574" y="98" textAnchor="middle" aria-hidden="true">W</text>
           </g>
         </svg>
-        <div className="map-depth-key" aria-label={dataSource === "app-screenings" ? "App-screening profile count key" : "Static public baseline key"}>
-          {dataSource === "app-screenings" ? <>
+        <div className="map-depth-key" aria-label={isCombined ? "Static public signal and app-screening overlay keys" : dataSource === "app-screenings" ? "App-screening profile count key" : "Static public baseline key"}>
+          {isCombined ? <>
+            <span><i className="signal-lower" /> Public lower</span>
+            <span><i className="signal-moderate" /> Public moderate</span>
+            <span><i className="signal-higher" /> Public higher</span>
+            <span><i className="screening-none" /> No app profiles</span>
+            <span><i className="screening-moderate" /> 1–2 app profiles</span>
+            <span><i className="screening-higher" /> 3+ app profiles</span>
+          </> : dataSource === "app-screenings" ? <>
             <span><i className="signal-lower" /> No saved profiles</span>
             <span><i className="signal-moderate" /> 1–2 profiles</span>
             <span><i className="signal-higher" /> 3+ profiles</span>

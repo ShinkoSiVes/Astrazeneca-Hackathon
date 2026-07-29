@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { ArchiveRestore, ArrowRight, Download, FilePenLine, FolderClock, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { ArchiveRestore, ArrowRight, Download, FilePenLine, LogOut, Plus, Trash2, Upload } from "lucide-react";
 import {
   normaliseScreeningDraft,
+  normaliseScreeningInputEvidence,
+  normaliseScreeningInputMode,
   readStoredScreenings,
   readTemporaryRecordSummary,
   temporaryRecordKey,
   type LocalScreeningDraft,
+  type ScreeningInputEvidence,
+  type ScreeningInputEvidenceItem,
+  type ScreeningInputMode,
   type StoredScreening,
   type TemporaryRecordSummary,
 } from "../local-screenings";
@@ -14,7 +19,7 @@ import "./EncounterDashboard.css";
 type EncounterDashboardProps = {
   clinicianId: string;
   onStartScreening: () => void;
-  onEditScreening: (draft: LocalScreeningDraft) => void;
+  onEditScreening: (draft: LocalScreeningDraft, inputEvidence?: ScreeningInputEvidence, inputMode?: ScreeningInputMode) => void;
   onDeleteScreening: (screeningId: string) => void;
   onViewTemporaryRecord: () => void;
   onDeleteTemporaryRecord: () => void;
@@ -24,6 +29,13 @@ type EncounterDashboardProps = {
 const timeLabel = (value: string) => new Intl.DateTimeFormat("en-PH", {
   day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
 }).format(new Date(value));
+
+const inputFieldLabel = (value: string) => value
+  .replace(/([a-z])([A-Z])/g, "$1 $2")
+  .replace(/^./, (character) => character.toUpperCase());
+
+const reviewableInputEvidence = (evidence: ScreeningInputEvidence) => Object.entries(evidence)
+  .filter((entry): entry is [string, ScreeningInputEvidenceItem] => Boolean(entry[1]?.rawText.trim()));
 
 const hasAnyScreeningField = (draft: LocalScreeningDraft) => Object.values(draft).some((value) => value.trim() !== "");
 
@@ -60,13 +72,24 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
       try {
         const parsed = JSON.parse(String(reader.result)) as unknown;
         if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid local record");
-        const record = parsed as { data?: unknown; screening?: unknown };
+        const record = parsed as {
+          data?: unknown;
+          screening?: unknown;
+          inputEvidence?: unknown;
+          inputMode?: unknown;
+          screeningInputEvidence?: unknown;
+          screeningInputMode?: unknown;
+        };
         const importedData = record.screening ?? record.data ?? record;
         if (!importedData || typeof importedData !== "object" || Array.isArray(importedData)) throw new Error("Invalid screening data");
         const draft = normaliseScreeningDraft(importedData as Partial<LocalScreeningDraft>);
         if (!hasAnyScreeningField(draft)) throw new Error("No screening fields");
         setImportMessage(record.screening ? "Temporary record loaded. Review the screening profile and save it before continuing." : "Local screening update loaded. Review and save it before continuing.");
-        onEditScreening(draft);
+        onEditScreening(
+          draft,
+          normaliseScreeningInputEvidence(record.screening ? record.screeningInputEvidence : record.inputEvidence),
+          normaliseScreeningInputMode(record.screening ? record.screeningInputMode : record.inputMode),
+        );
       } catch {
         setImportMessage("That file could not be read as a local screening or temporary record.");
       }
@@ -119,7 +142,6 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
   return (
     <section className="encounter-dashboard" aria-labelledby="encounter-dashboard-title">
       <div className="encounter-dashboard__intro">
-        <div className="ready-icon"><FolderClock size={34} /></div>
         <p className="eyebrow">Clinician workspace</p>
         <h1 id="encounter-dashboard-title">You’re signed in as {clinicianId}.</h1>
         <p>Consent is recorded for this encounter. Choose a local screening record or begin a new clinician-led entry.</p>
@@ -185,14 +207,33 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
                   <p>Last saved {timeLabel(screening.savedAt)} · {screening.data.barangay || "Location not recorded"}{screening.data.province ? `, ${screening.data.province}` : ""}</p>
                 </div>
                 <div className="screening-history-item__actions">
-                  <button className="secondary-button" type="button" onClick={() => onEditScreening(screening.data)}><FilePenLine size={17} /> Update screening</button>
+                  <button className="secondary-button" type="button" onClick={() => onEditScreening(screening.data, screening.inputEvidence, screening.inputMode)}><FilePenLine size={17} /> Update screening</button>
                   <button className="text-button danger-text-button" type="button" onClick={() => { setScreeningPendingDeletion(screening); setScreeningDeletionMessage(""); }}><Trash2 size={16} /> Delete local copy</button>
                 </div>
                 <div className="screening-history-item__updates">
                   <p className="screening-history-item__label">Saved updates · {screening.updates.length}</p>
                   <ol>
                     {screening.updates.map((update, index) => (
-                      <li key={update.id}><strong>Update {screening.updates.length - index}</strong><span>{timeLabel(update.savedAt)}</span><span>{update.data.barangay || "Location not recorded"}{update.data.province ? `, ${update.data.province}` : ""}</span></li>
+                      <li key={update.id}>
+                        <div className="screening-history-item__update-summary">
+                          <strong>Update {screening.updates.length - index}</strong>
+                          <span>{timeLabel(update.savedAt)}</span>
+                          <span>{update.data.barangay || "Location not recorded"}{update.data.province ? `, ${update.data.province}` : ""}</span>
+                        </div>
+                        {reviewableInputEvidence(update.inputEvidence).length > 0 && (
+                          <details className="screening-input-evidence">
+                            <summary>Review interpreted source text</summary>
+                            <dl>
+                              {reviewableInputEvidence(update.inputEvidence).map(([field, evidence]) => (
+                                <div key={field}>
+                                  <dt>{inputFieldLabel(field)}</dt>
+                                  <dd><q>{evidence.rawText}</q><span>Confirmed as {evidence.confirmedValue || "not confirmed"}</span></dd>
+                                </div>
+                              ))}
+                            </dl>
+                          </details>
+                        )}
+                      </li>
                     ))}
                   </ol>
                 </div>

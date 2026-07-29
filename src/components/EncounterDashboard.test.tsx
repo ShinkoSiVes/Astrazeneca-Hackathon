@@ -2,10 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { EncounterDashboard } from "./EncounterDashboard";
-import { screeningHistoryKey, temporaryRecordKey, type LocalScreeningDraft } from "../local-screenings";
+import { emptyLocalScreeningDraft, screeningHistoryKey, temporaryRecordKey, type LocalScreeningDraft } from "../local-screenings";
 
 const draft: LocalScreeningDraft = {
-  fieldReference: "FIELD-2026-014", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", smokingStatus: "Former smoker", packFrequency: "Per day", packYears: "12", householdSmoke: "No", occupationalExposure: "None reported", lungHistory: "None reported", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", weightLoss: "No", weightLossAmount: "", previousSurveyResponse: "No", oxygenSaturation: "97", clinicianNotes: "Demo entry",
+  ...emptyLocalScreeningDraft,
+  fieldReference: "FIELD-2026-014", age: "56", ageRange: "50-59", sexAtBirth: "Female", barangay: "Banaue", municipality: "Banaue — Ifugao", province: "Cordillera Administrative Region (CAR)", occupation: "Teacher", smokingStatus: "Former smoker", packFrequency: "Pack-years", packYears: "12", yearsSinceQuitting: "4", householdSmoke: "No", occupationalExposure: "None reported", previousTuberculosis: "No", copd: "No", asthma: "No", previousMalignancy: "No", familyHistory: "No", persistentCough: "No", breathlessness: "No", bloodInSputum: "No", chestPain: "No", weightLoss: "No", hoarseness: "No", fatigue: "No", previousSurveyResponse: "No", oxygenSaturation: "97", chestXrayAvailable: "No", physicalExamFindings: "Normal examination", clinicianNotes: "Demo entry",
 };
 
 const renderDashboard = () => {
@@ -40,8 +41,8 @@ describe("TASK-007 clinician encounter dashboard", () => {
     const props = renderDashboard();
 
     expect(screen.getByText(draft.fieldReference)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /edit screening/i }));
-    expect(props.onEditScreening).toHaveBeenCalledWith(draft);
+    await user.click(screen.getByRole("button", { name: /update screening/i }));
+    expect(props.onEditScreening).toHaveBeenCalledWith(draft, {}, "structured");
   });
 
   it("deletes only the selected screening record after confirmation", async () => {
@@ -81,8 +82,30 @@ describe("TASK-007 clinician encounter dashboard", () => {
 
     await user.upload(screen.getByLabelText(/import local screening or temporary record/i), temporaryRecordFile);
 
-    await waitFor(() => expect(props.onEditScreening).toHaveBeenCalledWith(draft));
+    await waitFor(() => expect(props.onEditScreening).toHaveBeenCalledWith(draft, {}, "structured"));
     expect(screen.getByText(/temporary record loaded/i)).toBeInTheDocument();
+  });
+
+  it("shows retained source text in the update where it was recorded", async () => {
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([{
+      id: draft.fieldReference,
+      savedAt: "2026-07-24T09:30:00.000Z",
+      data: draft,
+      inputMode: "text",
+      inputEvidence: {
+        smokingStatus: {
+          rawText: "used to smoke",
+          suggestedValue: "Former smoker",
+          confirmedValue: "Former smoker",
+        },
+      },
+    }]));
+    const user = userEvent.setup();
+    renderDashboard();
+
+    await user.click(screen.getByText(/review interpreted source text/i));
+    expect(screen.getByText("used to smoke")).toBeInTheDocument();
+    expect(screen.getByText(/confirmed as former smoker/i)).toBeInTheDocument();
   });
 
   it("requires confirmation before deleting a saved temporary record", async () => {
