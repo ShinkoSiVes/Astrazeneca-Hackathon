@@ -38,10 +38,10 @@ import {
   type ScreeningInputEvidence,
   type ScreeningInputMode,
 } from "./local-screenings";
-import { fetchEnvironmentalRiskForLocation, type EnvironmentalRiskSnapshot } from "./environmental-risk";
+import { fetchEnvironmentalRiskForLocation, parseMunicipalityLabel, type EnvironmentalRiskSnapshot } from "./environmental-risk";
 import { PLCO_EDUCATION_OPTIONS } from "./plcom2012-norace";
 import { estimateAerisRisk } from "./risk-estimate";
-import { PhilippinesRegionMap, PhilippinesRegionMapPreview } from "./components/PhilippinesRegionMap";
+import { PhilippinesRegionMap, PhilippinesRegionMapPreview, type ProvinceScreeningSignal } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "risk-estimate" | "aggregation";
@@ -105,6 +105,7 @@ type PopulationRecord = {
 };
 
 type HeatmapDataMode = "public" | "app-screenings" | "combined";
+type HeatmapViewLevel = "national" | "province";
 
 const normaliseRegionName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -131,6 +132,25 @@ const appScreeningRegionsFor = (profiles: LocalScreeningDraft[]): SyntheticRegio
 
   return { ...region, signalLevel, syntheticRecords: screenedIndividuals, coverage: `${screenedIndividuals} app-screened` };
 });
+
+const appScreeningProvincesFor = (profiles: LocalScreeningDraft[]): ProvinceScreeningSignal[] => {
+  const countsByProvince = new Map<string, ProvinceScreeningSignal>();
+
+  profiles.forEach((profile) => {
+    const municipality = parseMunicipalityLabel(profile.municipality);
+    const provinceName = municipality.province
+      || (/puerto princesa/i.test(municipality.name) ? "Palawan" : "");
+    if (!provinceName) return;
+    const provinceKey = normaliseRegionName(provinceName);
+    const current = countsByProvince.get(provinceKey);
+    countsByProvince.set(provinceKey, {
+      provinceName,
+      screenedIndividuals: (current?.screenedIndividuals ?? 0) + 1,
+    });
+  });
+
+  return [...countsByProvince.values()];
+};
 
 const emptyScreeningDraft: ScreeningDraft = {
   ...emptyLocalScreeningDraft,
@@ -221,6 +241,9 @@ export default function App() {
   const [appScreeningProfiles, setAppScreeningProfiles] = useState<LocalScreeningDraft[]>([]);
   const [heatmapDataMode, setHeatmapDataMode] = useState<HeatmapDataMode>("public");
   const [selectedRegionId, setSelectedRegionId] = useState(syntheticRegions[0].id);
+  const [heatmapViewLevel, setHeatmapViewLevel] = useState<HeatmapViewLevel>("national");
+  const [drilledRegionId, setDrilledRegionId] = useState<string | null>(null);
+  const [zoomReadyRegionId, setZoomReadyRegionId] = useState<string | null>(null);
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
   const [showIncompleteFields, setShowIncompleteFields] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
@@ -269,6 +292,7 @@ export default function App() {
   const uploadedPreview = imagingMetadata.imagingFiles.find((file) => file.previewUrl)?.previewUrl;
   const heatmapEligibleProfiles = useMemo(() => uniqueHeatmapProfiles(appScreeningProfiles), [appScreeningProfiles]);
   const appScreeningRegions = useMemo(() => appScreeningRegionsFor(heatmapEligibleProfiles), [heatmapEligibleProfiles]);
+  const appScreeningProvinces = useMemo(() => appScreeningProvincesFor(heatmapEligibleProfiles), [heatmapEligibleProfiles]);
   const priorSurveyProfiles = useMemo(() => appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "Yes"), [appScreeningProfiles]);
   const duplicateScreeningProfiles = appScreeningProfiles.filter((profile) => profile.previousSurveyResponse === "No").length - heatmapEligibleProfiles.length;
   const heatmapRegions = heatmapDataMode === "app-screenings" ? appScreeningRegions : syntheticRegions;
@@ -652,11 +676,40 @@ export default function App() {
     navigateTo("aggregation");
   };
 
+  const resetHeatmapView = (selectedRegion = syntheticRegions[0].id) => {
+    setSelectedRegionId(selectedRegion);
+    setHeatmapViewLevel("national");
+    setDrilledRegionId(null);
+    setZoomReadyRegionId(null);
+  };
+
+  const changeHeatmapDataMode = (mode: HeatmapDataMode) => {
+    setHeatmapDataMode(mode);
+    resetHeatmapView();
+  };
+
+  const activateHeatmapRegion = (regionId: string) => {
+    if (heatmapViewLevel === "province") return;
+    if (zoomReadyRegionId === regionId) {
+      setDrilledRegionId(regionId);
+      setHeatmapViewLevel("province");
+      return;
+    }
+    setSelectedRegionId(regionId);
+    setZoomReadyRegionId(regionId);
+  };
+
+  const returnToNationalHeatmap = () => {
+    setHeatmapViewLevel("national");
+    setDrilledRegionId(null);
+    setZoomReadyRegionId(selectedRegionId);
+  };
+
   const openPopulationDashboard = () => {
     setAppScreeningProfiles(readStoredScreenings().map((screening) => screening.data));
     setPopulationRecordCount(readLocalPopulationFixtureCount());
     setHeatmapDataMode("public");
-    setSelectedRegionId(syntheticRegions[0].id);
+    resetHeatmapView();
     navigateTo("heatmap-status");
   };
 
@@ -980,9 +1033,9 @@ export default function App() {
               <span>{heatmapDataMode === "public" ? "Lung Center of the Philippines public data" : heatmapDataMode === "app-screenings" ? `${heatmapEligibleProfiles.length} heatmap-eligible profile${heatmapEligibleProfiles.length === 1 ? "" : "s"}` : "Sources layered, never summed"}</span>
             </div>
             <div className="heatmap-source-switch" role="group" aria-label="Heat map data source">
-              <button className={heatmapDataMode === "public" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "public"} onClick={() => { setHeatmapDataMode("public"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>Public data</strong><span>Static baseline</span></button>
-              <button className={heatmapDataMode === "app-screenings" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "app-screenings"} onClick={() => { setHeatmapDataMode("app-screenings"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>App screenings</strong><span>Eligible profiles only</span></button>
-              <button className={heatmapDataMode === "combined" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "combined"} onClick={() => { setHeatmapDataMode("combined"); setSelectedRegionId(syntheticRegions[0].id); }}><strong>Combined overlay</strong><span>Two separate layers</span></button>
+              <button className={heatmapDataMode === "public" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "public"} onClick={() => changeHeatmapDataMode("public")}><strong>Public data</strong><span>Static baseline</span></button>
+              <button className={heatmapDataMode === "app-screenings" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "app-screenings"} onClick={() => changeHeatmapDataMode("app-screenings")}><strong>App screenings</strong><span>Eligible profiles only</span></button>
+              <button className={heatmapDataMode === "combined" ? "active" : ""} type="button" aria-pressed={heatmapDataMode === "combined"} onClick={() => changeHeatmapDataMode("combined")}><strong>Combined overlay</strong><span>Two separate layers</span></button>
             </div>
             <div className="dashboard-summary-grid">
               {heatmapDataMode === "public" ? <>
@@ -1003,7 +1056,18 @@ export default function App() {
               </>}
             </div>
             <div className="dashboard-workspace">
-              <PhilippinesRegionMap regions={heatmapRegions} screeningRegions={heatmapDataMode === "combined" ? appScreeningRegions : undefined} selectedRegionId={selectedRegionId} onSelect={setSelectedRegionId} dataSource={heatmapDataMode} />
+              <PhilippinesRegionMap
+                regions={heatmapRegions}
+                screeningRegions={heatmapDataMode === "combined" ? appScreeningRegions : undefined}
+                selectedRegionId={selectedRegionId}
+                onSelect={activateHeatmapRegion}
+                dataSource={heatmapDataMode}
+                viewLevel={heatmapViewLevel}
+                drilledRegionId={drilledRegionId}
+                zoomReadyRegionId={zoomReadyRegionId}
+                provinceScreeningSignals={appScreeningProvinces}
+                onResetView={returnToNationalHeatmap}
+              />
               {(() => {
                 const selectedRegion: SyntheticRegion = heatmapRegions.find((region) => region.id === selectedRegionId) || heatmapRegions[0];
                 const selectedScreeningRegion = appScreeningRegions.find((region) => region.id === selectedRegion.id) || appScreeningRegions[0];

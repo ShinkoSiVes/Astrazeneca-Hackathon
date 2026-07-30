@@ -40,7 +40,10 @@ No model or model fixture is used in this feature.
 - Modality: no model or geographic inference is used.
 - Source/version: real 2023 provincial boundary geometry from `faeldon/philippines-json-maps` (MIT; local source license retained), grouped to the PSA's current 18-region roster. The current roster reference is PSA PSGC.
 - Status: locally bundled, offline visual dashboard; local population-fixture count is deliberately unmapped. Negros Island Region is formed from Negros Occidental, Negros Oriental, and Siquijor source polygons.
-- Limitation: the geometry is a static visual-reference snapshot, not an authoritative operational GIS layer. Signal colors and values are illustrative interface data, not clinical risk, incidence, prevalence, or regional attribution.
+- Drill-down: a second activation of a selected region reprojects its bundled ADM2 province features; NCR uses the four district features available in the same source snapshot.
+- App-screening province layer: eligible local profiles are grouped by the province suffix stored in their municipality selection. Profiles without a mappable province suffix remain unshaded; City of Puerto Princesa is explicitly associated with Palawan.
+- Limitation: public registry values remain region-level and are not disaggregated across provinces. The geometry is a static visual-reference snapshot, not an authoritative operational GIS layer. Signal colors and values are illustrative interface data, not clinical risk, incidence, prevalence, or regional attribution.
+- Deferred data requirement: city or municipality drill-down needs approved ADM3 geometry, a PSGC-code crosswalk, license review, and lazy loading. City shapes are not present in the current asset bundle.
 - Clinician review: not applicable to synthetic fixtures; real population data remains governed by the TASK-005 gate.
 
 ## Future adapter boundary

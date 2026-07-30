@@ -1,4 +1,5 @@
-import type { KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { ChevronLeft } from "lucide-react";
 import regionI from "../assets/philippines-regions/region-100000000.json";
 import regionII from "../assets/philippines-regions/region-200000000.json";
 import regionIII from "../assets/philippines-regions/region-300000000.json";
@@ -77,24 +78,66 @@ const longitudeBounds = { min: 116.85, max: 126.7 };
 const latitudeBounds = { min: 4.35, max: 21.4 };
 const viewport = { width: 680, height: 780, horizontalPadding: 40, verticalPadding: 24 };
 
-const project = ([longitude, latitude]: Position): [number, number] => {
+type MapBounds = {
+  longitude: { min: number; max: number };
+  latitude: { min: number; max: number };
+};
+
+type ProjectPosition = (position: Position) => [number, number];
+
+const createProject = (bounds: MapBounds, preserveAspectRatio = false): ProjectPosition => ([longitude, latitude]) => {
   const usableWidth = viewport.width - viewport.horizontalPadding * 2;
   const usableHeight = viewport.height - viewport.verticalPadding * 2;
-  const x = viewport.horizontalPadding + ((longitude - longitudeBounds.min) / (longitudeBounds.max - longitudeBounds.min)) * usableWidth;
-  const y = viewport.verticalPadding + ((latitudeBounds.max - latitude) / (latitudeBounds.max - latitudeBounds.min)) * usableHeight;
+  const longitudeSpan = Math.max(bounds.longitude.max - bounds.longitude.min, 0.001);
+  const latitudeSpan = Math.max(bounds.latitude.max - bounds.latitude.min, 0.001);
+  const longitudeScale = usableWidth / longitudeSpan;
+  const latitudeScale = usableHeight / latitudeSpan;
+  const scale = preserveAspectRatio ? Math.min(longitudeScale, latitudeScale) : 1;
+  const contentWidth = preserveAspectRatio ? longitudeSpan * scale : usableWidth;
+  const contentHeight = preserveAspectRatio ? latitudeSpan * scale : usableHeight;
+  const x = viewport.horizontalPadding + (usableWidth - contentWidth) / 2
+    + (longitude - bounds.longitude.min) * (preserveAspectRatio ? scale : longitudeScale);
+  const y = viewport.verticalPadding + (usableHeight - contentHeight) / 2
+    + (bounds.latitude.max - latitude) * (preserveAspectRatio ? scale : latitudeScale);
   return [Number(x.toFixed(2)), Number(y.toFixed(2))];
 };
 
-const ringPath = (ring: Position[]) => ring.map((point, index) => {
-  const [x, y] = project(point);
-  return `${index === 0 ? "M" : "L"}${x} ${y}`;
-}).join(" ") + " Z";
+const nationalProject = createProject({ longitude: longitudeBounds, latitude: latitudeBounds });
 
-const featurePath = (feature: BoundaryFeature) => {
+const featurePositions = (feature: BoundaryFeature) => {
   const polygons = feature.geometry.type === "Polygon"
     ? [feature.geometry.coordinates as Position[][]]
     : feature.geometry.coordinates as Position[][][];
-  return polygons.map((polygon) => polygon.map(ringPath).join(" ")).join(" ");
+  return polygons.flatMap((polygon) => polygon.flatMap((ring) => ring));
+};
+
+const boundsForFeatures = (features: BoundaryFeature[]): MapBounds => {
+  const positions = features.flatMap(featurePositions);
+  const longitudes = positions.map(([longitude]) => longitude);
+  const latitudes = positions.map(([, latitude]) => latitude);
+  const longitudeMin = Math.min(...longitudes);
+  const longitudeMax = Math.max(...longitudes);
+  const latitudeMin = Math.min(...latitudes);
+  const latitudeMax = Math.max(...latitudes);
+  const longitudePadding = Math.max((longitudeMax - longitudeMin) * 0.08, 0.08);
+  const latitudePadding = Math.max((latitudeMax - latitudeMin) * 0.08, 0.08);
+
+  return {
+    longitude: { min: longitudeMin - longitudePadding, max: longitudeMax + longitudePadding },
+    latitude: { min: latitudeMin - latitudePadding, max: latitudeMax + latitudePadding },
+  };
+};
+
+const ringPath = (ring: Position[], projectPosition: ProjectPosition) => ring.map((point, index) => {
+  const [x, y] = projectPosition(point);
+  return `${index === 0 ? "M" : "L"}${x} ${y}`;
+}).join(" ") + " Z";
+
+const featurePath = (feature: BoundaryFeature, projectPosition: ProjectPosition = nationalProject) => {
+  const polygons = feature.geometry.type === "Polygon"
+    ? [feature.geometry.coordinates as Position[][]]
+    : feature.geometry.coordinates as Position[][][];
+  return polygons.map((polygon) => polygon.map((ring) => ringPath(ring, projectPosition)).join(" ")).join(" ");
 };
 
 type PhilippinesRegionMapProps = {
@@ -103,6 +146,16 @@ type PhilippinesRegionMapProps = {
   selectedRegionId: string;
   onSelect: (regionId: string) => void;
   dataSource?: "public" | "app-screenings" | "combined";
+  viewLevel?: "national" | "province";
+  drilledRegionId?: string | null;
+  zoomReadyRegionId?: string | null;
+  provinceScreeningSignals?: ProvinceScreeningSignal[];
+  onResetView?: () => void;
+};
+
+export type ProvinceScreeningSignal = {
+  provinceName: string;
+  screenedIndividuals: number;
 };
 
 type PhilippinesRegionMapPreviewProps = {
@@ -136,7 +189,7 @@ export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPre
       </g>
       <g filter="url(#map-preview-soft-shadow)">
         {regions.map((region) => {
-          const paths = (boundariesById.get(region.id) ?? []).map(featurePath);
+          const paths = (boundariesById.get(region.id) ?? []).map((feature) => featurePath(feature));
 
           return (
             <g className={`map-preview-region signal-${region.signalLevel.toLowerCase()}`} key={region.id}>
@@ -164,23 +217,85 @@ export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPre
   );
 }
 
-export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedRegionId, onSelect, dataSource = "public" }: PhilippinesRegionMapProps) {
+const normaliseProvinceName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+const screeningSignalFor = (count: number) => count === 0 ? "lower" : count < 3 ? "moderate" : "higher";
+
+export function PhilippinesRegionMap({
+  regions,
+  screeningRegions = [],
+  selectedRegionId,
+  onSelect,
+  dataSource = "public",
+  viewLevel = "national",
+  drilledRegionId = null,
+  zoomReadyRegionId = null,
+  provinceScreeningSignals = [],
+  onResetView,
+}: PhilippinesRegionMapProps) {
+  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(null);
+  const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
   const screeningRegionsById = new Map(screeningRegions.map((region) => [region.id, region]));
+  const provinceSignalsByName = new Map(provinceScreeningSignals.map((signal) => [normaliseProvinceName(signal.provinceName), signal.screenedIndividuals]));
   const isCombined = dataSource === "combined";
+  const isDrilled = viewLevel === "province" && Boolean(drilledRegionId);
+  const drilledRegion = regions.find((region) => region.id === drilledRegionId) ?? regions.find((region) => region.id === selectedRegionId) ?? regions[0];
+  const provinceFeatures = isDrilled ? boundariesById.get(drilledRegion.id) ?? [] : [];
+  const provinceProject = provinceFeatures.length
+    ? createProject(boundsForFeatures(provinceFeatures), true)
+    : nationalProject;
+
+  useEffect(() => {
+    setSelectedProvinceId(null);
+    if (isDrilled) backButtonRef.current?.focus();
+  }, [drilledRegionId, isDrilled]);
+
+  const resetFromKeyboard = (event: KeyboardEvent<HTMLElement>) => {
+    if (isDrilled && event.key === "Escape") {
+      event.preventDefault();
+      onResetView?.();
+    }
+  };
 
   return (
-    <section className="philippines-map-panel" aria-labelledby="region-map-title">
+    <section className="philippines-map-panel" aria-labelledby="region-map-title" onKeyDown={resetFromKeyboard}>
       <div className="map-panel-heading">
         <div>
-          <p className="card-kicker">Interactive regional geometry</p>
-          <h2 id="region-map-title">Philippines model</h2>
+          <p className="card-kicker">{isDrilled ? "Province drill-down" : "Interactive regional geometry"}</p>
+          <h2 id="region-map-title">{isDrilled ? drilledRegion.label : "Philippines model"}</h2>
         </div>
-        <span>18 regions</span>
+        <span>{isDrilled ? `${provinceFeatures.length} ${drilledRegion.id === "ncr" ? "districts" : "provinces"}` : "18 regions"}</span>
       </div>
-      <p className="map-panel-copy">{isCombined ? "Choose a region to compare its static public fill with the hatched app-screening overlay. The two source values remain separate." : dataSource === "app-screenings" ? "Choose a region to see only saved profiling drafts grouped by their selected region. Public baseline data is excluded." : "Choose a real administrative-region outline to inspect the static public baseline. App screening profiles are excluded."}</p>
-      <div className="philippines-map-stage">
-        <svg className="philippines-region-map" viewBox={`0 0 ${viewport.width} ${viewport.height}`} role="group" aria-label="Interactive Philippines model with 18 selectable administrative regions">
+      <p className="map-panel-copy">
+        {isDrilled
+          ? dataSource === "public"
+            ? "Province outlines are available for orientation, but the public registry source does not provide province-level values."
+            : isCombined
+              ? "The parent region’s public signal remains the base context. Province hatching shows locally saved screening profiles as a separate layer."
+              : "Choose a province to inspect locally saved screening activity. Areas without eligible profiles are shown as no data."
+          : isCombined
+            ? "Activate a region once to select it, then again to zoom into its provinces. Public and app-screening values remain separate."
+            : dataSource === "app-screenings"
+              ? "Activate a region once to select it, then again to zoom into locally saved screening activity by province."
+              : "Activate a region once to select it, then again to zoom into its province outlines. Public values remain regional only."}
+      </p>
+      {isDrilled && (
+        <div className="map-drill-toolbar">
+          <button ref={backButtonRef} className="map-drill-back" type="button" onClick={onResetView} aria-keyshortcuts="Escape">
+            <ChevronLeft size={16} aria-hidden="true" /> Back to all regions
+          </button>
+          <span role="status" aria-live="polite">Showing {drilledRegion.id === "ncr" ? "districts" : "provinces"} in {drilledRegion.label}</span>
+        </div>
+      )}
+      <div className={`philippines-map-stage ${isDrilled ? "is-drilled" : ""}`}>
+        <svg
+          className={`philippines-region-map ${isDrilled ? "is-drilled" : ""}`}
+          viewBox={`0 0 ${viewport.width} ${viewport.height}`}
+          role="group"
+          aria-label={isDrilled
+            ? `${drilledRegion.label} ${drilledRegion.id === "ncr" ? "district" : "province"} heatmap`
+            : "Interactive Philippines model with 18 selectable administrative regions"}
+        >
           <defs>
             <linearGradient id="map-water" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stopColor="#eff9f7" />
@@ -200,17 +315,59 @@ export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedR
             </pattern>
           </defs>
           <rect className="map-water" x="8" y="8" width={viewport.width - 16} height={viewport.height - 16} rx="48" />
-          <g className="map-contour-lines" aria-hidden="true">
-            <path d="M72 170c95-52 158-44 228-2 73 45 156 51 272 3" />
-            <path d="M74 405c92-50 161-44 232 2 76 47 163 50 270-4" />
-            <path d="M78 637c98-45 171-39 235 4 80 49 160 51 257 9" />
-          </g>
-          <g filter="url(#map-soft-shadow)">
-            {regions.map((region) => {
-              const paths = (boundariesById.get(region.id) ?? []).map(featurePath);
+          {!isDrilled && (
+            <g className="map-contour-lines" aria-hidden="true">
+              <path d="M72 170c95-52 158-44 228-2 73 45 156 51 272 3" />
+              <path d="M74 405c92-50 161-44 232 2 76 47 163 50 270-4" />
+              <path d="M78 637c98-45 171-39 235 4 80 49 160 51 257 9" />
+            </g>
+          )}
+          <g className={isDrilled ? "map-province-layer" : "map-national-layer"} filter="url(#map-soft-shadow)">
+            {isDrilled ? provinceFeatures.map((feature, index) => {
+              const provinceId = feature.properties.adm2_psgc ?? index;
+              const provinceName = feature.properties.adm2_en || `Administrative area ${index + 1}`;
+              const screenedIndividuals = provinceSignalsByName.get(normaliseProvinceName(provinceName)) ?? 0;
+              const screeningSignal = screeningSignalFor(screenedIndividuals);
+              const isSelected = selectedProvinceId === provinceId;
+              const path = featurePath(feature, provinceProject);
+              const provinceLabel = dataSource === "public"
+                ? `${provinceName}, province-level public data unavailable`
+                : isCombined
+                  ? `${provinceName}, ${drilledRegion.signalLevel} parent regional public context, ${screenedIndividuals} unique app screening profiles`
+                  : `${provinceName}, ${screenedIndividuals} unique app screening profiles`;
+              const selectProvinceFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedProvinceId(provinceId);
+                }
+              };
+
+              return (
+                <g
+                  className={`map-province-group ${dataSource === "public" ? "public-unavailable" : `signal-${isCombined ? drilledRegion.signalLevel.toLowerCase() : screeningSignal}`} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""}`}
+                  key={provinceId}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={provinceLabel}
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedProvinceId(provinceId)}
+                  onKeyDown={selectProvinceFromKeyboard}
+                >
+                  <g className="map-region-depth" aria-hidden="true">
+                    <path className="map-region-extrusion" d={path} fillRule="evenodd" transform="translate(0 10)" />
+                  </g>
+                  <g className="map-region-surface">
+                    <path className="map-region-shape" d={path} fillRule="evenodd" />
+                    {isCombined && <path className="map-screening-overlay" d={path} fillRule="evenodd" />}
+                  </g>
+                </g>
+              );
+            }) : regions.map((region) => {
+              const paths = (boundariesById.get(region.id) ?? []).map((feature) => featurePath(feature));
               const screeningRegion = screeningRegionsById.get(region.id);
               const screeningSignal = screeningRegion?.signalLevel.toLowerCase() ?? "lower";
               const isSelected = selectedRegionId === region.id;
+              const isZoomReady = zoomReadyRegionId === region.id;
               const selectFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
@@ -220,12 +377,13 @@ export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedR
 
               return (
                 <g
-                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""}`}
+                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""} ${isZoomReady ? "zoom-ready" : ""}`}
                   key={region.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningRegion?.syntheticRecords ?? 0} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}`}
+                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningRegion?.syntheticRecords ?? 0} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}${isZoomReady ? ", activate again to zoom into provinces" : ", activate to select"}`}
                   aria-pressed={isSelected}
+                  aria-expanded={isZoomReady ? false : undefined}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={selectFromKeyboard}
                 >
@@ -240,22 +398,28 @@ export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedR
               );
             })}
           </g>
-          <g className="map-compass-rose" role="img" aria-label="Compass showing north, east, south, and west">
-            <path className="map-compass-line" d="M622 62v64M590 94h64" aria-hidden="true" />
-            <path className="map-compass-needle map-compass-needle-north" d="M622 58l-8 36 8-7 8 7z" aria-hidden="true" />
-            <path className="map-compass-needle map-compass-needle-south" d="M622 130l-8-36 8 7 8-7z" aria-hidden="true" />
-            <circle className="map-compass-dot" cx="622" cy="94" r="3.5" aria-hidden="true" />
-            <text className="map-compass" x="622" y="49" textAnchor="middle" aria-hidden="true">N</text>
-            <text className="map-compass" x="670" y="98" textAnchor="middle" aria-hidden="true">E</text>
-            <text className="map-compass" x="622" y="145" textAnchor="middle" aria-hidden="true">S</text>
-            <text className="map-compass" x="574" y="98" textAnchor="middle" aria-hidden="true">W</text>
-          </g>
+          {!isDrilled && (
+            <g className="map-compass-rose" role="img" aria-label="Compass showing north, east, south, and west">
+              <path className="map-compass-line" d="M622 62v64M590 94h64" aria-hidden="true" />
+              <path className="map-compass-needle map-compass-needle-north" d="M622 58l-8 36 8-7 8 7z" aria-hidden="true" />
+              <path className="map-compass-needle map-compass-needle-south" d="M622 130l-8-36 8 7 8-7z" aria-hidden="true" />
+              <circle className="map-compass-dot" cx="622" cy="94" r="3.5" aria-hidden="true" />
+              <text className="map-compass" x="622" y="49" textAnchor="middle" aria-hidden="true">N</text>
+              <text className="map-compass" x="670" y="98" textAnchor="middle" aria-hidden="true">E</text>
+              <text className="map-compass" x="622" y="145" textAnchor="middle" aria-hidden="true">S</text>
+              <text className="map-compass" x="574" y="98" textAnchor="middle" aria-hidden="true">W</text>
+            </g>
+          )}
         </svg>
-        <div className="map-depth-key" aria-label={isCombined ? "Static public signal and app-screening overlay keys" : dataSource === "app-screenings" ? "App-screening profile count key" : "Static public baseline key"}>
-          {isCombined ? <>
-            <span><i className="signal-lower" /> Public lower</span>
-            <span><i className="signal-moderate" /> Public moderate</span>
-            <span><i className="signal-higher" /> Public higher</span>
+        <div className="map-depth-key" aria-label={isDrilled
+          ? dataSource === "public" ? "Province-level public data availability key" : isCombined ? "Parent regional public signal and province app-screening overlay keys" : "Province app-screening profile count key"
+          : isCombined ? "Static public signal and app-screening overlay keys" : dataSource === "app-screenings" ? "App-screening profile count key" : "Static public baseline key"}
+        >
+          {isDrilled && dataSource === "public" ? (
+            <span><i className="public-unavailable" /> Province-level values unavailable</span>
+          ) : isCombined ? <>
+            <span><i className={`signal-${isDrilled ? drilledRegion.signalLevel.toLowerCase() : "lower"}`} /> {isDrilled ? "Parent regional public signal" : "Public lower"}</span>
+            {!isDrilled && <><span><i className="signal-moderate" /> Public moderate</span><span><i className="signal-higher" /> Public higher</span></>}
             <span><i className="screening-none" /> No app profiles</span>
             <span><i className="screening-moderate" /> 1–2 app profiles</span>
             <span><i className="screening-higher" /> 3+ app profiles</span>
@@ -270,7 +434,11 @@ export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedR
           </>}
         </div>
       </div>
-      <p className="map-source-note">Boundary geometry: 2023 provincial snapshot, grouped to the PSA’s current 18-region roster. Static, offline, and for demo orientation only.</p>
+      <p className="map-source-note">
+        {isDrilled
+          ? "Province and district geometry: 2023 administrative snapshot. Public registry values remain region-level; local profile counts use saved municipality-to-province labels."
+          : "Boundary geometry: 2023 provincial snapshot, grouped to the PSA’s current 18-region roster. Static, offline, and for demo orientation only."}
+      </p>
     </section>
   );
 }

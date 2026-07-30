@@ -42,6 +42,14 @@
 - The geometry is for demo orientation only; it must not be described as an authoritative operational GIS layer, used for patient location, or combined with a clinical-risk claim.
 - Every colour, follow-up signal, record count, and coverage value remains static synthetic UI data. External sharing remains disabled.
 
+## Accepted revision - Region-to-province heatmap drill-down
+
+- A region may be activated once for selection and a second time to open the province or NCR-district outlines already present in the bundled 2023 geometry.
+- Public LCP registry values remain region-level. Province outlines in public mode must use a neutral unavailable state rather than fabricated province-level values.
+- App-screening mode may group eligible, deduplicated local profiles by the province suffix stored with their selected municipality. Combined mode may layer those counts over the parent region's public context, but the sources must remain separate and must never be summed.
+- The drill-down must remain keyboard-operable, provide a visible return control, support Escape, and state that its boundaries are for offline demo orientation only.
+- Deferred follow-up: a true city or municipality choropleth requires approved ADM3 geometry, license and provenance review, lazy per-region loading, and a reliable PSGC-code join. City-level geometry must not be inferred from the current province files.
+
 ## Accepted - Stylized map interaction without GIS attribution
 
 - TASK-006 may use a native SVG, 3D-styled Philippines-shaped selection surface for the 18 numbered synthetic fixtures.

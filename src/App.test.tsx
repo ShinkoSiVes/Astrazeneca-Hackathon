@@ -159,6 +159,37 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByText(/public data excluded/i)).toBeInTheDocument();
   });
 
+  it("selects a region before drilling into province-level app screening activity", async () => {
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([{
+      id: "FIELD-CAR-001",
+      savedAt: "2026-07-24T09:30:00.000Z",
+      data: {
+        fieldReference: "FIELD-CAR-001",
+        province: "Cordillera Administrative Region (CAR)",
+        municipality: "Banaue — Ifugao",
+        previousSurveyResponse: "No",
+      },
+    }]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await user.click(await screen.findByRole("button", { name: /app screenings/i }));
+
+    await user.click(screen.getByRole("button", { name: /cordillera administrative region.*activate to select/i }));
+    const zoomReadyRegion = screen.getByRole("button", { name: /cordillera administrative region.*activate again to zoom into provinces/i });
+    expect(zoomReadyRegion).toHaveClass("zoom-ready");
+    await user.click(zoomReadyRegion);
+
+    expect(await screen.findByText("6 provinces")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ifugao, 1 unique app screening profile/i })).toHaveClass("signal-moderate");
+    expect(screen.getByRole("button", { name: /abra, 0 unique app screening profiles/i })).toHaveClass("signal-lower");
+
+    await user.click(screen.getByRole("button", { name: /^public data/i }));
+    expect(screen.queryByRole("button", { name: /back to all regions/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /static public baseline/i })).toHaveLength(18);
+  });
+
   it("layers public and deduplicated screening data without summing source counts", async () => {
     localStorage.setItem(screeningHistoryKey, JSON.stringify([
       {
@@ -198,8 +229,8 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByLabelText(/demo passcode/i);
     await user.type(screen.getByLabelText(/demo passcode/i), "1234");
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
-    await screen.findByRole("button", { name: /start screening/i });
-    await user.click(screen.getByRole("button", { name: /start screening/i }));
+    await screen.findByRole("button", { name: /new screening/i });
+    await user.click(screen.getByRole("button", { name: /new screening/i }));
     await screen.findByLabelText(/field reference/i);
     await user.type(screen.getByLabelText(/field reference/i), "BHW-024-001");
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
