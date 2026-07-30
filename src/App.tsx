@@ -835,8 +835,26 @@ export default function App() {
               <p className="card-kicker">Our working purpose</p>
               <h2>Make a careful first step more reachable.</h2>
               <p>We are designing a lightweight workflow that helps medical professionals document consent, collect structured screening information, and review risk-support inputs without presenting AI as a diagnosis.</p>
-              <p className="placeholder-note">Project details, partners, and institutional affiliations: [add approved information here].</p>
             </article>
+
+            <section className="about-feature-section" aria-labelledby="clinical-review-title">
+              <p className="card-kicker">Clinical governance</p>
+              <h2 id="clinical-review-title">Clinical review and support</h2>
+              <div className="clinical-review-status">
+                <span className="review-status-badge">Pending clinical review</span>
+                <dl className="review-details">
+                  <div>
+                    <dt>Proposed clinical reviewer</dt>
+                    <dd>[Doctor&apos;s name]</dd>
+                  </div>
+                  <div>
+                    <dt>Current status</dt>
+                    <dd>Clinical review, approval, and support have not yet been confirmed.</dd>
+                  </div>
+                </dl>
+                <p>A formal review is planned for a future stage. Until that review is complete, Aeris AI remains a hackathon prototype and must not be presented as clinically approved or supported.</p>
+              </div>
+            </section>
 
             <section className="about-feature-section" aria-labelledby="attribution-title">
               <p className="card-kicker">Model attribution</p>
@@ -1331,7 +1349,7 @@ export default function App() {
                   aria-pressed={workspaceMode === "health-center"}
                   onClick={() => changeWorkspaceMode("health-center")}
                 >
-                  Health Care Center Mode
+                  Health Care Center
                 </button>
                 <button
                   type="button"
@@ -1339,7 +1357,7 @@ export default function App() {
                   aria-pressed={workspaceMode === "cancer-registry"}
                   onClick={() => changeWorkspaceMode("cancer-registry")}
                 >
-                  Cancer Registry Mode
+                  Cancer Registry
                 </button>
               </div>
               <p className="login-mode-note">Choose the workspace context. Mode-specific behavior will be added separately.</p>
