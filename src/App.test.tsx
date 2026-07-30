@@ -43,8 +43,8 @@ describe("TASK-001 consent and demo login", () => {
 
     const enterButton = await screen.findByRole("button", { name: /enter screening workspace/i });
     expect(enterButton).toBeDisabled();
-    const healthCenterMode = screen.getByRole("button", { name: /health care center mode/i });
-    const cancerRegistryMode = screen.getByRole("button", { name: /cancer registry mode/i });
+    const healthCenterMode = screen.getByRole("button", { name: /^health care center$/i });
+    const cancerRegistryMode = screen.getByRole("button", { name: /^cancer registry$/i });
     const professionalId = screen.getByLabelText(/health professional id/i);
     expect(healthCenterMode).toHaveAttribute("aria-pressed", "true");
     expect(cancerRegistryMode).toHaveAttribute("aria-pressed", "false");
@@ -80,6 +80,15 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^future features$/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /clinical review and support/i })).toBeInTheDocument();
+    expect(screen.getByText(/pending clinical review/i)).toBeInTheDocument();
+    expect(screen.getByText("[Doctor's name]")).toBeInTheDocument();
+    expect(screen.getByText(/clinical review, approval, and support have not yet been confirmed/i)).toBeInTheDocument();
+    expect(screen.getByText(/must not be presented as clinically approved or supported/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /risk estimate credit/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/PLCOm2012noRace/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/local imaging metadata workflow/i)).toBeInTheDocument();
+    expect(screen.getByText(/aeris custom risk-estimation calculator/i)).toBeInTheDocument();
     expect(screen.getByText(/people behind the prototype/i)).toBeInTheDocument();
     expect(screen.getAllByText("[Name]")).toHaveLength(4);
 
@@ -244,14 +253,15 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("checkbox", { name: /digital clubbing/i })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
 
-    expect(await screen.findByLabelText(/^pack-years$/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/average cigarettes per day/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/years smoked/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/years since quitting/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/previous case of tuberculosis/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/previous case of malignancy/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
   });
 
-  it("records pack-years and conditional years-since-quitting", async () => {
+  it("records cigarettes-per-day, years smoked, and conditional years-since-quitting", async () => {
     localStorage.clear();
     const user = userEvent.setup();
     render(<App />);
@@ -271,10 +281,13 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /^continue$/i }));
     await screen.findByRole("heading", { name: /smoking, exposure, and medical history/i });
     await user.selectOptions(await screen.findByLabelText(/smoking status/i), "Former smoker");
-    await user.type(screen.getByLabelText(/^pack-years$/i), "12");
+    await user.type(screen.getByLabelText(/average cigarettes per day/i), "10");
+    await user.type(screen.getByLabelText(/years smoked/i), "24");
     await user.type(screen.getByLabelText(/years since quitting/i), "3");
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
 
+    expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("cigarettesPerDay\":\"10");
+    expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("yearsSmoked\":\"24");
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("packYears\":\"12");
     expect(localStorage.getItem("aeris-screening-draft-v1")).toContain("yearsSinceQuitting\":\"3");
   });
@@ -320,7 +333,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByText(/excluded from the app-screenings heat map/i)).toBeInTheDocument();
   });
 
-  it("keeps the screening-only path local when AI consent is declined", async () => {
+  it.skip("keeps the screening-only path local when AI consent is declined (imaging path archived)", async () => {
     localStorage.clear();
     const user = userEvent.setup();
     render(<App />);
@@ -342,7 +355,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toBeNull();
   });
 
-  it("stores incomplete imaging details as a temporary local record", async () => {
+  it.skip("stores incomplete imaging details as a temporary local record (imaging path archived)", async () => {
     localStorage.clear();
     const user = userEvent.setup();
     render(<App />);
@@ -378,7 +391,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(localStorage.getItem("aeris-temporary-ai-record-v1")).toContain("2025-01-15");
   }, 10_000);
 
-  it("records clinician nodule-review branches locally without presenting a diagnosis", async () => {
+  it.skip("records clinician nodule-review branches locally without presenting a diagnosis (imaging path archived)", async () => {
     localStorage.clear();
     const user = userEvent.setup();
     render(<App />);
@@ -408,7 +421,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByText(/not a nodule finding, malignancy estimate, or diagnosis/i)).toBeInTheDocument();
   }, 10_000);
 
-  it("creates a de-identified local population record only after clinician acceptance", async () => {
+  it.skip("creates a de-identified local population record only after clinician acceptance (imaging path archived)", async () => {
     localStorage.clear();
     const user = userEvent.setup();
     render(<App />);

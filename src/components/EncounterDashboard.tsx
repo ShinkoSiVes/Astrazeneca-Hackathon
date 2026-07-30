@@ -156,9 +156,9 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
         </article>
         <article className="encounter-action-card">
           <ArchiveRestore size={22} aria-hidden="true" />
-          <h2>View temporary data</h2>
-          <p>{temporaryRecord ? `Saved ${timeLabel(temporaryRecord.savedAt)} · ${temporaryRecord.status}` : "No temporary imaging record is stored on this device."}</p>
-          <button className="secondary-button" type="button" disabled={!temporaryRecord} onClick={onViewTemporaryRecord}>Open temporary record <ArrowRight size={18} /></button>
+          <h2>Temporary imaging data</h2>
+          <p>Local imaging metadata is archived for a later release. See About → Future features. Existing temporary files on this device can still be extracted or deleted.</p>
+          <button className="secondary-button" type="button" disabled={!temporaryRecord} onClick={onViewTemporaryRecord}>Open archived notice <ArrowRight size={18} /></button>
           <button className="text-button temporary-extract-button" type="button" disabled={!temporaryRecord} onClick={extractTemporaryRecord}><Download size={16} /> Extract local temporary data</button>
           {isConfirmingTemporaryDeletion ? (
             <div className="temporary-delete-confirmation" role="group" aria-label="Confirm temporary data deletion">

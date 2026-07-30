@@ -1,8 +1,14 @@
+import type { EnvironmentalRiskSnapshot } from "./environmental-risk";
+
 export type LocalScreeningDraft = {
   fieldReference: string;
   age: string;
   ageRange: string;
   sexAtBirth: string;
+  educationLevel: string;
+  heightCm: string;
+  weightKg: string;
+  bmi: string;
   barangay: string;
   municipality: string;
   province: string;
@@ -10,6 +16,8 @@ export type LocalScreeningDraft = {
   smokingStatus: string;
   packFrequency: string;
   packYears: string;
+  cigarettesPerDay: string;
+  yearsSmoked: string;
   yearsSinceQuitting: string;
   householdSmoke: string;
   occupationalExposure: string;
@@ -80,6 +88,7 @@ export type StoredScreening = {
   inputMode: ScreeningInputMode;
   inputEvidence: ScreeningInputEvidence;
   updates: ScreeningRecordUpdate[];
+  environmentalRisk?: EnvironmentalRiskSnapshot | null;
 };
 
 export type TemporaryRecordSummary = {
@@ -94,7 +103,7 @@ export const screeningHistoryKey = "aeris-screening-history-v1";
 export const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 
 export const emptyLocalScreeningDraft: LocalScreeningDraft = {
-  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
+  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", educationLevel: "", heightCm: "", weightKg: "", bmi: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", cigarettesPerDay: "", yearsSmoked: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
 };
 
 export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | undefined): LocalScreeningDraft => {
@@ -107,6 +116,19 @@ export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | un
     normalised.occupationalExposure = [normalised.occupationalExposure, "Secondhand smoke"].filter(Boolean).join(" | ");
   }
   if (normalised.smokingStatus === "Never smoked") normalised.smokingStatus = "Never smoker";
+
+  const heightCm = Number.parseFloat(normalised.heightCm);
+  const weightKg = Number.parseFloat(normalised.weightKg);
+  if (Number.isFinite(heightCm) && heightCm > 0 && Number.isFinite(weightKg) && weightKg > 0) {
+    const heightM = heightCm / 100;
+    normalised.bmi = String(Math.round((weightKg / (heightM * heightM)) * 10) / 10);
+  }
+
+  const cigarettesPerDay = Number.parseFloat(normalised.cigarettesPerDay);
+  const yearsSmoked = Number.parseFloat(normalised.yearsSmoked);
+  if (Number.isFinite(cigarettesPerDay) && cigarettesPerDay > 0 && Number.isFinite(yearsSmoked) && yearsSmoked > 0) {
+    normalised.packYears = String(Math.round((cigarettesPerDay / 20) * yearsSmoked * 10) / 10);
+  }
 
   return normalised;
 };
@@ -171,6 +193,7 @@ const normaliseStoredScreening = (value: RecordLike): StoredScreening | null => 
     inputMode: latest.inputMode,
     inputEvidence: latest.inputEvidence,
     updates: recordUpdates,
+    environmentalRisk: "environmentalRisk" in value ? (value.environmentalRisk as EnvironmentalRiskSnapshot | null | undefined) ?? null : null,
   };
 };
 
@@ -192,6 +215,7 @@ export const storeScreeningSnapshot = (
   draft: LocalScreeningDraft,
   inputEvidence: ScreeningInputEvidence = {},
   inputMode: ScreeningInputMode = "structured",
+  environmentalRisk: EnvironmentalRiskSnapshot | null = null,
 ) => {
   const savedAt = new Date().toISOString();
   const reference = draft.fieldReference.trim() || `local-${savedAt}`;
@@ -211,6 +235,7 @@ export const storeScreeningSnapshot = (
     inputMode: snapshot.inputMode,
     inputEvidence: snapshot.inputEvidence,
     updates: [snapshot, ...(existingRecord?.updates ?? [])].slice(0, 20),
+    environmentalRisk: environmentalRisk ?? existingRecord?.environmentalRisk ?? null,
   };
   const next = [record, ...history.filter((item) => item.id !== reference)].slice(0, 12);
   localStorage.setItem(screeningHistoryKey, JSON.stringify(next));

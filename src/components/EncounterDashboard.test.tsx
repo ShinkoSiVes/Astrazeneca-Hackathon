@@ -32,7 +32,7 @@ describe("TASK-007 clinician encounter dashboard", () => {
 
     await user.click(screen.getByRole("button", { name: /new screening/i }));
     expect(props.onStartScreening).toHaveBeenCalledOnce();
-    expect(screen.getByRole("button", { name: /open temporary record/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /open archived notice/i })).toBeDisabled();
   });
 
   it("lists a saved screening and reopens it for clinician editing", async () => {
@@ -69,7 +69,7 @@ describe("TASK-007 clinician encounter dashboard", () => {
     const user = userEvent.setup();
     const props = renderDashboard();
 
-    const temporaryButton = screen.getByRole("button", { name: /open temporary record/i });
+    const temporaryButton = screen.getByRole("button", { name: /open archived notice/i });
     expect(temporaryButton).toBeEnabled();
     await user.click(temporaryButton);
     expect(props.onViewTemporaryRecord).toHaveBeenCalledOnce();
@@ -119,7 +119,7 @@ describe("TASK-007 clinician encounter dashboard", () => {
 
     await user.click(screen.getByRole("button", { name: /confirm delete/i }));
     expect(props.onDeleteTemporaryRecord).toHaveBeenCalledOnce();
-    expect(screen.getByRole("button", { name: /open temporary record/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /open archived notice/i })).toBeDisabled();
     expect(screen.getByText(/local temporary data was deleted/i)).toBeInTheDocument();
   });
 });
