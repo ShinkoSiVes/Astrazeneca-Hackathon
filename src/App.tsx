@@ -21,6 +21,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import lungMark from "./assets/aeris-mark.svg";
+import philippinesMapMini from "./assets/philippines-map-mini.jpg";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningChoiceField } from "./components/ScreeningChoiceField";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
@@ -41,8 +42,13 @@ import {
 import { fetchEnvironmentalRiskForLocation, parseMunicipalityLabel, type EnvironmentalRiskSnapshot } from "./environmental-risk";
 import { PLCO_EDUCATION_OPTIONS } from "./plcom2012-norace";
 import { estimateAerisRisk } from "./risk-estimate";
-import { PhilippinesRegionMap, PhilippinesRegionMapPreview, type ProvinceScreeningSignal } from "./components/PhilippinesRegionMap";
+import { PhilippinesRegionMap, type ProvinceScreeningSignal } from "./components/PhilippinesRegionMap";
+import { RegionRiskSummaryPanel } from "./components/RegionRiskSummaryPanel";
+import { RegionStatisticsPanel } from "./components/RegionStatisticsPanel";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
+import { fetchEnvironmentalRiskForRegion } from "./region-environment";
+import { buildRegionRiskSummary } from "./region-risk-summary";
+import { buildRegionStatistics } from "./region-statistics";
 
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "risk-estimate" | "aggregation";
 type WorkspaceMode = "health-center" | "cancer-registry";
@@ -240,10 +246,16 @@ export default function App() {
   const [populationRecordCount, setPopulationRecordCount] = useState(0);
   const [appScreeningProfiles, setAppScreeningProfiles] = useState<LocalScreeningDraft[]>([]);
   const [heatmapDataMode, setHeatmapDataMode] = useState<HeatmapDataMode>("public");
-  const [selectedRegionId, setSelectedRegionId] = useState(syntheticRegions[0].id);
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
   const [heatmapViewLevel, setHeatmapViewLevel] = useState<HeatmapViewLevel>("national");
   const [drilledRegionId, setDrilledRegionId] = useState<string | null>(null);
-  const [zoomReadyRegionId, setZoomReadyRegionId] = useState<string | null>(null);
+  const [selectedProvinceName, setSelectedProvinceName] = useState<string | null>(null);
+  const [showRegionStatistics, setShowRegionStatistics] = useState(false);
+  const [showRegionRiskSummary, setShowRegionRiskSummary] = useState(false);
+  const [regionEnvironmentalRisk, setRegionEnvironmentalRisk] = useState<EnvironmentalRiskSnapshot | null>(null);
+  const [regionEnvironmentalStatus, setRegionEnvironmentalStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [regionEnvironmentalError, setRegionEnvironmentalError] = useState("");
+  const [regionEnvironmentalRefreshKey, setRegionEnvironmentalRefreshKey] = useState(0);
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
   const [showIncompleteFields, setShowIncompleteFields] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
@@ -259,6 +271,7 @@ export default function App() {
   const navigationTimer = useRef<number | undefined>(undefined);
   const screeningStepTimer = useRef<number | undefined>(undefined);
   const incompleteFieldFocusTimer = useRef<number | undefined>(undefined);
+  const heatmapRegionClickRef = useRef<{ id: string; at: number } | null>(null);
   const previousScrollY = useRef(0);
   const imagingFileInput = useRef<HTMLInputElement | null>(null);
   const conditionalScreeningFields: (keyof ScreeningDraft)[] = [
@@ -355,6 +368,42 @@ export default function App() {
 
     return () => { active = false; };
   }, [screeningDraft.province, screeningDraft.municipality, screeningDraft.barangay, environmentalRefreshKey]);
+
+  useEffect(() => {
+    setShowRegionRiskSummary(false);
+    setRegionEnvironmentalRisk(null);
+    setRegionEnvironmentalStatus("idle");
+    setRegionEnvironmentalError("");
+  }, [selectedRegionId]);
+
+  useEffect(() => {
+    if (!selectedRegionId || (!showRegionStatistics && !showRegionRiskSummary)) return;
+
+    const regionLabel = syntheticRegions.find((region) => region.id === selectedRegionId)?.label ?? selectedRegionId;
+    const controller = new AbortController();
+    let active = true;
+    setRegionEnvironmentalStatus("loading");
+    setRegionEnvironmentalError("");
+
+    const fetchImpl: typeof fetch = (input, init) => globalThis.fetch(input, { ...init, signal: controller.signal });
+
+    void fetchEnvironmentalRiskForRegion(selectedRegionId, regionLabel, fetchImpl).then((result) => {
+      if (!active || controller.signal.aborted) return;
+      if (result.ok) {
+        setRegionEnvironmentalRisk(result.snapshot);
+        setRegionEnvironmentalStatus("ready");
+        return;
+      }
+      setRegionEnvironmentalRisk(null);
+      setRegionEnvironmentalStatus("error");
+      setRegionEnvironmentalError(result.error);
+    });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [selectedRegionId, showRegionStatistics, showRegionRiskSummary, regionEnvironmentalRefreshKey]);
 
   const [draftStatus, setDraftStatus] = useState("");
 
@@ -676,11 +725,14 @@ export default function App() {
     navigateTo("aggregation");
   };
 
-  const resetHeatmapView = (selectedRegion = syntheticRegions[0].id) => {
+  const resetHeatmapView = (selectedRegion: string | null = null) => {
+    heatmapRegionClickRef.current = null;
     setSelectedRegionId(selectedRegion);
     setHeatmapViewLevel("national");
     setDrilledRegionId(null);
-    setZoomReadyRegionId(null);
+    setSelectedProvinceName(null);
+    setShowRegionStatistics(false);
+    setShowRegionRiskSummary(false);
   };
 
   const changeHeatmapDataMode = (mode: HeatmapDataMode) => {
@@ -690,19 +742,40 @@ export default function App() {
 
   const activateHeatmapRegion = (regionId: string) => {
     if (heatmapViewLevel === "province") return;
-    if (zoomReadyRegionId === regionId) {
+
+    const now = performance.now();
+    const previousClick = heatmapRegionClickRef.current;
+    const isConsecutiveDoubleClick = Boolean(
+      previousClick
+      && previousClick.id === regionId
+      && now - previousClick.at <= 400,
+    );
+
+    if (isConsecutiveDoubleClick) {
+      heatmapRegionClickRef.current = null;
+      setSelectedRegionId(regionId);
       setDrilledRegionId(regionId);
       setHeatmapViewLevel("province");
+      setSelectedProvinceName(null);
+      setShowRegionStatistics(false);
+      setShowRegionRiskSummary(false);
       return;
     }
+
+    heatmapRegionClickRef.current = { id: regionId, at: now };
     setSelectedRegionId(regionId);
-    setZoomReadyRegionId(regionId);
+    setSelectedProvinceName(null);
+    setShowRegionStatistics(false);
+    setShowRegionRiskSummary(false);
   };
 
   const returnToNationalHeatmap = () => {
+    heatmapRegionClickRef.current = null;
     setHeatmapViewLevel("national");
     setDrilledRegionId(null);
-    setZoomReadyRegionId(selectedRegionId);
+    setSelectedProvinceName(null);
+    setShowRegionStatistics(false);
+    setShowRegionRiskSummary(false);
   };
 
   const openPopulationDashboard = () => {
@@ -815,6 +888,21 @@ export default function App() {
               <p><LockKeyhole size={20} /><span><strong>Purpose-limited</strong>Only consented screening information continues.</span></p>
               <p><CloudOff size={20} /><span><strong>Works offline</strong>Drafts stay on this device until a future sync is approved.</span></p>
             </div>
+
+            <button
+              className="heatmap-mini-card"
+              type="button"
+              aria-label="Heatmap status: view heatmap dashboard"
+              onClick={openPopulationDashboard}
+            >
+              <img className="heatmap-mini-map" src={philippinesMapMini} alt="" />
+              <span className="heatmap-mini-copy">
+                <span className="eyebrow"><MapPinned size={14} /> Population dashboard</span>
+                <strong>Regional signals</strong>
+                <span>Compare public registry patterns with screening profiles saved in this app.</span>
+                <span className="heatmap-mini-action">View heatmap <ArrowRight size={16} aria-hidden="true" /></span>
+              </span>
+            </button>
           </div>
 
             <div className="workflow-card">
@@ -836,34 +924,6 @@ export default function App() {
                 Continue to secure login <ArrowRight size={18} />
               </button>
             </div>
-            </div>
-          </section>
-
-          <section className="heatmap-preview-section" aria-labelledby="heatmap-preview-title">
-            <div className="heatmap-preview-card">
-              <span className="heatmap-preview-copy">
-                <span className="eyebrow"><MapPinned size={16} /> Heatmap status</span>
-                <strong id="heatmap-preview-title">Regional signals at a glance</strong>
-                <span>
-                  Open the population dashboard to explore regional patterns across public registry
-                  data and screening profiles saved in this app, with each source kept separate.
-                </span>
-                <small>Demo orientation only · No live clinical or patient data</small>
-              </span>
-              <button
-                className="heatmap-preview-visual"
-                type="button"
-                aria-label="Heatmap status: view heatmap dashboard"
-                onClick={openPopulationDashboard}
-              >
-                <PhilippinesRegionMapPreview regions={syntheticRegions} />
-                <span className="heatmap-preview-action">View heatmap <ArrowRight size={18} aria-hidden="true" /></span>
-                <span className="heatmap-preview-key">
-                  <span><i className="signal-lower" /> Lower</span>
-                  <span><i className="signal-moderate" /> Moderate</span>
-                  <span><i className="signal-higher" /> Higher</span>
-                </span>
-              </button>
             </div>
           </section>
 
@@ -1064,16 +1124,238 @@ export default function App() {
                 dataSource={heatmapDataMode}
                 viewLevel={heatmapViewLevel}
                 drilledRegionId={drilledRegionId}
-                zoomReadyRegionId={zoomReadyRegionId}
+                selectedProvinceName={selectedProvinceName}
                 provinceScreeningSignals={appScreeningProvinces}
+                onSelectProvince={setSelectedProvinceName}
                 onResetView={returnToNationalHeatmap}
               />
               {(() => {
-                const selectedRegion: SyntheticRegion = heatmapRegions.find((region) => region.id === selectedRegionId) || heatmapRegions[0];
-                const selectedScreeningRegion = appScreeningRegions.find((region) => region.id === selectedRegion.id) || appScreeningRegions[0];
+                const detailRegionId = heatmapViewLevel === "province" && drilledRegionId ? drilledRegionId : selectedRegionId;
+                const selectedRegion = detailRegionId
+                  ? heatmapRegions.find((region) => region.id === detailRegionId) ?? null
+                  : null;
+                const selectedScreeningRegion = selectedRegion
+                  ? appScreeningRegions.find((region) => region.id === selectedRegion.id) || appScreeningRegions[0]
+                  : null;
+                const publicRegion = selectedRegion
+                  ? syntheticRegions.find((region) => region.id === selectedRegion.id) || selectedRegion
+                  : null;
                 const isAppScreeningMode = heatmapDataMode === "app-screenings";
                 const isCombinedMode = heatmapDataMode === "combined";
-                return <aside className="regional-detail" aria-live="polite"><p className="card-kicker">Selected administrative region</p><h2>{selectedRegion.label}</h2><p>{isCombinedMode ? "The LCP public signal is shown as the region fill, with unique app-screening profiles shown as a hatched overlay. Values remain separate because the sources have no shared participant identifier." : isAppScreeningMode ? "This view counts only unique saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded." : "This boundary shows public lung cancer data from the Lung Center of the Philippines registry (2009–2017). It does not include profiling drafts saved in this web app."}</p><dl>{isCombinedMode && <div><dt>Public signal</dt><dd>{selectedRegion.signalLevel} (LCP)</dd></div>}<div><dt>{isAppScreeningMode || isCombinedMode ? "Screened individuals" : "Risk level"}</dt><dd>{isCombinedMode ? `${selectedScreeningRegion.syntheticRecords} unique app-screened` : isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : `${selectedRegion.signalLevel}`}</dd></div><div><dt>{isAppScreeningMode ? "Region key" : "Recorded cases"}</dt><dd>{isAppScreeningMode ? "Selected profile region" : selectedRegion.coverage}</dd></div><div><dt>{isCombinedMode ? "Combination rule" : "Data separation"}</dt><dd>{isCombinedMode ? "Layered, not summed" : isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd></div></dl><small>{isCombinedMode ? "App profiles are deduplicated by normalized field reference. Cross-source totals are never calculated, preventing the public baseline and app layer from being counted twice." : isAppScreeningMode ? "Profiles marked Yes for a previous survey are excluded. Repeated field references are counted once even if letter casing differs." : "Source: LCP Lung Cancer Registry, 2009–2017 (cumulative hospital admissions by region of residence). National estimate: 23,728 new cases/year (GLOBOCAN 2022)."}</small></aside>;
+                const isDrilledView = heatmapViewLevel === "province";
+                const isProvinceSelected = isDrilledView && Boolean(selectedProvinceName);
+                const canOpenRegionStatistics = Boolean(selectedRegion) && !isDrilledView;
+                const provinceAreaKind = selectedRegion?.id === "ncr" ? "district" : "province";
+                const provinceScreeningCount = selectedProvinceName
+                  ? appScreeningProvinces.find((signal) => signal.provinceName.toLowerCase().replace(/[^a-z0-9]/g, "") === selectedProvinceName.toLowerCase().replace(/[^a-z0-9]/g, ""))?.screenedIndividuals ?? 0
+                  : 0;
+                const regionStatistics = selectedRegion && publicRegion && canOpenRegionStatistics
+                  ? buildRegionStatistics(selectedRegion, publicRegion, heatmapEligibleProfiles)
+                  : null;
+                const regionRiskSummary = selectedRegion && publicRegion && regionStatistics
+                  ? buildRegionRiskSummary(publicRegion, regionStatistics, regionEnvironmentalRisk)
+                  : null;
+                const retryRegionEnvironmental = () => setRegionEnvironmentalRefreshKey((current) => current + 1);
+
+                if (!selectedRegion) {
+                  return (
+                    <aside className="regional-detail" aria-live="polite">
+                      <p className="card-kicker">No region selected</p>
+                      <h2>Choose a region on the map</h2>
+                      <p>
+                        Activate any administrative region to inspect its public registry baseline or locally saved screening activity. Nothing is preselected when you open this dashboard.
+                      </p>
+                      <dl>
+                        <div>
+                          <dt>Selection</dt>
+                          <dd>None yet</dd>
+                        </div>
+                        <div>
+                          <dt>Regions available</dt>
+                          <dd>18 PSA-aligned regions</dd>
+                        </div>
+                        <div>
+                          <dt>Data modes</dt>
+                          <dd>Public, app screenings, or combined</dd>
+                        </div>
+                        <div>
+                          <dt>Next step</dt>
+                          <dd>Click a region once to select it</dd>
+                        </div>
+                      </dl>
+                      <small>
+                        Public values come from the LCP Lung Cancer Registry (2009–2017). App-screening counts use unique profiles saved on this device.
+                      </small>
+                    </aside>
+                  );
+                }
+
+                if (showRegionRiskSummary && regionRiskSummary) {
+                  return (
+                    <RegionRiskSummaryPanel
+                      summary={regionRiskSummary}
+                      environmental={regionEnvironmentalRisk}
+                      environmentalStatus={regionEnvironmentalStatus}
+                      environmentalError={regionEnvironmentalError}
+                      onClose={() => setShowRegionRiskSummary(false)}
+                      onRetryEnvironmental={retryRegionEnvironmental}
+                    />
+                  );
+                }
+
+                if (showRegionStatistics && regionStatistics) {
+                  return (
+                    <RegionStatisticsPanel
+                      statistics={regionStatistics}
+                      environmental={regionEnvironmentalRisk}
+                      environmentalStatus={regionEnvironmentalStatus}
+                      environmentalError={regionEnvironmentalError}
+                      onClose={() => setShowRegionStatistics(false)}
+                      onRetryEnvironmental={retryRegionEnvironmental}
+                      onOpenRiskSummary={() => setShowRegionRiskSummary(true)}
+                    />
+                  );
+                }
+
+                if (isProvinceSelected && selectedProvinceName) {
+                  return (
+                    <aside className="regional-detail" aria-live="polite">
+                      <p className="card-kicker">Selected {provinceAreaKind}</p>
+                      <h2>{selectedProvinceName}</h2>
+                      <p>
+                        {isAppScreeningMode
+                          ? "This outline is a province or district boundary used to group locally saved screening profiles. City and municipality choropleths are not available in this demo."
+                          : "This outline is a province or district boundary for orientation only. Aeris AI does not currently display lung cancer case counts per city or municipality."}
+                      </p>
+                      <dl>
+                        <div>
+                          <dt>City-level LC counts</dt>
+                          <dd>Future feature</dd>
+                        </div>
+                        <div>
+                          <dt>Parent region</dt>
+                          <dd>{selectedRegion.label}</dd>
+                        </div>
+                        {isAppScreeningMode || isCombinedMode ? (
+                          <div>
+                            <dt>App-screened in this {provinceAreaKind}</dt>
+                            <dd>{provinceScreeningCount} unique profile{provinceScreeningCount === 1 ? "" : "s"}</dd>
+                          </div>
+                        ) : (
+                          <div>
+                            <dt>Parent LCP cases</dt>
+                            <dd>{selectedRegion.coverage}</dd>
+                          </div>
+                        )}
+                        {isCombinedMode && (
+                          <div>
+                            <dt>Public signal</dt>
+                            <dd>{selectedRegion.signalLevel} (regional LCP only)</dd>
+                          </div>
+                        )}
+                        <div>
+                          <dt>Public data depth</dt>
+                          <dd>Region-level only</dd>
+                        </div>
+                      </dl>
+                      <small>
+                        LCP publishes confirmed cases by region of residence, not by city. Limited Metro Manila city rates exist in older Philippine Cancer Society / DOH Rizal registry reports, but no nationwide open city-level lung cancer dataset is wired into this demo.
+                      </small>
+                    </aside>
+                  );
+                }
+
+                if (isDrilledView) {
+                  return (
+                    <aside className="regional-detail" aria-live="polite">
+                      <p className="card-kicker">Province drill-down</p>
+                      <h2>{selectedRegion.label}</h2>
+                      <p>
+                        Select a {provinceAreaKind} outline on the map. City and municipality lung cancer counts are a future feature; the public LCP source only provides regional totals.
+                      </p>
+                      <dl>
+                        <div>
+                          <dt>City-level LC counts</dt>
+                          <dd>Future feature</dd>
+                        </div>
+                        <div>
+                          <dt>Parent risk level</dt>
+                          <dd>{isAppScreeningMode ? `${selectedRegion.syntheticRecords} app-screened` : selectedRegion.signalLevel}</dd>
+                        </div>
+                        <div>
+                          <dt>{isAppScreeningMode ? "App profiles in region" : "Parent LCP cases"}</dt>
+                          <dd>{isAppScreeningMode ? `${selectedRegion.syntheticRecords} unique profiles` : selectedRegion.coverage}</dd>
+                        </div>
+                        <div>
+                          <dt>Next step</dt>
+                          <dd>Click a {provinceAreaKind} outline</dd>
+                        </div>
+                      </dl>
+                      <small>
+                        Province and district geometry is for orientation only. Public registry values stay at the parent-region level until a trusted city-level source is added. Region statistics stay on the national view.
+                      </small>
+                    </aside>
+                  );
+                }
+
+                return (
+                  <aside className="regional-detail" aria-live="polite">
+                    <p className="card-kicker">Selected administrative region</p>
+                    <h2>{selectedRegion.label}</h2>
+                    <p>
+                      {isCombinedMode
+                        ? "The LCP public signal is shown as the region fill, with unique app-screening profiles shown as a hatched overlay. Values remain separate because the sources have no shared participant identifier."
+                        : isAppScreeningMode
+                          ? "This view counts only unique saved profiling drafts marked as not previously surveyed whose selected region matches this boundary. Static public data is excluded."
+                          : "This boundary shows public lung cancer data from the Lung Center of the Philippines registry (2009–2017). It does not include profiling drafts saved in this web app."}
+                    </p>
+                    <dl>
+                      {isCombinedMode && (
+                        <div>
+                          <dt>Public signal</dt>
+                          <dd>{selectedRegion.signalLevel} (LCP)</dd>
+                        </div>
+                      )}
+                      <div>
+                        <dt>{isAppScreeningMode || isCombinedMode ? "Screened individuals" : "Risk level"}</dt>
+                        <dd>
+                          {isCombinedMode
+                            ? `${selectedScreeningRegion?.syntheticRecords ?? 0} unique app-screened`
+                            : isAppScreeningMode
+                              ? `${selectedRegion.syntheticRecords} app-screened`
+                              : `${selectedRegion.signalLevel}`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{isAppScreeningMode ? "Region key" : "Recorded cases"}</dt>
+                        <dd>{isAppScreeningMode ? "Selected profile region" : selectedRegion.coverage}</dd>
+                      </div>
+                      <div>
+                        <dt>{isCombinedMode ? "Combination rule" : "Data separation"}</dt>
+                        <dd>{isCombinedMode ? "Layered, not summed" : isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd>
+                      </div>
+                    </dl>
+                    {!isAppScreeningMode && (
+                      <button
+                        className="secondary-button region-statistics-button"
+                        type="button"
+                        onClick={() => setShowRegionRiskSummary(true)}
+                      >
+                        Why this {selectedRegion.signalLevel.toLowerCase()} risk level
+                      </button>
+                    )}
+                    <button className="secondary-button region-statistics-button" type="button" onClick={() => setShowRegionStatistics(true)}>
+                      Region statistics
+                    </button>
+                    <small>
+                      {isCombinedMode
+                        ? "App profiles are deduplicated by normalized field reference. Cross-source totals are never calculated, preventing the public baseline and app layer from being counted twice."
+                        : isAppScreeningMode
+                          ? "Profiles marked Yes for a previous survey are excluded. Repeated field references are counted once even if letter casing differs."
+                          : "Source: LCP Lung Cancer Registry, 2009–2017 (cumulative hospital admissions by region of residence). National estimate: 23,728 new cases/year (GLOBOCAN 2022). Environmental air quality is included in the risk explanation and region statistics when online."}
+                    </small>
+                  </aside>
+                );
               })()}
             </div>
           </div>

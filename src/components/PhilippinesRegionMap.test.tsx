@@ -10,6 +10,16 @@ const regions = Array.from({ length: 18 }, (_, index) => ({
   signalLevel: ["Lower", "Moderate", "Higher"][index % 3],
 }));
 
+it("keeps NCR on top with an expanded national-map hit target", () => {
+  render(<PhilippinesRegionMap regions={syntheticRegions} selectedRegionId={null} onSelect={vi.fn()} />);
+
+  const ncr = screen.getByRole("button", { name: /national capital region.*static public baseline/i });
+  expect(ncr).toHaveClass("is-ncr");
+  expect(ncr.querySelector(".map-ncr-hit")).toHaveAttribute("r", "34");
+  expect(ncr.querySelector(".map-ncr-label")).not.toBeInTheDocument();
+  expect(ncr.querySelector(".map-ncr-halo")).not.toBeInTheDocument();
+});
+
 it("exposes 18 clickable, keyboard-selectable regional boundaries", async () => {
   const user = userEvent.setup();
   const onSelect = vi.fn();
@@ -49,7 +59,6 @@ it("renders MIMAROPA provinces with local screening signals and returns on Escap
     <PhilippinesRegionMap
       regions={syntheticRegions}
       selectedRegionId="mimaropa"
-      zoomReadyRegionId="mimaropa"
       drilledRegionId="mimaropa"
       viewLevel="province"
       dataSource="app-screenings"
@@ -84,7 +93,7 @@ it("uses the bundled district and NIR province boundaries in drill-down", () => 
   );
 
   expect(screen.getByText("4 districts")).toBeInTheDocument();
-  expect(screen.getAllByRole("button", { name: /province-level public data unavailable/i })).toHaveLength(4);
+  expect(screen.getAllByRole("button", { name: /city-level public lung cancer counts are a future feature/i })).toHaveLength(4);
 
   rerender(
     <PhilippinesRegionMap
@@ -98,5 +107,26 @@ it("uses the bundled district and NIR province boundaries in drill-down", () => 
   );
 
   expect(screen.getByText("3 provinces")).toBeInTheDocument();
-  expect(screen.getAllByRole("button", { name: /province-level public data unavailable/i })).toHaveLength(3);
+  expect(screen.getAllByRole("button", { name: /city-level public lung cancer counts are a future feature/i })).toHaveLength(3);
+});
+
+it("notifies the parent when a public-mode province outline is selected", async () => {
+  const user = userEvent.setup();
+  const onSelectProvince = vi.fn();
+  render(
+    <PhilippinesRegionMap
+      regions={syntheticRegions}
+      selectedRegionId="mimaropa"
+      drilledRegionId="mimaropa"
+      viewLevel="province"
+      dataSource="public"
+      selectedProvinceName={null}
+      onSelect={vi.fn()}
+      onSelectProvince={onSelectProvince}
+      onResetView={vi.fn()}
+    />,
+  );
+
+  await user.click(screen.getByRole("button", { name: /palawan.*future feature/i }));
+  expect(onSelectProvince).toHaveBeenCalledWith("Palawan");
 });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { ChevronLeft } from "lucide-react";
 import regionI from "../assets/philippines-regions/region-100000000.json";
 import regionII from "../assets/philippines-regions/region-200000000.json";
@@ -140,16 +140,28 @@ const featurePath = (feature: BoundaryFeature, projectPosition: ProjectPosition 
   return polygons.map((polygon) => polygon.map((ring) => ringPath(ring, projectPosition)).join(" ")).join(" ");
 };
 
+const featureCentroid = (features: BoundaryFeature[], projectPosition: ProjectPosition = nationalProject): [number, number] => {
+  const positions = features.flatMap(featurePositions).map((position) => projectPosition(position));
+  if (!positions.length) return [viewport.width / 2, viewport.height / 2];
+  const sum = positions.reduce<[number, number]>(([sumX, sumY], [x, y]) => [sumX + x, sumY + y], [0, 0]);
+  return [Number((sum[0] / positions.length).toFixed(2)), Number((sum[1] / positions.length).toFixed(2))];
+};
+
+const ncrHitRadius = 34;
+const ncrFeatures = featureList(ncr);
+const ncrCentroid = featureCentroid(ncrFeatures);
+
 type PhilippinesRegionMapProps = {
   regions: SyntheticRegion[];
   screeningRegions?: SyntheticRegion[];
-  selectedRegionId: string;
+  selectedRegionId: string | null;
   onSelect: (regionId: string) => void;
   dataSource?: "public" | "app-screenings" | "combined";
   viewLevel?: "national" | "province";
   drilledRegionId?: string | null;
-  zoomReadyRegionId?: string | null;
+  selectedProvinceName?: string | null;
   provinceScreeningSignals?: ProvinceScreeningSignal[];
+  onSelectProvince?: (provinceName: string) => void;
   onResetView?: () => void;
 };
 
@@ -228,11 +240,11 @@ export function PhilippinesRegionMap({
   dataSource = "public",
   viewLevel = "national",
   drilledRegionId = null,
-  zoomReadyRegionId = null,
+  selectedProvinceName = null,
   provinceScreeningSignals = [],
+  onSelectProvince,
   onResetView,
 }: PhilippinesRegionMapProps) {
-  const [selectedProvinceId, setSelectedProvinceId] = useState<number | null>(null);
   const backButtonRef = useRef<HTMLButtonElement | null>(null);
   const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
   const screeningRegionsById = new Map(screeningRegions.map((region) => [region.id, region]));
@@ -246,9 +258,12 @@ export function PhilippinesRegionMap({
     : nationalProject;
 
   useEffect(() => {
-    setSelectedProvinceId(null);
     if (isDrilled) backButtonRef.current?.focus();
   }, [drilledRegionId, isDrilled]);
+
+  const selectProvince = (provinceName: string) => {
+    onSelectProvince?.(provinceName);
+  };
 
   const resetFromKeyboard = (event: KeyboardEvent<HTMLElement>) => {
     if (isDrilled && event.key === "Escape") {
@@ -269,15 +284,15 @@ export function PhilippinesRegionMap({
       <p className="map-panel-copy">
         {isDrilled
           ? dataSource === "public"
-            ? "Province outlines are available for orientation, but the public registry source does not provide province-level values."
+            ? "Province and district outlines are for orientation. Click one to learn more: city and municipality lung cancer counts are a future feature because the public LCP source is region-level only."
             : isCombined
               ? "The parent region’s public signal remains the base context. Province hatching shows locally saved screening profiles as a separate layer."
               : "Choose a province to inspect locally saved screening activity. Areas without eligible profiles are shown as no data."
           : isCombined
-            ? "Activate a region once to select it, then again to zoom into its provinces. Public and app-screening values remain separate."
+            ? "Click a region to select it. Double-click the same region within a moment to zoom into its provinces. Public and app-screening values remain separate."
             : dataSource === "app-screenings"
-              ? "Activate a region once to select it, then again to zoom into locally saved screening activity by province."
-              : "Activate a region once to select it, then again to zoom into its province outlines. Public values remain regional only."}
+              ? "Click a region to select it. Double-click the same region within a moment to zoom into locally saved screening activity by province."
+              : "Click a region to select it. Double-click the same region within a moment to zoom into its province outlines. Public values remain regional only."}
       </p>
       {isDrilled && (
         <div className="map-drill-toolbar">
@@ -328,17 +343,18 @@ export function PhilippinesRegionMap({
               const provinceName = feature.properties.adm2_en || `Administrative area ${index + 1}`;
               const screenedIndividuals = provinceSignalsByName.get(normaliseProvinceName(provinceName)) ?? 0;
               const screeningSignal = screeningSignalFor(screenedIndividuals);
-              const isSelected = selectedProvinceId === provinceId;
+              const isSelected = normaliseProvinceName(selectedProvinceName ?? "") === normaliseProvinceName(provinceName);
               const path = featurePath(feature, provinceProject);
+              const areaKind = drilledRegion.id === "ncr" ? "district" : "province";
               const provinceLabel = dataSource === "public"
-                ? `${provinceName}, province-level public data unavailable`
+                ? `${provinceName}, ${areaKind} outline selected; city-level public lung cancer counts are a future feature`
                 : isCombined
                   ? `${provinceName}, ${drilledRegion.signalLevel} parent regional public context, ${screenedIndividuals} unique app screening profiles`
                   : `${provinceName}, ${screenedIndividuals} unique app screening profiles`;
               const selectProvinceFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  setSelectedProvinceId(provinceId);
+                  selectProvince(provinceName);
                 }
               };
 
@@ -350,7 +366,7 @@ export function PhilippinesRegionMap({
                   tabIndex={0}
                   aria-label={provinceLabel}
                   aria-pressed={isSelected}
-                  onClick={() => setSelectedProvinceId(provinceId)}
+                  onClick={() => selectProvince(provinceName)}
                   onKeyDown={selectProvinceFromKeyboard}
                 >
                   <g className="map-region-depth" aria-hidden="true">
@@ -362,12 +378,19 @@ export function PhilippinesRegionMap({
                   </g>
                 </g>
               );
-            }) : regions.map((region) => {
+            }) : (() => {
+              const orderedRegions = [...regions].sort((left, right) => {
+                if (left.id === "ncr") return 1;
+                if (right.id === "ncr") return -1;
+                return 0;
+              });
+
+              return orderedRegions.map((region) => {
               const paths = (boundariesById.get(region.id) ?? []).map((feature) => featurePath(feature));
               const screeningRegion = screeningRegionsById.get(region.id);
               const screeningSignal = screeningRegion?.signalLevel.toLowerCase() ?? "lower";
               const isSelected = selectedRegionId === region.id;
-              const isZoomReady = zoomReadyRegionId === region.id;
+              const isNcr = region.id === "ncr";
               const selectFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
@@ -377,16 +400,18 @@ export function PhilippinesRegionMap({
 
               return (
                 <g
-                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""} ${isZoomReady ? "zoom-ready" : ""}`}
+                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""} ${isNcr ? "is-ncr" : ""}`}
                   key={region.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningRegion?.syntheticRecords ?? 0} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}${isZoomReady ? ", activate again to zoom into provinces" : ", activate to select"}`}
+                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningRegion?.syntheticRecords ?? 0} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}, click to select, double-click to zoom into provinces`}
                   aria-pressed={isSelected}
-                  aria-expanded={isZoomReady ? false : undefined}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={selectFromKeyboard}
                 >
+                  {isNcr && (
+                    <circle className="map-ncr-hit" cx={ncrCentroid[0]} cy={ncrCentroid[1]} r={ncrHitRadius} />
+                  )}
                   <g className="map-region-depth" aria-hidden="true">
                     {paths.map((path, index) => <path className="map-region-extrusion" d={path} fillRule="evenodd" key={`${region.id}-depth-${index}`} transform="translate(0 10)" />)}
                   </g>
@@ -396,7 +421,8 @@ export function PhilippinesRegionMap({
                   </g>
                 </g>
               );
-            })}
+              });
+            })()}
           </g>
           {!isDrilled && (
             <g className="map-compass-rose" role="img" aria-label="Compass showing north, east, south, and west">
