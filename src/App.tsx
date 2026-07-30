@@ -41,7 +41,7 @@ import {
 import { fetchEnvironmentalRiskForLocation, type EnvironmentalRiskSnapshot } from "./environmental-risk";
 import { PLCO_EDUCATION_OPTIONS } from "./plcom2012-norace";
 import { estimateAerisRisk } from "./risk-estimate";
-import { PhilippinesRegionMap } from "./components/PhilippinesRegionMap";
+import { PhilippinesRegionMap, PhilippinesRegionMapPreview } from "./components/PhilippinesRegionMap";
 import { populationDataKey, readLocalPopulationFixtureCount, syntheticRegions, type SyntheticRegion } from "./population-dashboard";
 
 type View = "consent" | "login" | "ready" | "about" | "heatmap-status" | "screening" | "ai-consent" | "imaging-metadata" | "temporary-record" | "screening-complete" | "nodule-review" | "risk-estimate" | "aggregation";
@@ -762,11 +762,6 @@ export default function App() {
               <p><LockKeyhole size={20} /><span><strong>Purpose-limited</strong>Only consented screening information continues.</span></p>
               <p><CloudOff size={20} /><span><strong>Works offline</strong>Drafts stay on this device until a future sync is approved.</span></p>
             </div>
-            <button className="heatmap-status-link" type="button" onClick={openPopulationDashboard}>
-              <span className="status-beacon" aria-hidden="true" />
-              <span><strong>Heatmap status</strong><small>Open synthetic population dashboard</small></span>
-              <ArrowRight size={18} aria-hidden="true" />
-            </button>
           </div>
 
             <div className="workflow-card">
@@ -788,6 +783,34 @@ export default function App() {
                 Continue to secure login <ArrowRight size={18} />
               </button>
             </div>
+            </div>
+          </section>
+
+          <section className="heatmap-preview-section" aria-labelledby="heatmap-preview-title">
+            <div className="heatmap-preview-card">
+              <span className="heatmap-preview-copy">
+                <span className="eyebrow"><MapPinned size={16} /> Heatmap status</span>
+                <strong id="heatmap-preview-title">Regional signals at a glance</strong>
+                <span>
+                  Open the population dashboard to explore regional patterns across public registry
+                  data and screening profiles saved in this app, with each source kept separate.
+                </span>
+                <small>Demo orientation only · No live clinical or patient data</small>
+              </span>
+              <button
+                className="heatmap-preview-visual"
+                type="button"
+                aria-label="Heatmap status: view heatmap dashboard"
+                onClick={openPopulationDashboard}
+              >
+                <PhilippinesRegionMapPreview regions={syntheticRegions} />
+                <span className="heatmap-preview-action">View heatmap <ArrowRight size={18} aria-hidden="true" /></span>
+                <span className="heatmap-preview-key">
+                  <span><i className="signal-lower" /> Lower</span>
+                  <span><i className="signal-moderate" /> Moderate</span>
+                  <span><i className="signal-higher" /> Higher</span>
+                </span>
+              </button>
             </div>
           </section>
 

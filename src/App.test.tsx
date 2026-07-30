@@ -32,6 +32,21 @@ describe("TASK-001 consent and demo login", () => {
     expect(container.querySelectorAll("details[open]")).toHaveLength(0);
   });
 
+  it("shows a cropped heatmap button between the profiling mission and field guide", () => {
+    const { container } = render(<App />);
+    const previewButton = screen.getByRole("button", { name: /heatmap status.*view heatmap/i });
+    const previewCard = container.querySelector(".heatmap-preview-card");
+    const hero = container.querySelector(".hero-grid");
+
+    expect(hero?.nextElementSibling).toHaveClass("heatmap-preview-section");
+    expect(hero?.nextElementSibling?.nextElementSibling).toHaveClass("faq-section");
+    expect(previewCard).toHaveTextContent(/public registry data and screening profiles saved in this app/i);
+    expect(previewCard).not.toBe(previewButton);
+    expect(previewButton.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(previewButton.querySelector("svg")).toHaveAttribute("viewBox", "0 0 680 390");
+    expect(screen.queryByRole("button", { name: /region i.*static public baseline/i })).not.toBeInTheDocument();
+  });
+
   it("requires consent and a passcode before entering the workspace", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -116,13 +131,13 @@ describe("TASK-001 consent and demo login", () => {
 
     await user.click(screen.getByRole("button", { name: /heatmap status/i }));
 
-    await screen.findByText(/static public data only/i);
+    await screen.findByText(/lung center of the philippines public data/i);
 
     expect(screen.getByRole("heading", { name: /regional follow-up dashboard/i })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /static public baseline/i })).toHaveLength(18);
     await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*static public baseline/i }));
     expect(screen.getByRole("heading", { name: /region iii.*central luzon/i })).toBeInTheDocument();
-    expect(screen.getByText(/sharing remains disabled/i)).toBeInTheDocument();
+    expect(screen.getByText(/sharing disabled/i)).toBeInTheDocument();
   });
 
   it("counts saved profiling drafts by selected region without combining public data", async () => {
@@ -135,7 +150,7 @@ describe("TASK-001 consent and demo login", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /heatmap status/i }));
-    await screen.findByText(/static public data only/i);
+    await screen.findByText(/lung center of the philippines public data/i);
     await user.click(screen.getByRole("button", { name: /app screenings/i }));
 
     expect(screen.getByText(/1 heatmap-eligible profile/i)).toBeInTheDocument();
@@ -168,7 +183,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("button", { name: /region i.*ilocos region.*0 unique app screening profiles/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /region ii.*cagayan valley.*0 unique app screening profiles/i })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*static public baseline.*1 unique app screening profile/i }));
-    expect(screen.getByText("50 baseline")).toBeInTheDocument();
+    expect(screen.getByText(/765 recorded.*lcp 2009–2017/i)).toBeInTheDocument();
     expect(screen.getByText("1 unique app-screened")).toBeInTheDocument();
     expect(screen.getByText(/layered, not summed/i)).toBeInTheDocument();
   });

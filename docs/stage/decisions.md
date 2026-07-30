@@ -159,6 +159,13 @@
 - The current status is static: 18-region coverage is planned, only synthetic data is allowed, aggregation is gated, and external sharing is disabled.
 - TASK-006 remains the only task permitted to implement the actual population dashboard and map.
 
+## Accepted revision - Front-page population heatmap preview
+
+- After TASK-006 introduced the synthetic population dashboard, the front-page Heatmap status entry may show a decorative preview of its static public baseline.
+- The preview is a separate group between the profiling mission and Field guide. Its cropped map image is the single keyboard-accessible control that opens the dashboard.
+- Homepage copy may describe the dashboard’s existing public-registry and locally saved screening-profile modes, while clearly stating that the demo has no live clinical or patient data.
+- The preview must not expose saved app-screening profiles, add selectable regions to the front page, or be described as live clinical or patient data.
+
 ## Accepted - Public-facing placeholder content
 
 - The front-page FAQ answers workflow and consent questions only. It explicitly states that Aeris AI is not diagnostic and AI cannot make the final decision.
