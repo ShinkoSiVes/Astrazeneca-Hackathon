@@ -6,6 +6,7 @@ type RegionRiskSummaryPanelProps = {
   environmental: EnvironmentalRiskSnapshot | null;
   environmentalStatus: "idle" | "loading" | "ready" | "error";
   environmentalError: string;
+  backLabel?: string;
   onClose: () => void;
   onRetryEnvironmental: () => void;
 };
@@ -15,6 +16,7 @@ export function RegionRiskSummaryPanel({
   environmental,
   environmentalStatus,
   environmentalError,
+  backLabel = "Back to region summary",
   onClose,
   onRetryEnvironmental,
 }: RegionRiskSummaryPanelProps) {
@@ -22,7 +24,7 @@ export function RegionRiskSummaryPanel({
     <aside className="regional-detail region-risk-summary-panel" aria-live="polite">
       <div className="region-statistics-topline">
         <p className="card-kicker">Risk explanation</p>
-        <button className="text-button" type="button" onClick={onClose}>Back to region summary</button>
+        <button className="text-button" type="button" onClick={onClose}>{backLabel}</button>
       </div>
       <h2>{summary.headline}</h2>
       <p className={`region-risk-level-chip signal-${summary.level.toLowerCase()}`}>{summary.level} public baseline</p>
@@ -44,6 +46,10 @@ export function RegionRiskSummaryPanel({
             <div>
               <dt>PM2.5</dt>
               <dd>{environmental.pm25 ?? "—"} μg/m³ · {environmental.exposureTier}</dd>
+            </div>
+            <div>
+              <dt>vs WHO guideline</dt>
+              <dd>{environmental.whoGuidelineRatio == null ? "—" : `${environmental.whoGuidelineRatio}× (5 μg/m³)`}</dd>
             </div>
             <div>
               <dt>US AQI</dt>

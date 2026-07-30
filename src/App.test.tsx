@@ -319,7 +319,11 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /^region statistics$/i }));
     expect(await screen.findByRole("heading", { name: /environmental air quality/i })).toBeInTheDocument();
     expect(screen.getByText(/17\.2 μg\/m³/i)).toBeInTheDocument();
+    expect(screen.getByText(/vs who guideline/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /why this higher risk level/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /why this higher risk level/i }));
+    expect(await screen.findByRole("button", { name: /back to region statistics/i })).toBeInTheDocument();
 
     fetchMock.mockRestore();
   });

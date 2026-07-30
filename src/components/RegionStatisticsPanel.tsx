@@ -34,7 +34,11 @@ export function RegionStatisticsPanel({
       <dl>
         <div>
           <dt>Public risk level</dt>
-          <dd>{statistics.publicRiskLevel}</dd>
+          <dd>
+            <span className={`region-risk-level-chip signal-${statistics.publicRiskLevel.toLowerCase()}`}>
+              {statistics.publicRiskLevel}
+            </span>
+          </dd>
         </div>
         <div>
           <dt>Public recorded cases</dt>
@@ -72,6 +76,10 @@ export function RegionStatisticsPanel({
             <div>
               <dt>PM2.5</dt>
               <dd>{environmental.pm25 ?? "—"} μg/m³ · {environmental.exposureTier}</dd>
+            </div>
+            <div>
+              <dt>vs WHO guideline</dt>
+              <dd>{environmental.whoGuidelineRatio == null ? "—" : `${environmental.whoGuidelineRatio}× (5 μg/m³)`}</dd>
             </div>
             <div>
               <dt>PM10</dt>

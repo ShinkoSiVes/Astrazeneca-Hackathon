@@ -410,8 +410,11 @@ button:disabled { cursor: not-allowed; }
 .regional-detail dl div { padding: 10px; border-radius: 10px; background: #f2f9f6; }
 .regional-detail dt { color: #71898d; font-size: 10px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
 .regional-detail dd { margin: 4px 0 0; color: #214c55; font-size: 13px; font-weight: 800; }
+.regional-detail dd .region-risk-level-chip { margin-top: 2px; }
 .regional-detail > small { color: #688087; font-size: 12px; line-height: 1.45; }
 .region-statistics-button { width: 100%; margin-top: 4px; }
+.region-detail-actions { display: grid; gap: 8px; margin-top: 4px; }
+.region-detail-actions .region-statistics-button { margin-top: 0; }
 .region-statistics-topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .region-statistics-topline .text-button { flex: 0 0 auto; text-decoration: none; }
 .region-factor-section, .region-future-section { display: grid; gap: 8px; margin-top: 4px; }

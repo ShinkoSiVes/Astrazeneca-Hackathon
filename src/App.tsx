@@ -1015,6 +1015,10 @@ export default function App() {
                   <p>Static public baseline data and profiles screened in this app are shown separately, preventing the two sources from being counted together.</p>
                 </article>
                 <article>
+                  <h3>Region risk explanations</h3>
+                  <p>Each public risk level opens a short summary that combines the LCP case baseline, local screening factors, and Open-Meteo air quality at a regional reference point.</p>
+                </article>
+                <article>
                   <h3>PLCOm2012noRace risk support</h3>
                   <p>Validated ever-smoker probability with separate local clinical considerations (never-smoker gaps, indoor/outdoor air, occupation, TB, EGFR context) — never presented as a diagnosis.</p>
                 </article>
@@ -1082,9 +1086,11 @@ export default function App() {
             <button className="back-link" type="button" onClick={() => navigateTo("consent")}>
               <ChevronLeft size={17} /> Back to screening
             </button>
-            <p className="eyebrow"><MapPinned size={16} /> Population dashboard</p>
+            <p className="eyebrow"><MapPinned size={16} /> Population dashboard · Version 0.8</p>
             <h1 id="heatmap-status-title">Regional follow-up dashboard.</h1>
-            <p>Compare the static public baseline, unique profiles saved in this web app, or a layered view that shows both sources without adding their counts together.</p>
+            <p>
+              Compare the static public baseline, unique profiles saved in this web app, or a layered view that shows both sources without adding their counts together. Open a region for risk explanations and live air-quality context when online.
+            </p>
           </div>
 
           <div className="heatmap-status-card">
@@ -1197,6 +1203,7 @@ export default function App() {
                       environmental={regionEnvironmentalRisk}
                       environmentalStatus={regionEnvironmentalStatus}
                       environmentalError={regionEnvironmentalError}
+                      backLabel={showRegionStatistics ? "Back to region statistics" : "Back to region summary"}
                       onClose={() => setShowRegionRiskSummary(false)}
                       onRetryEnvironmental={retryRegionEnvironmental}
                     />
@@ -1323,7 +1330,11 @@ export default function App() {
                             ? `${selectedScreeningRegion?.syntheticRecords ?? 0} unique app-screened`
                             : isAppScreeningMode
                               ? `${selectedRegion.syntheticRecords} app-screened`
-                              : `${selectedRegion.signalLevel}`}
+                              : (
+                                <span className={`region-risk-level-chip signal-${selectedRegion.signalLevel.toLowerCase()}`}>
+                                  {selectedRegion.signalLevel}
+                                </span>
+                              )}
                         </dd>
                       </div>
                       <div>
@@ -1335,18 +1346,20 @@ export default function App() {
                         <dd>{isCombinedMode ? "Layered, not summed" : isAppScreeningMode ? "Public data excluded" : "App screenings excluded"}</dd>
                       </div>
                     </dl>
-                    {!isAppScreeningMode && (
-                      <button
-                        className="secondary-button region-statistics-button"
-                        type="button"
-                        onClick={() => setShowRegionRiskSummary(true)}
-                      >
-                        Why this {selectedRegion.signalLevel.toLowerCase()} risk level
+                    <div className="region-detail-actions">
+                      {!isAppScreeningMode && (
+                        <button
+                          className="secondary-button region-statistics-button"
+                          type="button"
+                          onClick={() => setShowRegionRiskSummary(true)}
+                        >
+                          Why this {selectedRegion.signalLevel.toLowerCase()} risk level
+                        </button>
+                      )}
+                      <button className="secondary-button region-statistics-button" type="button" onClick={() => setShowRegionStatistics(true)}>
+                        Region statistics
                       </button>
-                    )}
-                    <button className="secondary-button region-statistics-button" type="button" onClick={() => setShowRegionStatistics(true)}>
-                      Region statistics
-                    </button>
+                    </div>
                     <small>
                       {isCombinedMode
                         ? "App profiles are deduplicated by normalized field reference. Cross-source totals are never calculated, preventing the public baseline and app layer from being counted twice."
