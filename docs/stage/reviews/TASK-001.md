@@ -1,5 +1,12 @@
 # TASK-001 review pack
 
+## Revision - Standalone heatmap preview card
+
+- The Heatmap status entry is now a separate homepage group between the profiling mission and Field guide.
+- Its decorative Philippines map previews only the static synthetic public baseline; saved app-screening profiles are not read or displayed.
+- The shorter preview shows the northern half of the Philippines; the image is the keyboard-accessible action that opens the existing TASK-006 population dashboard.
+- The description accurately introduces the dashboard’s public-registry and locally saved screening-profile modes without claiming live external data.
+
 ## Revision - Collapsed FAQ default
 
 - All FAQ answers now begin collapsed; each one can still be opened independently.
@@ -18,7 +25,7 @@ Deliver a clinician-led survey-consent and demo-login flow that can safely start
 - The temporary product identity is displayed as `Aeris AI | Lung screening` with an original vector placeholder mark.
 - FAQ cards expand independently without changing the height of neighboring closed cards.
 - The front page includes a clinician FAQ and an About view with explicit static team placeholders.
-- The front page provides a Heatmap status entry point that reports demo readiness without exposing a map or live data.
+- The front page provides a Heatmap status card with a decorative static synthetic preview and no live or patient data.
 
 ## Changed files
 

@@ -105,6 +105,65 @@ type PhilippinesRegionMapProps = {
   dataSource?: "public" | "app-screenings" | "combined";
 };
 
+type PhilippinesRegionMapPreviewProps = {
+  regions: SyntheticRegion[];
+};
+
+export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPreviewProps) {
+  const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
+
+  return (
+    <svg
+      className="philippines-region-map philippines-region-map-preview"
+      viewBox={`0 0 ${viewport.width} ${viewport.height / 2}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id="map-preview-water" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#eff9f7" />
+          <stop offset="1" stopColor="#d8eee9" />
+        </linearGradient>
+        <filter id="map-preview-soft-shadow" x="-25%" y="-15%" width="150%" height="160%">
+          <feDropShadow dx="0" dy="11" stdDeviation="8" floodColor="#0f5f61" floodOpacity=".19" />
+        </filter>
+      </defs>
+      <rect className="map-preview-water" x="8" y="8" width={viewport.width - 16} height={viewport.height - 16} rx="48" />
+      <g className="map-contour-lines">
+        <path d="M72 170c95-52 158-44 228-2 73 45 156 51 272 3" />
+        <path d="M74 405c92-50 161-44 232 2 76 47 163 50 270-4" />
+        <path d="M78 637c98-45 171-39 235 4 80 49 160 51 257 9" />
+      </g>
+      <g filter="url(#map-preview-soft-shadow)">
+        {regions.map((region) => {
+          const paths = (boundariesById.get(region.id) ?? []).map(featurePath);
+
+          return (
+            <g className={`map-preview-region signal-${region.signalLevel.toLowerCase()}`} key={region.id}>
+              <g className="map-region-depth">
+                {paths.map((path, index) => <path className="map-region-extrusion" d={path} fillRule="evenodd" key={`${region.id}-preview-depth-${index}`} transform="translate(0 10)" />)}
+              </g>
+              <g className="map-region-surface">
+                {paths.map((path, index) => <path className="map-region-shape" d={path} fillRule="evenodd" key={`${region.id}-preview-shape-${index}`} />)}
+              </g>
+            </g>
+          );
+        })}
+      </g>
+      <g className="map-compass-rose">
+        <path className="map-compass-line" d="M622 62v64M590 94h64" />
+        <path className="map-compass-needle map-compass-needle-north" d="M622 58l-8 36 8-7 8 7z" />
+        <path className="map-compass-needle map-compass-needle-south" d="M622 130l-8-36 8 7 8-7z" />
+        <circle className="map-compass-dot" cx="622" cy="94" r="3.5" />
+        <text className="map-compass" x="622" y="49" textAnchor="middle">N</text>
+        <text className="map-compass" x="670" y="98" textAnchor="middle">E</text>
+        <text className="map-compass" x="622" y="145" textAnchor="middle">S</text>
+        <text className="map-compass" x="574" y="98" textAnchor="middle">W</text>
+      </g>
+    </svg>
+  );
+}
+
 export function PhilippinesRegionMap({ regions, screeningRegions = [], selectedRegionId, onSelect, dataSource = "public" }: PhilippinesRegionMapProps) {
   const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
   const screeningRegionsById = new Map(screeningRegions.map((region) => [region.id, region]));
