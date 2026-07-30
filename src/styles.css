@@ -276,7 +276,7 @@ button:disabled { cursor: not-allowed; }
 .about-hero { max-width: 800px; }
 .about-hero .back-link { margin-bottom: 34px; }
 .about-hero h1 { max-width: 780px; margin: 14px 0 20px; color: #103d49; font-size: clamp(42px, 5.5vw, 70px); line-height: .98; letter-spacing: -0.06em; }
-.about-hero > p:last-child { max-width: 700px; margin: 0; color: #526d74; font-size: 18px; line-height: 1.6; }
+.about-hero > p:last-child { max-width: 700px; margin: 0; color: #294f58; font-size: 18px; font-weight: 600; line-height: 1.6; }
 .about-content { display: grid; gap: 28px; margin-top: 54px; }
 .about-story, .about-feature-section, .team-section { border: 1px solid #d9e8e4; border-radius: 24px; padding: clamp(25px, 4vw, 42px); background: rgb(255 255 255 / 78%); box-shadow: 0 18px 48px rgb(20 64 69 / 6%); }
 .about-story .card-kicker, .about-feature-section .card-kicker, .team-heading .card-kicker { margin-top: 0; }
