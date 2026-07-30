@@ -435,6 +435,10 @@ button:disabled { cursor: not-allowed; }
 .screening-checklist { display: grid; gap: 8px; min-width: 0; margin: 0; border: 1px solid #b9d0ce; border-radius: 14px; padding: 13px; background: rgb(252 254 253 / 88%); }
 .screening-checklist legend { padding: 0 4px; color: #2a525b; font-size: 14px; font-weight: 800; }
 .screening-checklist > p { margin: 0; color: #678087; font-size: 12px; line-height: 1.4; }
+.vital-signs-group { display: grid; gap: 8px; min-width: 0; margin: 0; border: 1px solid rgb(89 151 144 / 38%); border-radius: 14px; padding: 14px; background: linear-gradient(145deg, rgb(243 251 248 / 94%), rgb(255 255 255 / 86%)); }
+.vital-signs-group legend { padding: 0 4px; color: #2a525b; font-size: 14px; font-weight: 800; }
+.vital-signs-group > p { margin: 0 0 6px; color: #678087; font-size: 12px; line-height: 1.4; }
+.vital-signs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .screening-checklist__options { display: grid; gap: 7px; }
 .screening-checklist__options--columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .screening-checklist__options label { display: flex; align-items: center; gap: 9px; color: #244d56; font-size: 13px; font-weight: 650; line-height: 1.35; cursor: pointer; }
@@ -608,6 +612,7 @@ button:disabled { cursor: not-allowed; }
   .review-card { padding: 25px 20px; border-radius: 20px; }
   .review-facts { grid-template-columns: 1fr; }
   .deid-grid { grid-template-columns: 1fr; }
+  .vital-signs-grid { grid-template-columns: 1fr; }
   .heatmap-status-layout { margin-bottom: 60px; }
   .about-story, .about-feature-section, .team-section { padding: 25px 20px; border-radius: 20px; }
   .team-grid { grid-template-columns: 1fr; }

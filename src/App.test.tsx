@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import App from "./App";
-import { screeningHistoryKey } from "./local-screenings";
+import { screeningHistoryKey, type LocalScreeningDraft } from "./local-screenings";
 
 describe("TASK-001 consent and demo login", () => {
   it("keeps navigation active on page changes and tucks it away only while scrolling down", async () => {
@@ -259,6 +259,48 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByLabelText(/previous case of tuberculosis/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/previous case of malignancy/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
+  });
+
+  it("captures separate optional vital-sign measurements", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
+    await screen.findByLabelText(/^age$/i);
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    const temperature = await screen.findByLabelText(/temperature.*°c/i);
+    const respiratoryRate = screen.getByLabelText(/respiratory rate.*breaths\/min/i);
+    const systolic = screen.getByLabelText(/systolic blood pressure.*mmhg/i);
+    const diastolic = screen.getByLabelText(/diastolic blood pressure.*mmhg/i);
+    const pulseRate = screen.getByLabelText(/pulse rate.*bpm/i);
+    const oxygenSaturation = screen.getByLabelText(/oxygen saturation.*%/i);
+
+    expect(temperature).toHaveAttribute("type", "number");
+    await user.type(temperature, "36.8");
+    await user.type(respiratoryRate, "16");
+    await user.type(systolic, "120");
+    await user.type(diastolic, "80");
+    await user.type(pulseRate, "76");
+    await user.type(oxygenSaturation, "97");
+    await user.click(screen.getByRole("button", { name: /save local draft/i }));
+
+    const saved = JSON.parse(localStorage.getItem("aeris-screening-draft-v1") ?? "{}") as {
+      data?: Partial<LocalScreeningDraft>;
+    };
+    expect(saved.data).toEqual(expect.objectContaining({
+      temperatureC: "36.8",
+      respiratoryRate: "16",
+      systolicBloodPressure: "120",
+      diastolicBloodPressure: "80",
+      pulseRate: "76",
+      oxygenSaturation: "97",
+    }));
   });
 
   it("records cigarettes-per-day, years smoked, and conditional years-since-quitting", async () => {

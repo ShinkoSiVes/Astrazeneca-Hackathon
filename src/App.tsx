@@ -1108,8 +1108,18 @@ export default function App() {
                   {renderScreeningChoice("hoarseness", "Hoarseness", responseOptions)}
                   {renderScreeningChoice("fatigue", "Fatigue", responseOptions)}
                   <div className="form-section-heading wide-field"><h3>Initial clinical assessment</h3></div>
-                  <label>Vital signs (optional)<input name="vitalSigns" value={screeningDraft.vitalSigns} onChange={(event) => updateDraft("vitalSigns", event.target.value)} placeholder="e.g. BP 120/80, pulse 76, temperature 36.8 °C" /></label>
-                  <label className="symptom-oxygen">Oxygen saturation (optional)<input name="oxygenSaturation" value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} inputMode="decimal" placeholder="e.g. 97%" /></label>
+                  <fieldset className="vital-signs-group wide-field">
+                    <legend>Vital signs (optional)</legend>
+                    <p>Enter available measurements using the units shown. These readings do not affect the prototype risk estimate.</p>
+                    <div className="vital-signs-grid">
+                      <label>Temperature (°C)<input name="temperatureC" type="number" step="0.1" inputMode="decimal" value={screeningDraft.temperatureC} onChange={(event) => updateDraft("temperatureC", event.target.value)} placeholder="e.g. 36.8" /></label>
+                      <label>Respiratory rate (breaths/min)<input name="respiratoryRate" type="number" step="1" inputMode="numeric" value={screeningDraft.respiratoryRate} onChange={(event) => updateDraft("respiratoryRate", event.target.value)} placeholder="e.g. 16" /></label>
+                      <label>Systolic blood pressure (mmHg)<input name="systolicBloodPressure" type="number" step="1" inputMode="numeric" value={screeningDraft.systolicBloodPressure} onChange={(event) => updateDraft("systolicBloodPressure", event.target.value)} placeholder="e.g. 120" /></label>
+                      <label>Diastolic blood pressure (mmHg)<input name="diastolicBloodPressure" type="number" step="1" inputMode="numeric" value={screeningDraft.diastolicBloodPressure} onChange={(event) => updateDraft("diastolicBloodPressure", event.target.value)} placeholder="e.g. 80" /></label>
+                      <label>Pulse rate (bpm)<input name="pulseRate" type="number" step="1" inputMode="numeric" value={screeningDraft.pulseRate} onChange={(event) => updateDraft("pulseRate", event.target.value)} placeholder="e.g. 76" /></label>
+                      <label>Oxygen saturation (%)<input name="oxygenSaturation" type="number" step="1" inputMode="numeric" value={screeningDraft.oxygenSaturation} onChange={(event) => updateDraft("oxygenSaturation", event.target.value)} placeholder="e.g. 97" /></label>
+                    </div>
+                  </fieldset>
                   {renderScreeningChoice("chestXrayAvailable", "Chest X-ray available", ["Yes", "No"])}
                   <div className="form-section-heading wide-field"><h3>Relevant physical examination findings</h3></div>
                   <fieldset className={`screening-checklist wide-field ${missingFieldClass("physicalExamFindings")}`}>

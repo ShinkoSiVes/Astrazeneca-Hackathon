@@ -59,10 +59,24 @@ describe("local screening records", () => {
       occupation: "Miner",
       householdSmoke: "Yes",
       physicalExamFindings: "Crackles (rales) | Digital clubbing",
+      vitalSigns: "BP 118/76, pulse 72",
+      temperatureC: "36.7",
+      respiratoryRate: "16",
+      systolicBloodPressure: "118",
+      diastolicBloodPressure: "76",
+      pulseRate: "72",
     });
 
     expect(profile.occupation).toBe("Miner");
     expect(profile.occupationalExposure).toBe("Secondhand smoke");
     expect(profile.physicalExamFindings).toContain("Digital clubbing");
+    expect(profile).toEqual(expect.objectContaining({
+      vitalSigns: "BP 118/76, pulse 72",
+      temperatureC: "36.7",
+      respiratoryRate: "16",
+      systolicBloodPressure: "118",
+      diastolicBloodPressure: "76",
+      pulseRate: "72",
+    }));
   });
 });
