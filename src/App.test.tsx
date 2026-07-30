@@ -43,8 +43,8 @@ describe("TASK-001 consent and demo login", () => {
 
     const enterButton = await screen.findByRole("button", { name: /enter screening workspace/i });
     expect(enterButton).toBeDisabled();
-    const healthCenterMode = screen.getByRole("button", { name: /health care center mode/i });
-    const cancerRegistryMode = screen.getByRole("button", { name: /cancer registry mode/i });
+    const healthCenterMode = screen.getByRole("button", { name: /^health care center$/i });
+    const cancerRegistryMode = screen.getByRole("button", { name: /^cancer registry$/i });
     const professionalId = screen.getByLabelText(/health professional id/i);
     expect(healthCenterMode).toHaveAttribute("aria-pressed", "true");
     expect(cancerRegistryMode).toHaveAttribute("aria-pressed", "false");
@@ -80,6 +80,11 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^future features$/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /clinical review and support/i })).toBeInTheDocument();
+    expect(screen.getByText(/pending clinical review/i)).toBeInTheDocument();
+    expect(screen.getByText("[Doctor's name]")).toBeInTheDocument();
+    expect(screen.getByText(/clinical review, approval, and support have not yet been confirmed/i)).toBeInTheDocument();
+    expect(screen.getByText(/must not be presented as clinically approved or supported/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /risk estimate credit/i })).toBeInTheDocument();
     expect(screen.getAllByText(/PLCOm2012noRace/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/local imaging metadata workflow/i)).toBeInTheDocument();
