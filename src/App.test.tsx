@@ -471,6 +471,9 @@ describe("TASK-001 consent and demo login", () => {
 
     expect(temperature).toHaveAttribute("type", "number");
     await user.type(temperature, "36.8");
+    await user.click(screen.getByRole("button", { name: /^°f$/i }));
+    expect(await screen.findByLabelText(/temperature.*°f/i)).toHaveValue(98.2);
+    await user.click(screen.getByRole("button", { name: /^°c$/i }));
     await user.type(respiratoryRate, "16");
     await user.type(systolic, "120");
     await user.type(diastolic, "80");
@@ -488,6 +491,41 @@ describe("TASK-001 consent and demo login", () => {
       diastolicBloodPressure: "80",
       pulseRate: "76",
       oxygenSaturation: "97",
+    }));
+  });
+
+  it("converts height ft/in and weight lb into metric values for BMI and the calculator", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
+    await screen.findByLabelText(/^height \(cm\)$/i);
+
+    await user.click(screen.getByRole("button", { name: /^ft \/ in$/i }));
+    await user.type(screen.getByLabelText(/^feet$/i), "5");
+    await user.type(screen.getByLabelText(/^inches$/i), "5");
+    await user.click(screen.getByRole("button", { name: /^lb$/i }));
+    const weightInput = screen.getByLabelText(/^weight \(lb\)$/i);
+    await user.clear(weightInput);
+    await user.type(weightInput, "154.3");
+
+    expect(screen.getByLabelText(/bmi/i)).toHaveValue("25.7 kg/m²");
+    expect(screen.getByText(/stored for calculator: 165\.1 cm/i)).toBeInTheDocument();
+    expect(screen.getByText(/stored for calculator: 70 kg/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /save local draft/i }));
+    const saved = JSON.parse(localStorage.getItem("aeris-screening-draft-v1") ?? "{}") as {
+      data?: Partial<LocalScreeningDraft>;
+    };
+    expect(saved.data).toEqual(expect.objectContaining({
+      heightCm: "165.1",
+      weightKg: "70",
+      bmi: "25.7",
     }));
   });
 

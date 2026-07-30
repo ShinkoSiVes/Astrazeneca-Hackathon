@@ -26,6 +26,7 @@ import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningChoiceField } from "./components/ScreeningChoiceField";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
 import { EnvironmentalRiskPanel } from "./components/EnvironmentalRiskPanel";
+import { BodyMeasureFields } from "./components/BodyMeasureFields";
 import {
   deleteStoredScreening,
   emptyLocalScreeningDraft,
@@ -40,6 +41,16 @@ import {
   type ScreeningInputMode,
 } from "./local-screenings";
 import { fetchEnvironmentalRiskForLocation, parseMunicipalityLabel, type EnvironmentalRiskSnapshot } from "./environmental-risk";
+import {
+  displayTemperature,
+  displayWeightLoss,
+  fahrenheitToCelsius,
+  lbToKg,
+  parseMeasure,
+  type HeightUnit,
+  type TemperatureUnit,
+  type WeightUnit,
+} from "./body-measures";
 import { PLCO_EDUCATION_OPTIONS } from "./plcom2012-norace";
 import { estimateAerisRisk } from "./risk-estimate";
 import { PhilippinesRegionMap, type ProvinceScreeningSignal } from "./components/PhilippinesRegionMap";
@@ -256,6 +267,12 @@ export default function App() {
   const [regionEnvironmentalStatus, setRegionEnvironmentalStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [regionEnvironmentalError, setRegionEnvironmentalError] = useState("");
   const [regionEnvironmentalRefreshKey, setRegionEnvironmentalRefreshKey] = useState(0);
+  const [heightUnit, setHeightUnit] = useState<HeightUnit>("cm");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
+  const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>("C");
+  const [temperatureDisplay, setTemperatureDisplay] = useState("");
+  const [weightLossUnit, setWeightLossUnit] = useState<WeightUnit>("kg");
+  const [weightLossDisplay, setWeightLossDisplay] = useState("");
   const [isStudyCalendarOpen, setIsStudyCalendarOpen] = useState(false);
   const [showIncompleteFields, setShowIncompleteFields] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
@@ -499,6 +516,38 @@ export default function App() {
       }
       return next;
     });
+  };
+
+  const updateTemperatureDisplay = (value: string) => {
+    setTemperatureDisplay(value);
+    if (!value.trim()) {
+      updateDraft("temperatureC", "");
+      return;
+    }
+    const parsed = parseMeasure(value);
+    if (parsed === null) return;
+    updateDraft("temperatureC", temperatureUnit === "C" ? String(parsed) : String(fahrenheitToCelsius(parsed)));
+  };
+
+  const changeTemperatureUnit = (unit: TemperatureUnit) => {
+    setTemperatureUnit(unit);
+    setTemperatureDisplay(displayTemperature(screeningDraft.temperatureC, unit));
+  };
+
+  const updateWeightLossAmountDisplay = (value: string) => {
+    setWeightLossDisplay(value);
+    if (!value.trim()) {
+      updateDraft("weightLossAmount", "");
+      return;
+    }
+    const parsed = parseMeasure(value);
+    if (parsed === null) return;
+    updateDraft("weightLossAmount", weightLossUnit === "kg" ? String(parsed) : String(lbToKg(parsed)));
+  };
+
+  const changeWeightLossUnit = (unit: WeightUnit) => {
+    setWeightLossUnit(unit);
+    setWeightLossDisplay(displayWeightLoss(screeningDraft.weightLossAmount, unit));
   };
 
   const updateWeightLoss = (value: string) => {
@@ -1431,9 +1480,19 @@ export default function App() {
                       {PLCO_EDUCATION_OPTIONS.map((option) => <option key={option.value} value={String(option.value)}>{option.label}</option>)}
                     </select>
                   </label>
-                  <label className={missingFieldClass("heightCm")}>Height (cm)<input name="heightCm" type="number" min="50" max="250" step="0.1" inputMode="decimal" value={screeningDraft.heightCm} onChange={(event) => updateBodyMeasure("heightCm", event.target.value)} placeholder="e.g. 165" /></label>
-                  <label className={missingFieldClass("weightKg")}>Weight (kg)<input name="weightKg" type="number" min="20" max="300" step="0.1" inputMode="decimal" value={screeningDraft.weightKg} onChange={(event) => updateBodyMeasure("weightKg", event.target.value)} placeholder="e.g. 70" /></label>
-                  <label>BMI (auto)<input name="bmi" value={screeningDraft.bmi ? `${screeningDraft.bmi} kg/m²` : "Enter height and weight"} readOnly /></label>
+                  <BodyMeasureFields
+                    heightCm={screeningDraft.heightCm}
+                    weightKg={screeningDraft.weightKg}
+                    bmi={screeningDraft.bmi}
+                    heightInvalid={showIncompleteFields && !screeningDraft.heightCm.trim()}
+                    weightInvalid={showIncompleteFields && !screeningDraft.weightKg.trim()}
+                    heightUnit={heightUnit}
+                    weightUnit={weightUnit}
+                    onHeightUnitChange={setHeightUnit}
+                    onWeightUnitChange={setWeightUnit}
+                    onHeightCmChange={(value) => updateBodyMeasure("heightCm", value)}
+                    onWeightKgChange={(value) => updateBodyMeasure("weightKg", value)}
+                  />
                   <label className={missingFieldClass("occupation")}>Occupation<input name="occupation" value={screeningDraft.occupation} onChange={(event) => updateDraft("occupation", event.target.value)} placeholder="Current or primary occupation" /></label>
                   <ScreeningLocationFields
                     region={screeningDraft.province}
@@ -1496,16 +1555,76 @@ export default function App() {
                   {renderScreeningChoice("chestPain", "Chest pain", responseOptions)}
                   <div className={`weight-loss-field ${screeningDraft.weightLoss === "Yes" ? "has-detail" : ""} ${missingFieldClass("weightLoss")}`}>
                     {renderScreeningChoice("weightLoss", "Weight loss", responseOptions, updateWeightLoss)}
-                    {screeningDraft.weightLoss === "Yes" && <label>How much weight did the patient lose? (optional)<input value={screeningDraft.weightLossAmount} onChange={(event) => updateDraft("weightLossAmount", event.target.value)} placeholder="e.g. 5 kg or 11 lb" /></label>}
+                    {screeningDraft.weightLoss === "Yes" && (
+                      <div className="measure-field weight-loss-amount-field">
+                        <div className="measure-field-topline">
+                          <span>Amount lost (optional)</span>
+                          <div className="unit-toggle" role="group" aria-label="Weight loss unit">
+                            <button type="button" className={weightLossUnit === "kg" ? "active" : ""} aria-pressed={weightLossUnit === "kg"} onClick={() => changeWeightLossUnit("kg")}>kg</button>
+                            <button type="button" className={weightLossUnit === "lb" ? "active" : ""} aria-pressed={weightLossUnit === "lb"} onClick={() => changeWeightLossUnit("lb")}>lb</button>
+                          </div>
+                        </div>
+                        <label>
+                          Weight lost ({weightLossUnit})
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            inputMode="decimal"
+                            value={weightLossUnit === "kg" ? screeningDraft.weightLossAmount : weightLossDisplay}
+                            onChange={(event) => {
+                              if (weightLossUnit === "kg") {
+                                updateDraft("weightLossAmount", event.target.value);
+                                return;
+                              }
+                              updateWeightLossAmountDisplay(event.target.value);
+                            }}
+                            placeholder={weightLossUnit === "kg" ? "e.g. 5" : "e.g. 11"}
+                          />
+                        </label>
+                        {weightLossUnit === "lb" && screeningDraft.weightLossAmount && (
+                          <small className="measure-converted">Stored as {screeningDraft.weightLossAmount} kg</small>
+                        )}
+                      </div>
+                    )}
                   </div>
                   {renderScreeningChoice("hoarseness", "Hoarseness", responseOptions)}
                   {renderScreeningChoice("fatigue", "Fatigue", responseOptions)}
                   <div className="form-section-heading wide-field"><h3>Initial clinical assessment</h3></div>
                   <fieldset className="vital-signs-group wide-field">
                     <legend>Vital signs (optional)</legend>
-                    <p>Enter available measurements using the units shown. These readings do not affect the prototype risk estimate.</p>
+                    <p>Enter available measurements. Toggle temperature units if needed; values are stored in °C. These readings do not affect the prototype risk estimate.</p>
                     <div className="vital-signs-grid">
-                      <label>Temperature (°C)<input name="temperatureC" type="number" step="0.1" inputMode="decimal" value={screeningDraft.temperatureC} onChange={(event) => updateDraft("temperatureC", event.target.value)} placeholder="e.g. 36.8" /></label>
+                      <div className="measure-field">
+                        <div className="measure-field-topline">
+                          <span>Temperature</span>
+                          <div className="unit-toggle" role="group" aria-label="Temperature unit">
+                            <button type="button" className={temperatureUnit === "C" ? "active" : ""} aria-pressed={temperatureUnit === "C"} onClick={() => changeTemperatureUnit("C")}>°C</button>
+                            <button type="button" className={temperatureUnit === "F" ? "active" : ""} aria-pressed={temperatureUnit === "F"} onClick={() => changeTemperatureUnit("F")}>°F</button>
+                          </div>
+                        </div>
+                        <label>
+                          Temperature (°{temperatureUnit})
+                          <input
+                            name="temperatureC"
+                            type="number"
+                            step="0.1"
+                            inputMode="decimal"
+                            value={temperatureUnit === "C" ? screeningDraft.temperatureC : temperatureDisplay}
+                            onChange={(event) => {
+                              if (temperatureUnit === "C") {
+                                updateDraft("temperatureC", event.target.value);
+                                return;
+                              }
+                              updateTemperatureDisplay(event.target.value);
+                            }}
+                            placeholder={temperatureUnit === "C" ? "e.g. 36.8" : "e.g. 98.2"}
+                          />
+                        </label>
+                        {temperatureUnit === "F" && screeningDraft.temperatureC && (
+                          <small className="measure-converted">Stored as {screeningDraft.temperatureC} °C</small>
+                        )}
+                      </div>
                       <label>Respiratory rate (breaths/min)<input name="respiratoryRate" type="number" step="1" inputMode="numeric" value={screeningDraft.respiratoryRate} onChange={(event) => updateDraft("respiratoryRate", event.target.value)} placeholder="e.g. 16" /></label>
                       <label>Systolic blood pressure (mmHg)<input name="systolicBloodPressure" type="number" step="1" inputMode="numeric" value={screeningDraft.systolicBloodPressure} onChange={(event) => updateDraft("systolicBloodPressure", event.target.value)} placeholder="e.g. 120" /></label>
                       <label>Diastolic blood pressure (mmHg)<input name="diastolicBloodPressure" type="number" step="1" inputMode="numeric" value={screeningDraft.diastolicBloodPressure} onChange={(event) => updateDraft("diastolicBloodPressure", event.target.value)} placeholder="e.g. 80" /></label>

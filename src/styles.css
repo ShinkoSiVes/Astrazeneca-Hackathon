@@ -498,6 +498,25 @@ button:disabled { cursor: not-allowed; }
 .form-heading > p:last-child { margin: 0; color: #637d83; font-size: 15px; line-height: 1.55; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 31px; }
 .form-grid label { display: grid; gap: 8px; min-width: 0; color: #2a525b; font-size: 14px; font-weight: 800; }
+.measure-field { display: grid; gap: 8px; min-width: 0; }
+.measure-field-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #2a525b; font-size: 14px; font-weight: 800; }
+.unit-toggle { display: inline-flex; flex: 0 0 auto; border: 1px solid #b9d2cd; border-radius: 999px; overflow: hidden; background: #eef6f3; }
+.unit-toggle button {
+  margin: 0;
+  border: 0;
+  padding: 5px 10px;
+  background: transparent;
+  color: #5d787e;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.unit-toggle button.active { background: #0d8179; color: #fff; }
+.unit-toggle button:focus-visible { outline: 3px solid rgb(14 129 121 / 22%); outline-offset: 1px; z-index: 1; }
+.imperial-height-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.measure-converted { color: #688087; font-size: 12px; font-weight: 600; line-height: 1.35; }
+.weight-loss-amount-field { margin-top: 10px; }
 .form-grid > label { align-self: start; align-content: start; }
 .form-grid input, .form-grid select, .form-grid textarea { width: 100%; border: 1px solid #b9d0ce; border-radius: 11px; padding: 0 13px; color: #173e47; background: #fcfefd; outline: none; font: inherit; font-weight: 500; }
 .form-grid input, .form-grid select { min-height: 50px; }
