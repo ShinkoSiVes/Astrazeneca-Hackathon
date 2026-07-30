@@ -92,6 +92,10 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByText(/people behind the prototype/i);
 
     expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
+    expect(screen.getByText(/^goal$/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /assists rather than replaces medical-professional judgment/i })).toBeInTheDocument();
+    expect(screen.getByText(/geographic equity/i)).toBeInTheDocument();
+    expect(screen.getByText(/primary users are medical professionals during profiling missions/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^future features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /clinical review and support/i })).toBeInTheDocument();

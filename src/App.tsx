@@ -967,10 +967,21 @@ export default function App() {
           </div>
 
           <div className="about-content">
-            <article className="about-story">
-              <p className="card-kicker">Our working purpose</p>
-              <h2>Make a careful first step more reachable.</h2>
-              <p>We are designing a lightweight workflow that helps medical professionals document consent, collect structured screening information, and review risk-support inputs without presenting AI as a diagnosis.</p>
+            <article className="about-story" aria-labelledby="goal-title">
+              <p className="card-kicker">Goal</p>
+              <h2 id="goal-title">Deliver a fast, clear, offline-friendly lung-cancer screening demo that assists rather than replaces medical-professional judgment.</h2>
+              <p>
+                Aeris AI is built for clinician-led community profiling missions in the Philippines, with geographic equity in mind—especially rural and underserved areas where radiologist access is limited. Field teams document consent, collect structured screening information door to door, and review risk-support inputs without presenting AI as a diagnosis.
+              </p>
+              <p>
+                De-identified local screening signals, public registry baselines, and environmental context feed a regional heatmap so health teams can see where lung-health follow-up may be needed—never by diagnosing any individual, and never by sending identifiable patient data externally in this demo.
+              </p>
+              <ul className="about-goal-list">
+                <li>Primary users are medical professionals during profiling missions, not patients self-screening.</li>
+                <li>The workflow stays offline-ready so teams can work with little or no connectivity.</li>
+                <li>Validated risk support (PLCOm2012noRace) and map statistics inform clinicians; they remain responsible for decisions.</li>
+                <li>Population insights stay separated by source so public cases and app screenings are never double-counted.</li>
+              </ul>
             </article>
 
             <section className="about-feature-section" aria-labelledby="clinical-review-title">
