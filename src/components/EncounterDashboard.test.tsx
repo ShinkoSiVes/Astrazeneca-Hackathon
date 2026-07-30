@@ -15,6 +15,7 @@ const renderDashboard = () => {
     onStartScreening: vi.fn(),
     onEditScreening: vi.fn(),
     onDeleteScreening: vi.fn(),
+    onViewImagingMetadata: vi.fn(),
     onViewTemporaryRecord: vi.fn(),
     onDeleteTemporaryRecord: vi.fn(),
     onEndSession: vi.fn(),
@@ -33,6 +34,14 @@ describe("TASK-007 clinician encounter dashboard", () => {
     await user.click(screen.getByRole("button", { name: /new screening/i }));
     expect(props.onStartScreening).toHaveBeenCalledOnce();
     expect(screen.getByRole("button", { name: /open archived notice/i })).toBeDisabled();
+  });
+
+  it("opens the imaging metadata future-feature notice from the workspace", async () => {
+    const user = userEvent.setup();
+    const props = renderDashboard();
+
+    await user.click(screen.getByRole("button", { name: /view imaging metadata/i }));
+    expect(props.onViewImagingMetadata).toHaveBeenCalledOnce();
   });
 
   it("lists a saved screening and reopens it for clinician editing", async () => {

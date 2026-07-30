@@ -94,18 +94,21 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
     expect(screen.getByText(/^goal$/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /assists rather than replaces medical-professional judgment/i })).toBeInTheDocument();
-    expect(screen.getByText(/geographic equity/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/geographic equity/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/primary users are medical professionals during profiling missions/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^future features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /clinical review and support/i })).toBeInTheDocument();
     expect(screen.getByText(/pending clinical review/i)).toBeInTheDocument();
-    expect(screen.getByText("[Doctor's name]")).toBeInTheDocument();
+    expect(screen.getByText(/indicate medical oncologist, clinician-scientist/i)).toBeInTheDocument();
+    expect(screen.getByText(/interview feedback/i)).toBeInTheDocument();
+    expect(screen.getByText(/community-based screening concept as doable/i)).toBeInTheDocument();
     expect(screen.getByText(/clinical review, approval, and support have not yet been confirmed/i)).toBeInTheDocument();
     expect(screen.getByText(/must not be presented as clinically approved or supported/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /risk estimate credit/i })).toBeInTheDocument();
     expect(screen.getAllByText(/PLCOm2012noRace/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/local imaging metadata workflow/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /open imaging metadata page/i })).toBeInTheDocument();
     expect(screen.getByText(/aeris custom risk-estimation calculator/i)).toBeInTheDocument();
     expect(screen.getByText(/people behind the prototype/i)).toBeInTheDocument();
     expect(screen.getAllByText("[Name]")).toHaveLength(4);
@@ -113,6 +116,22 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /back to screening/i }));
     await screen.findByText(/start every screening with a clear patient choice/i);
     expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
+  });
+
+  it("opens imaging metadata as a future-feature notice from the clinician workspace", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /view imaging metadata/i }));
+
+    expect(await screen.findByRole("heading", { name: /this page is a future feature/i })).toBeInTheDocument();
+    expect(screen.getByText(/ct\/chest x-ray metadata capture is not available/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /return to workspace/i }));
+    expect(await screen.findByRole("button", { name: /view imaging metadata/i })).toBeInTheDocument();
   });
 
   it("returns to the front page from the Aeris AI wordmark", async () => {

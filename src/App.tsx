@@ -22,6 +22,10 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/aeris-mark.svg";
 import philippinesMapMini from "./assets/philippines-map-mini.jpg";
+import teamPhotoPaul from "./assets/team/paul-roa.jpg";
+import teamPhotoCharles from "./assets/team/charles-bantong.png";
+import teamPhotoAldrhey from "./assets/team/aldrhey-agsunod.png";
+import teamPhotoShayne from "./assets/team/shayne-jao.png";
 import { EncounterDashboard } from "./components/EncounterDashboard";
 import { ScreeningChoiceField } from "./components/ScreeningChoiceField";
 import { ScreeningLocationFields } from "./components/ScreeningLocationFields";
@@ -78,11 +82,80 @@ const landscapeSlides = [
   "landscape-benguet-vista",
 ];
 
-const teamPlaceholders = [
-  { initials: "01", name: "[Name]", title: "[Role / specialty]" },
-  { initials: "02", name: "[Name]", title: "[Role / specialty]" },
-  { initials: "03", name: "[Name]", title: "[Role / specialty]" },
-  { initials: "04", name: "[Name]", title: "[Role / specialty]" },
+const teamMembers = [
+  {
+    id: "shayne",
+    initials: "SJ",
+    name: "Jao, Shayne Luhmen B.",
+    role: "Healthcare Lead",
+    study: "3rd Year Nursing Student",
+    photo: teamPhotoShayne as string | null,
+    photoPosition: "center 22%",
+    focus: [
+      "Current screening workflow & who should be screened",
+      "Patient journey and why people present late",
+      "Health behavior & healthcare-system barriers",
+      "Ethics and clinical validation",
+      "Impact on patients and primary care",
+    ],
+    linkedIn: "https://www.linkedin.com/in/shaynejao",
+    github: null as string | null,
+    email: "shayniejao369@gmail.com",
+  },
+  {
+    id: "aldrhey",
+    initials: "AJ",
+    name: "Agsunod, Aldrhey Jave M.",
+    role: "Full Stack Developer",
+    study: "3rd Year IT Student · Web & App Dev",
+    photo: teamPhotoAldrhey as string | null,
+    photoPosition: "center 20%",
+    focus: [
+      "Full-stack frontend and backend",
+      "Risk estimation model & architecture",
+      "Technical feasibility and machine learning",
+      "UI/UX, dashboards and product flowcharts",
+    ],
+    linkedIn: "https://www.linkedin.com/in/aldrhey-agsunod-255738390",
+    github: "https://github.com/ShinkoSiVes",
+    email: "aldrheyagsunod@gmail.com",
+  },
+  {
+    id: "paul",
+    initials: "PR",
+    name: "Roa, Paul Miguel O.",
+    role: "AI Engineer · Product Marketing",
+    study: "3rd Year IT Student · IoT Automation",
+    photo: teamPhotoPaul as string | null,
+    photoPosition: "center 18%",
+    focus: [
+      "AI engineering and model support",
+      "Risk estimation & model architecture",
+      "Frontend, UI/UX & dashboards",
+      "Product messaging and demos",
+    ],
+    linkedIn: "https://www.linkedin.com/in/paul-roa-242210312/",
+    github: "https://github.com/PaulR-1",
+    email: "paulroa2006@gmail.com",
+  },
+  {
+    id: "charles",
+    initials: "CB",
+    name: "Charles Brent Bantong",
+    role: "Business · Strategist · DevOps",
+    study: "3rd Year IT Student · NetSec",
+    photo: teamPhotoCharles as string | null,
+    photoPosition: "center 12%",
+    focus: [
+      "Scalability and sustainability",
+      "Partnerships and adoption",
+      "Cost and government integration",
+      "DevOps and deployment readiness",
+    ],
+    linkedIn: "https://www.linkedin.com/in/charles-brent-bantong-b96260404",
+    github: "https://github.com/cb-bantong",
+    email: "bantong.charlesbrent@gmail.com",
+  },
 ];
 
 type ScreeningDraft = LocalScreeningDraft;
@@ -1041,13 +1114,19 @@ export default function App() {
                 <dl className="review-details">
                   <div>
                     <dt>Proposed clinical reviewer</dt>
-                    <dd>[Doctor&apos;s name]</dd>
+                    <dd>Indicate Medical Oncologist, Clinician-Scientist</dd>
                   </div>
                   <div>
                     <dt>Current status</dt>
                     <dd>Clinical review, approval, and support have not yet been confirmed.</dd>
                   </div>
                 </dl>
+                <div className="clinical-review-feedback">
+                  <h3>Interview feedback — what looked promising</h3>
+                  <p>
+                    Early clinician interview notes were positive on the community-based screening concept as doable, and on the environmental and diagnostic framing in the demo. The reviewer also saw potential value for Philippine care pathways, while noting that barangay-level workload and implementation resources still need planning.
+                  </p>
+                </div>
                 <p>A formal review is planned for a future stage. Until that review is complete, Aeris AI remains a hackathon prototype and must not be presented as clinically approved or supported.</p>
               </div>
             </section>
@@ -1092,6 +1171,9 @@ export default function App() {
                 <article>
                   <h3>Local imaging metadata workflow</h3>
                   <p>Archived for now. A later release will restore local CT/chest X-ray metadata capture, temporary imaging records, and clinician review gates without claiming automated diagnosis.</p>
+                  <button className="secondary-button region-statistics-button" type="button" onClick={() => navigateTo("imaging-metadata")}>
+                    Open imaging metadata page
+                  </button>
                 </article>
                 <article>
                   <h3>Aeris custom risk-estimation calculator</h3>
@@ -1118,19 +1200,53 @@ export default function App() {
 
             <section className="team-section" aria-labelledby="team-title">
               <div className="team-heading">
-                <p className="card-kicker">Meet the team</p>
-                <h2 id="team-title">People behind the prototype</h2>
+                <div>
+                  <p className="card-kicker">Meet the team</p>
+                  <h2 id="team-title">People behind the prototype</h2>
+                </div>
+                <p className="team-heading-note">Clinical leadership, engineering, product, and strategy—each with clear ownership for the Aeris AI build.</p>
               </div>
               <div className="team-grid">
-                {teamPlaceholders.map((member) => (
-                  <article className="team-card" key={member.initials}>
-                    <div className="avatar-placeholder" role="img" aria-label={`Profile photo placeholder for ${member.name}`}>{member.initials}</div>
-                    <h3>{member.name}</h3>
-                    <p>{member.title}</p>
-                    <div className="social-placeholders" aria-label={`Placeholder social links for ${member.name}`}>
-                      <a href="#team-social"><Link size={15} /> LinkedIn</a>
-                      <a href="#team-social"><Code2 size={15} /> GitHub</a>
-                      <a href="#team-social"><Mail size={15} /> Email</a>
+                {teamMembers.map((member) => (
+                  <article className={`team-card team-card-${member.id}`} key={member.id}>
+                    <div className="team-card-top">
+                      <div
+                        className={`team-photo-slot ${member.photo ? "has-photo" : ""}`}
+                        role="img"
+                        aria-label={member.photo ? `Portrait of ${member.name}` : `Photo placeholder for ${member.name}. Add a portrait later.`}
+                      >
+                        {member.photo ? (
+                          <img src={member.photo} alt="" style={{ objectPosition: member.photoPosition }} />
+                        ) : (
+                          <span className="team-photo-initials" aria-hidden="true">{member.initials}</span>
+                        )}
+                      </div>
+                      <div className="team-card-identity">
+                        <p className="team-role">{member.role}</p>
+                        <h3>{member.name}</h3>
+                        <p className="team-study">{member.study}</p>
+                      </div>
+                    </div>
+                    <div className="team-focus-block">
+                      <p className="team-focus-label">Owns</p>
+                      <ul className="team-focus-list" aria-label={`Focus areas for ${member.name}`}>
+                        {member.focus.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="team-socials" aria-label={`Contact links for ${member.name}`}>
+                      <a href={member.linkedIn} target="_blank" rel="noreferrer">
+                        <Link size={15} aria-hidden="true" /> LinkedIn
+                      </a>
+                      {member.github && (
+                        <a href={member.github} target="_blank" rel="noreferrer">
+                          <Code2 size={15} aria-hidden="true" /> GitHub
+                        </a>
+                      )}
+                      <a href={`mailto:${member.email}`}>
+                        <Mail size={15} aria-hidden="true" /> Email
+                      </a>
                     </div>
                   </article>
                 ))}
@@ -1146,7 +1262,7 @@ export default function App() {
             <button className="back-link" type="button" onClick={() => navigateTo("consent")}>
               <ChevronLeft size={17} /> Back to screening
             </button>
-            <p className="eyebrow"><MapPinned size={16} /> Population dashboard · Version 0.8</p>
+            <p className="eyebrow"><MapPinned size={16} /> Population dashboard · Version 0.9</p>
             <h1 id="heatmap-status-title">Regional follow-up dashboard.</h1>
             <p>
               Compare the static public baseline, unique profiles saved in this web app, or a layered view that shows both sources without adding their counts together. Open a region for risk explanations and live air-quality context when online.
@@ -1692,11 +1808,13 @@ export default function App() {
       )}
 
       {view === "imaging-metadata" && (
-        <section className="ready-layout temporary-record-layout" aria-labelledby="archived-imaging-metadata-title">
+        <section className="ready-layout temporary-record-layout" aria-labelledby="future-imaging-metadata-title">
           <div className="ready-icon"><CloudOff size={34} /></div>
-          <p className="eyebrow">Archived for later</p>
-          <h1 id="archived-imaging-metadata-title">Local imaging metadata is archived.</h1>
-          <p>CT/chest X-ray metadata capture is not part of the active demo path right now. It remains listed under About → Future features for the next build.</p>
+          <p className="eyebrow">Future feature</p>
+          <h1 id="future-imaging-metadata-title">This page is a future feature.</h1>
+          <p>
+            Local CT/chest X-ray metadata capture is not available in the current demo. Screening drafts and PLCOm2012noRace risk support remain the active path. This workflow will return in a later release without claiming automated diagnosis.
+          </p>
           <div className="ready-actions">
             <button className="secondary-button" type="button" onClick={() => navigateTo("about")}>View future features</button>
             <button className="primary-button" type="button" onClick={() => navigateTo("ready")}>Return to workspace</button>
@@ -1907,6 +2025,7 @@ export default function App() {
             onStartScreening={startScreening}
             onEditScreening={editSavedScreening}
             onDeleteScreening={deleteSavedScreening}
+            onViewImagingMetadata={() => navigateTo("imaging-metadata")}
             onViewTemporaryRecord={() => navigateTo("temporary-record")}
           onDeleteTemporaryRecord={deleteTemporaryRecord}
           onEndSession={endDemoSession}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { ArchiveRestore, ArrowRight, Download, FilePenLine, LogOut, Plus, Trash2, Upload } from "lucide-react";
+import { ArchiveRestore, ArrowRight, Download, FilePenLine, LogOut, Plus, ScanSearch, Trash2, Upload } from "lucide-react";
 import {
   normaliseScreeningDraft,
   normaliseScreeningInputEvidence,
@@ -21,6 +21,7 @@ type EncounterDashboardProps = {
   onStartScreening: () => void;
   onEditScreening: (draft: LocalScreeningDraft, inputEvidence?: ScreeningInputEvidence, inputMode?: ScreeningInputMode) => void;
   onDeleteScreening: (screeningId: string) => void;
+  onViewImagingMetadata: () => void;
   onViewTemporaryRecord: () => void;
   onDeleteTemporaryRecord: () => void;
   onEndSession: () => void;
@@ -39,7 +40,7 @@ const reviewableInputEvidence = (evidence: ScreeningInputEvidence) => Object.ent
 
 const hasAnyScreeningField = (draft: LocalScreeningDraft) => Object.values(draft).some((value) => value.trim() !== "");
 
-export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreening, onDeleteScreening, onViewTemporaryRecord, onDeleteTemporaryRecord, onEndSession }: EncounterDashboardProps) {
+export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreening, onDeleteScreening, onViewImagingMetadata, onViewTemporaryRecord, onDeleteTemporaryRecord, onEndSession }: EncounterDashboardProps) {
   const [screenings, setScreenings] = useState<StoredScreening[]>([]);
   const [temporaryRecord, setTemporaryRecord] = useState<TemporaryRecordSummary | null>(null);
   const [importMessage, setImportMessage] = useState("");
@@ -155,9 +156,15 @@ export function EncounterDashboard({ clinicianId, onStartScreening, onEditScreen
           <button className="primary-button" type="button" onClick={onStartScreening}>New screening <ArrowRight size={18} /></button>
         </article>
         <article className="encounter-action-card">
+          <ScanSearch size={22} aria-hidden="true" />
+          <h2>Imaging metadata</h2>
+          <p>Open the planned CT/chest X-ray metadata workflow. It is not active in this demo release.</p>
+          <button className="secondary-button" type="button" onClick={onViewImagingMetadata}>View imaging metadata <ArrowRight size={18} /></button>
+        </article>
+        <article className="encounter-action-card">
           <ArchiveRestore size={22} aria-hidden="true" />
           <h2>Temporary imaging data</h2>
-          <p>Local imaging metadata is archived for a later release. See About → Future features. Existing temporary files on this device can still be extracted or deleted.</p>
+          <p>Existing temporary imaging files on this device can still be extracted or deleted. The capture workflow itself is a future feature.</p>
           <button className="secondary-button" type="button" disabled={!temporaryRecord} onClick={onViewTemporaryRecord}>Open archived notice <ArrowRight size={18} /></button>
           <button className="text-button temporary-extract-button" type="button" disabled={!temporaryRecord} onClick={extractTemporaryRecord}><Download size={16} /> Extract local temporary data</button>
           {isConfirmingTemporaryDeletion ? (

@@ -1,5 +1,6 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import { ChevronLeft } from "lucide-react";
+import { heatmapPaletteForValue, screeningOverlayOpacity, unavailableMapPalette } from "../map-signal-colors";
 import regionI from "../assets/philippines-regions/region-100000000.json";
 import regionII from "../assets/philippines-regions/region-200000000.json";
 import regionIII from "../assets/philippines-regions/region-300000000.json";
@@ -176,6 +177,7 @@ type PhilippinesRegionMapPreviewProps = {
 
 export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPreviewProps) {
   const boundariesById = new Map(mapRegionBoundaries.map((boundary) => [boundary.id, boundary.features]));
+  const maxRecords = Math.max(0, ...regions.map((region) => region.syntheticRecords ?? 0));
 
   return (
     <svg
@@ -192,6 +194,18 @@ export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPre
         <filter id="map-preview-soft-shadow" x="-25%" y="-15%" width="150%" height="160%">
           <feDropShadow dx="0" dy="11" stdDeviation="8" floodColor="#0f5f61" floodOpacity=".19" />
         </filter>
+        {regions.map((region) => {
+          const palette = heatmapPaletteForValue(region.syntheticRecords ?? 0, maxRecords);
+          return (
+            <RegionFillGradient
+              key={`preview-fill-${region.id}`}
+              id={`preview-fill-${region.id}`}
+              highlight={palette.highlight}
+              surface={palette.surface}
+              depth={palette.depth}
+            />
+          );
+        })}
       </defs>
       <rect className="map-preview-water" x="8" y="8" width={viewport.width - 16} height={viewport.height - 16} rx="48" />
       <g className="map-contour-lines">
@@ -202,14 +216,15 @@ export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPre
       <g filter="url(#map-preview-soft-shadow)">
         {regions.map((region) => {
           const paths = (boundariesById.get(region.id) ?? []).map((feature) => featurePath(feature));
+          const value = region.syntheticRecords ?? 0;
 
           return (
-            <g className={`map-preview-region signal-${region.signalLevel.toLowerCase()}`} key={region.id}>
+            <g className={`map-preview-region signal-${region.signalLevel.toLowerCase()}`} key={region.id} style={paletteStyle(value, maxRecords)}>
               <g className="map-region-depth">
                 {paths.map((path, index) => <path className="map-region-extrusion" d={path} fillRule="evenodd" key={`${region.id}-preview-depth-${index}`} transform="translate(0 10)" />)}
               </g>
               <g className="map-region-surface">
-                {paths.map((path, index) => <path className="map-region-shape" d={path} fillRule="evenodd" key={`${region.id}-preview-shape-${index}`} />)}
+                {paths.map((path, index) => <path className="map-region-shape" d={path} fill={`url(#preview-fill-${region.id})`} fillRule="evenodd" key={`${region.id}-preview-shape-${index}`} />)}
               </g>
             </g>
           );
@@ -231,6 +246,34 @@ export function PhilippinesRegionMapPreview({ regions }: PhilippinesRegionMapPre
 
 const normaliseProvinceName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 const screeningSignalFor = (count: number) => count === 0 ? "lower" : count < 3 ? "moderate" : "higher";
+
+const paletteStyle = (value: number, maxValue: number): CSSProperties => {
+  const palette = heatmapPaletteForValue(value, maxValue);
+  return {
+    ["--map-surface" as string]: palette.surface,
+    ["--map-edge" as string]: palette.edge,
+    ["--map-depth" as string]: palette.depth,
+    ["--map-highlight" as string]: palette.highlight,
+  };
+};
+
+const unavailablePaletteStyle = (): CSSProperties => {
+  const palette = unavailableMapPalette();
+  return {
+    ["--map-surface" as string]: palette.surface,
+    ["--map-edge" as string]: palette.edge,
+    ["--map-depth" as string]: palette.depth,
+    ["--map-highlight" as string]: palette.highlight,
+  };
+};
+
+const RegionFillGradient = ({ id, highlight, surface, depth }: { id: string; highlight: string; surface: string; depth: string }) => (
+  <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stopColor={highlight} />
+    <stop offset="48%" stopColor={surface} />
+    <stop offset="100%" stopColor={depth} />
+  </linearGradient>
+);
 
 export function PhilippinesRegionMap({
   regions,
@@ -256,6 +299,13 @@ export function PhilippinesRegionMap({
   const provinceProject = provinceFeatures.length
     ? createProject(boundsForFeatures(provinceFeatures), true)
     : nationalProject;
+  const maxBaseValue = Math.max(1, ...regions.map((region) => region.syntheticRecords ?? 0));
+  const maxScreeningValue = Math.max(
+    1,
+    ...screeningRegions.map((region) => region.syntheticRecords ?? 0),
+    ...provinceScreeningSignals.map((signal) => signal.screenedIndividuals),
+  );
+  const unavailablePalette = unavailableMapPalette();
 
   useEffect(() => {
     if (isDrilled) backButtonRef.current?.focus();
@@ -286,7 +336,7 @@ export function PhilippinesRegionMap({
           ? dataSource === "public"
             ? "Province and district outlines are for orientation. Click one to learn more: city and municipality lung cancer counts are a future feature because the public LCP source is region-level only."
             : isCombined
-              ? "The parent region’s public signal remains the base context. Province hatching shows locally saved screening profiles as a separate layer."
+              ? "The parent region’s public signal remains the base context. A continuous wash shows locally saved screening profiles as a separate layer."
               : "Choose a province to inspect locally saved screening activity. Areas without eligible profiles are shown as no data."
           : isCombined
             ? "Click a region to select it. Double-click the same region within a moment to zoom into its provinces. Public and app-screening values remain separate."
@@ -316,6 +366,11 @@ export function PhilippinesRegionMap({
               <stop offset="0" stopColor="#eff9f7" />
               <stop offset="1" stopColor="#d8eee9" />
             </linearGradient>
+            <linearGradient id="map-intensity-legend" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#9fd4c8" />
+              <stop offset="50%" stopColor="#e6c878" />
+              <stop offset="100%" stopColor="#e08b6a" />
+            </linearGradient>
             <filter id="map-soft-shadow" x="-25%" y="-15%" width="150%" height="160%">
               <feDropShadow dx="0" dy="11" stdDeviation="8" floodColor="#0f5f61" floodOpacity=".19" />
             </filter>
@@ -328,6 +383,67 @@ export function PhilippinesRegionMap({
             <pattern id="screening-higher-pattern" width="7" height="7" patternUnits="userSpaceOnUse">
               <path d="M-2 2L2-2M0 7L7 0M5 9L9 5" stroke="#064f4d" strokeWidth="2.2" opacity=".82" />
             </pattern>
+            {!isDrilled && regions.map((region) => {
+              const palette = heatmapPaletteForValue(region.syntheticRecords ?? 0, maxBaseValue);
+              return (
+                <RegionFillGradient
+                  key={`region-fill-${region.id}`}
+                  id={`region-fill-${region.id}`}
+                  highlight={palette.highlight}
+                  surface={palette.surface}
+                  depth={palette.depth}
+                />
+              );
+            })}
+            {!isDrilled && isCombined && regions.map((region) => {
+              const count = screeningRegionsById.get(region.id)?.syntheticRecords ?? 0;
+              const palette = heatmapPaletteForValue(count, maxScreeningValue);
+              return (
+                <RegionFillGradient
+                  key={`screening-fill-${region.id}`}
+                  id={`screening-fill-${region.id}`}
+                  highlight={palette.highlight}
+                  surface={palette.surface}
+                  depth={palette.depth}
+                />
+              );
+            })}
+            {isDrilled && dataSource === "public" && (
+              <RegionFillGradient
+                id="province-unavailable-fill"
+                highlight={unavailablePalette.highlight}
+                surface={unavailablePalette.surface}
+                depth={unavailablePalette.depth}
+              />
+            )}
+            {isDrilled && dataSource !== "public" && provinceFeatures.map((feature, index) => {
+              const provinceName = feature.properties.adm2_en || `Administrative area ${index + 1}`;
+              const screenedIndividuals = provinceSignalsByName.get(normaliseProvinceName(provinceName)) ?? 0;
+              const baseValue = isCombined ? (drilledRegion.syntheticRecords ?? 0) : screenedIndividuals;
+              const baseMax = isCombined ? maxBaseValue : maxScreeningValue;
+              const basePalette = heatmapPaletteForValue(baseValue, baseMax);
+              const fillId = `province-fill-${feature.properties.adm2_psgc ?? index}`;
+              const screeningId = `province-screening-fill-${feature.properties.adm2_psgc ?? index}`;
+              const screeningPalette = heatmapPaletteForValue(screenedIndividuals, maxScreeningValue);
+              return (
+                <g key={fillId}>
+                  <RegionFillGradient
+                    id={fillId}
+                    highlight={basePalette.highlight}
+                    surface={basePalette.surface}
+                    depth={basePalette.depth}
+                  />
+                  {isCombined && (
+                    <RegionFillGradient
+                      id={screeningId}
+                      highlight={screeningPalette.highlight}
+                      surface={screeningPalette.surface}
+                      depth={screeningPalette.depth}
+                    />
+                  )}
+                </g>
+              );
+            })}
           </defs>
           <rect className="map-water" x="8" y="8" width={viewport.width - 16} height={viewport.height - 16} rx="48" />
           {!isDrilled && (
@@ -343,6 +459,7 @@ export function PhilippinesRegionMap({
               const provinceName = feature.properties.adm2_en || `Administrative area ${index + 1}`;
               const screenedIndividuals = provinceSignalsByName.get(normaliseProvinceName(provinceName)) ?? 0;
               const screeningSignal = screeningSignalFor(screenedIndividuals);
+              const screeningPalette = heatmapPaletteForValue(screenedIndividuals, maxScreeningValue);
               const isSelected = normaliseProvinceName(selectedProvinceName ?? "") === normaliseProvinceName(provinceName);
               const path = featurePath(feature, provinceProject);
               const areaKind = drilledRegion.id === "ncr" ? "district" : "province";
@@ -357,15 +474,22 @@ export function PhilippinesRegionMap({
                   selectProvince(provinceName);
                 }
               };
+              const provinceBaseStyle = dataSource === "public"
+                ? unavailablePaletteStyle()
+                : paletteStyle(
+                  isCombined ? (drilledRegion.syntheticRecords ?? 0) : screenedIndividuals,
+                  isCombined ? maxBaseValue : maxScreeningValue,
+                );
 
               return (
                 <g
-                  className={`map-province-group ${dataSource === "public" ? "public-unavailable" : `signal-${isCombined ? drilledRegion.signalLevel.toLowerCase() : screeningSignal}`} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""}`}
+                  className={`map-province-group ${dataSource === "public" ? "public-unavailable" : `signal-${isCombined ? drilledRegion.signalLevel.toLowerCase() : screeningSignal}`} ${isCombined ? "combined" : ""} ${isSelected ? "selected" : ""}`}
                   key={provinceId}
                   role="button"
                   tabIndex={0}
                   aria-label={provinceLabel}
                   aria-pressed={isSelected}
+                  style={provinceBaseStyle}
                   onClick={() => selectProvince(provinceName)}
                   onKeyDown={selectProvinceFromKeyboard}
                 >
@@ -373,8 +497,25 @@ export function PhilippinesRegionMap({
                     <path className="map-region-extrusion" d={path} fillRule="evenodd" transform="translate(0 10)" />
                   </g>
                   <g className="map-region-surface">
-                    <path className="map-region-shape" d={path} fillRule="evenodd" />
-                    {isCombined && <path className="map-screening-overlay" d={path} fillRule="evenodd" />}
+                    <path
+                      className="map-region-shape"
+                      d={path}
+                      fill={isSelected
+                        ? undefined
+                        : dataSource === "public"
+                          ? "url(#province-unavailable-fill)"
+                          : `url(#province-fill-${provinceId})`}
+                      fillRule="evenodd"
+                    />
+                    {isCombined && !isSelected && (
+                      <path
+                        className="map-screening-overlay map-screening-overlay-gradient"
+                        d={path}
+                        fill={`url(#province-screening-fill-${provinceId})`}
+                        fillRule="evenodd"
+                        opacity={screeningOverlayOpacity(screeningPalette.intensity)}
+                      />
+                    )}
                   </g>
                 </g>
               );
@@ -388,9 +529,11 @@ export function PhilippinesRegionMap({
               return orderedRegions.map((region) => {
               const paths = (boundariesById.get(region.id) ?? []).map((feature) => featurePath(feature));
               const screeningRegion = screeningRegionsById.get(region.id);
-              const screeningSignal = screeningRegion?.signalLevel.toLowerCase() ?? "lower";
+              const screeningCount = screeningRegion?.syntheticRecords ?? 0;
+              const screeningPalette = heatmapPaletteForValue(screeningCount, maxScreeningValue);
               const isSelected = selectedRegionId === region.id;
               const isNcr = region.id === "ncr";
+              const fillValue = region.syntheticRecords ?? 0;
               const selectFromKeyboard = (event: KeyboardEvent<SVGGElement>) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
@@ -400,12 +543,13 @@ export function PhilippinesRegionMap({
 
               return (
                 <g
-                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? `combined screening-${screeningSignal}` : ""} ${isSelected ? "selected" : ""} ${isNcr ? "is-ncr" : ""}`}
+                  className={`map-region-group signal-${region.signalLevel.toLowerCase()} ${isCombined ? "combined" : ""} ${isSelected ? "selected" : ""} ${isNcr ? "is-ncr" : ""}`}
                   key={region.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningRegion?.syntheticRecords ?? 0} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}, click to select, double-click to zoom into provinces`}
+                  aria-label={`${region.label}, ${isCombined ? `${region.signalLevel} static public baseline, ${screeningCount} unique app screening profiles` : `${region.signalLevel} ${dataSource === "app-screenings" ? "app screening profile count" : "static public baseline"}`}, click to select, double-click to zoom into provinces`}
                   aria-pressed={isSelected}
+                  style={paletteStyle(fillValue, maxBaseValue)}
                   onClick={() => onSelect(region.id)}
                   onKeyDown={selectFromKeyboard}
                 >
@@ -416,8 +560,25 @@ export function PhilippinesRegionMap({
                     {paths.map((path, index) => <path className="map-region-extrusion" d={path} fillRule="evenodd" key={`${region.id}-depth-${index}`} transform="translate(0 10)" />)}
                   </g>
                   <g className="map-region-surface">
-                    {paths.map((path, index) => <path className="map-region-shape" d={path} fillRule="evenodd" key={`${region.id}-shape-${index}`} />)}
-                    {isCombined && paths.map((path, index) => <path className="map-screening-overlay" d={path} fillRule="evenodd" key={`${region.id}-screening-${index}`} />)}
+                    {paths.map((path, index) => (
+                      <path
+                        className="map-region-shape"
+                        d={path}
+                        fill={isSelected ? undefined : `url(#region-fill-${region.id})`}
+                        fillRule="evenodd"
+                        key={`${region.id}-shape-${index}`}
+                      />
+                    ))}
+                    {isCombined && !isSelected && paths.map((path, index) => (
+                      <path
+                        className="map-screening-overlay map-screening-overlay-gradient"
+                        d={path}
+                        fill={`url(#screening-fill-${region.id})`}
+                        fillRule="evenodd"
+                        opacity={screeningOverlayOpacity(screeningPalette.intensity)}
+                        key={`${region.id}-screening-${index}`}
+                      />
+                    ))}
                   </g>
                 </g>
               );
@@ -442,21 +603,23 @@ export function PhilippinesRegionMap({
           : isCombined ? "Static public signal and app-screening overlay keys" : dataSource === "app-screenings" ? "App-screening profile count key" : "Static public baseline key"}
         >
           {isDrilled && dataSource === "public" ? (
-            <span><i className="public-unavailable" /> Province-level values unavailable</span>
+            <>
+              <span className="map-intensity-scale map-intensity-scale-muted" aria-hidden="true" />
+              <span>Province outlines only · public counts stay regional</span>
+            </>
           ) : isCombined ? <>
-            <span><i className={`signal-${isDrilled ? drilledRegion.signalLevel.toLowerCase() : "lower"}`} /> {isDrilled ? "Parent regional public signal" : "Public lower"}</span>
-            {!isDrilled && <><span><i className="signal-moderate" /> Public moderate</span><span><i className="signal-higher" /> Public higher</span></>}
-            <span><i className="screening-none" /> No app profiles</span>
-            <span><i className="screening-moderate" /> 1–2 app profiles</span>
-            <span><i className="screening-higher" /> 3+ app profiles</span>
+            <span className="map-intensity-scale" aria-hidden="true" />
+            <span>Public lower → higher</span>
+            <span className="map-intensity-scale map-intensity-scale-overlay" aria-hidden="true" />
+            <span>App profiles wash (fewer → more)</span>
           </> : dataSource === "app-screenings" ? <>
-            <span><i className="signal-lower" /> No saved profiles</span>
-            <span><i className="signal-moderate" /> 1–2 profiles</span>
-            <span><i className="signal-higher" /> 3+ profiles</span>
+            <span className="map-intensity-scale" aria-hidden="true" />
+            <span>Fewer → more profiles</span>
           </> : <>
-            <span><i className="signal-lower" /> Lower</span>
-            <span><i className="signal-moderate" /> Moderate</span>
-            <span><i className="signal-higher" /> Higher</span>
+            <span className="map-intensity-scale" aria-hidden="true" />
+            <span>Lower</span>
+            <span>Moderate</span>
+            <span>Higher</span>
           </>}
         </div>
       </div>
