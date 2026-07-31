@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import lungMark from "./assets/aeris-mark.svg";
 import philippinesMapMini from "./assets/philippines-map-mini.jpg";
-import teamPhotoPaul from "./assets/team/paul-roa.jpg";
+import teamPhotoPaul from "./assets/team/paul-roa.png";
 import teamPhotoCharles from "./assets/team/charles-bantong.png";
 import teamPhotoAldrhey from "./assets/team/aldrhey-agsunod.png";
 import teamPhotoShayne from "./assets/team/shayne-jao.png";
@@ -127,7 +127,7 @@ const teamMembers = [
     role: "AI Engineer · Product Marketing",
     study: "3rd Year IT Student · IoT Automation",
     photo: teamPhotoPaul as string | null,
-    photoPosition: "center 18%",
+    photoPosition: "center 20%",
     focus: [
       "AI engineering and model support",
       "Risk estimation & model architecture",
@@ -141,11 +141,11 @@ const teamMembers = [
   {
     id: "charles",
     initials: "CB",
-    name: "Charles Brent Bantong",
+    name: "Bantong, Charles Brent",
     role: "Business · Strategist · DevOps",
     study: "3rd Year IT Student · NetSec",
     photo: teamPhotoCharles as string | null,
-    photoPosition: "center 12%",
+    photoPosition: "center 22%",
     focus: [
       "Scalability and sustainability",
       "Partnerships and adoption",
@@ -1262,7 +1262,7 @@ export default function App() {
             <button className="back-link" type="button" onClick={() => navigateTo("consent")}>
               <ChevronLeft size={17} /> Back to screening
             </button>
-            <p className="eyebrow"><MapPinned size={16} /> Population dashboard · Version 0.9</p>
+            <p className="eyebrow"><MapPinned size={16} /> Population dashboard · Version 1</p>
             <h1 id="heatmap-status-title">Regional follow-up dashboard.</h1>
             <p>
               Compare the static public baseline, unique profiles saved in this web app, or a layered view that shows both sources without adding their counts together. Open a region for risk explanations and live air-quality context when online.

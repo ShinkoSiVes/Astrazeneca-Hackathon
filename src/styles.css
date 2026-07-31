@@ -466,11 +466,12 @@ button:disabled { cursor: not-allowed; }
   color: var(--team-accent);
   background: #edf8f5;
 }
- { width: min(1120px, calc(100% - 48px)); margin: clamp(35px, 7vh, 88px) auto 94px; animation: content-enter 600ms both; }
+.heatmap-status-layout { width: min(1120px, calc(100% - 48px)); margin: clamp(35px, 7vh, 88px) auto 94px; animation: content-enter 600ms both; }
 .heatmap-status-hero { max-width: 830px; }
-.heatmap-status-hero .back-link { margin-bottom: 34px; }
-.heatmap-status-hero h1 { max-width: 790px; margin: 14px 0 20px; color: #103d49; font-size: clamp(42px, 5.5vw, 70px); line-height: .98; letter-spacing: -0.06em; }
-.heatmap-status-hero > p:last-child { max-width: 720px; margin: 0; color: #526d74; font-size: 18px; line-height: 1.6; }
+.heatmap-status-hero .back-link { margin-bottom: 22px; }
+.heatmap-status-hero .eyebrow { margin-bottom: 10px; }
+.heatmap-status-hero h1 { max-width: 790px; margin: 0 0 22px; color: #103d49; font-size: clamp(42px, 5.5vw, 70px); line-height: 1.08; letter-spacing: -0.06em; }
+.heatmap-status-hero > p:last-child { max-width: 720px; margin: 0; color: #526d74; font-size: 18px; line-height: 1.65; }
 .heatmap-status-card { margin-top: 52px; border: 1px solid #d6e7e2; border-radius: 25px; padding: clamp(25px, 4vw, 42px); background: rgb(255 255 255 / 78%); box-shadow: 0 18px 48px rgb(20 64 69 / 6%); }
 .heatmap-status-topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #688087; font-size: 13px; font-weight: 750; }
 .heatmap-source-switch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 20px; padding: 6px; border: 1px solid #cfe1dd; border-radius: 15px; background: #eef7f4; }
