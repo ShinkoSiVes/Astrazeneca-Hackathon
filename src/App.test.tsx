@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import App from "./App";
-import { screeningHistoryKey } from "./local-screenings";
+import { screeningHistoryKey, type LocalScreeningDraft } from "./local-screenings";
 
 describe("TASK-001 consent and demo login", () => {
   it("keeps navigation active on page changes and tucks it away only while scrolling down", async () => {
@@ -30,6 +30,20 @@ describe("TASK-001 consent and demo login", () => {
     const { container } = render(<App />);
 
     expect(container.querySelectorAll("details[open]")).toHaveLength(0);
+  });
+
+  it("shows a compact Philippines map heatmap entry under the offline principle", () => {
+    const { container } = render(<App />);
+    const previewButton = screen.getByRole("button", { name: /heatmap status.*view heatmap/i });
+    const introPanel = container.querySelector(".intro-panel");
+    const hero = container.querySelector(".hero-grid");
+
+    expect(hero?.nextElementSibling).toHaveClass("faq-section");
+    expect(introPanel).toContainElement(previewButton);
+    expect(previewButton).toHaveClass("heatmap-mini-card");
+    expect(previewButton.querySelector("img.heatmap-mini-map")).toBeInTheDocument();
+    expect(previewButton).toHaveTextContent(/regional signals/i);
+    expect(screen.queryByRole("button", { name: /region i.*static public baseline/i })).not.toBeInTheDocument();
   });
 
   it("requires consent and a passcode before entering the workspace", async () => {
@@ -78,16 +92,23 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByText(/people behind the prototype/i);
 
     expect(screen.getByRole("heading", { name: /field-friendly path/i })).toBeInTheDocument();
+    expect(screen.getByText(/^goal$/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /assists rather than replaces medical-professional judgment/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/geographic equity/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/primary users are medical professionals during profiling missions/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^future features$/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /clinical review and support/i })).toBeInTheDocument();
     expect(screen.getByText(/pending clinical review/i)).toBeInTheDocument();
-    expect(screen.getByText("[Doctor's name]")).toBeInTheDocument();
+    expect(screen.getByText(/indicate medical oncologist, clinician-scientist/i)).toBeInTheDocument();
+    expect(screen.getByText(/interview feedback/i)).toBeInTheDocument();
+    expect(screen.getByText(/community-based screening concept as doable/i)).toBeInTheDocument();
     expect(screen.getByText(/clinical review, approval, and support have not yet been confirmed/i)).toBeInTheDocument();
     expect(screen.getByText(/must not be presented as clinically approved or supported/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /risk estimate credit/i })).toBeInTheDocument();
     expect(screen.getAllByText(/PLCOm2012noRace/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/local imaging metadata workflow/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /open imaging metadata page/i })).toBeInTheDocument();
     expect(screen.getByText(/aeris custom risk-estimation calculator/i)).toBeInTheDocument();
     expect(screen.getByText(/people behind the prototype/i)).toBeInTheDocument();
     expect(screen.getAllByText("[Name]")).toHaveLength(4);
@@ -95,6 +116,22 @@ describe("TASK-001 consent and demo login", () => {
     await user.click(screen.getByRole("button", { name: /back to screening/i }));
     await screen.findByText(/start every screening with a clear patient choice/i);
     expect(screen.getByRole("heading", { name: /would the patient like to participate/i })).toBeInTheDocument();
+  });
+
+  it("opens imaging metadata as a future-feature notice from the clinician workspace", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /view imaging metadata/i }));
+
+    expect(await screen.findByRole("heading", { name: /this page is a future feature/i })).toBeInTheDocument();
+    expect(screen.getByText(/ct\/chest x-ray metadata capture is not available/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /return to workspace/i }));
+    expect(await screen.findByRole("button", { name: /view imaging metadata/i })).toBeInTheDocument();
   });
 
   it("returns to the front page from the Aeris AI wordmark", async () => {
@@ -116,13 +153,16 @@ describe("TASK-001 consent and demo login", () => {
 
     await user.click(screen.getByRole("button", { name: /heatmap status/i }));
 
-    await screen.findByText(/static public data only/i);
+    await screen.findByText(/lung center of the philippines public data/i);
 
     expect(screen.getByRole("heading", { name: /regional follow-up dashboard/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /choose a region on the map/i })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /national capital region/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /static public baseline/i })).toHaveLength(18);
+    expect(screen.queryByRole("button", { name: /national capital region.*static public baseline/i })).not.toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*static public baseline/i }));
     expect(screen.getByRole("heading", { name: /region iii.*central luzon/i })).toBeInTheDocument();
-    expect(screen.getByText(/sharing remains disabled/i)).toBeInTheDocument();
+    expect(screen.getByText(/sharing disabled/i)).toBeInTheDocument();
   });
 
   it("counts saved profiling drafts by selected region without combining public data", async () => {
@@ -135,13 +175,180 @@ describe("TASK-001 consent and demo login", () => {
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: /heatmap status/i }));
-    await screen.findByText(/static public data only/i);
+    await screen.findByText(/lung center of the philippines public data/i);
     await user.click(screen.getByRole("button", { name: /app screenings/i }));
 
     expect(screen.getByText(/1 heatmap-eligible profile/i)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*moderate app screening profile count/i }));
     expect(screen.getByText(/1 app-screened/i)).toBeInTheDocument();
     expect(screen.getByText(/public data excluded/i)).toBeInTheDocument();
+  });
+
+  it("selects a region before drilling into province-level app screening activity", async () => {
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([{
+      id: "FIELD-CAR-001",
+      savedAt: "2026-07-24T09:30:00.000Z",
+      data: {
+        fieldReference: "FIELD-CAR-001",
+        province: "Cordillera Administrative Region (CAR)",
+        municipality: "Banaue — Ifugao",
+        previousSurveyResponse: "No",
+      },
+    }]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await user.click(await screen.findByRole("button", { name: /app screenings/i }));
+
+    const carRegion = screen.getByRole("button", { name: /cordillera administrative region.*click to select, double-click to zoom/i });
+    await user.dblClick(carRegion);
+
+    expect(await screen.findByText("6 provinces")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ifugao, 1 unique app screening profile/i })).toHaveClass("signal-moderate");
+    expect(screen.getByRole("button", { name: /abra, 0 unique app screening profiles/i })).toHaveClass("signal-lower");
+
+    await user.click(screen.getByRole("button", { name: /^public data/i }));
+    expect(screen.queryByRole("button", { name: /back to all regions/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /static public baseline/i })).toHaveLength(18);
+  });
+
+  it("does not zoom when two region clicks are not consecutive on the same region", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await screen.findByText(/lung center of the philippines public data/i);
+
+    await user.click(screen.getByRole("button", { name: /mimaropa region.*click to select, double-click to zoom/i }));
+    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*click to select, double-click to zoom/i }));
+    await user.click(screen.getByRole("button", { name: /mimaropa region.*click to select, double-click to zoom/i }));
+
+    expect(screen.queryByRole("button", { name: /back to all regions/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /mimaropa region/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /static public baseline/i })).toHaveLength(18);
+  });
+
+  it("marks city-level lung cancer counts as a future feature when a zoomed province is selected", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await screen.findByText(/lung center of the philippines public data/i);
+
+    await user.dblClick(screen.getByRole("button", { name: /mimaropa region.*click to select, double-click to zoom/i }));
+
+    expect(await screen.findByText("5 provinces")).toBeInTheDocument();
+    expect(screen.getByText(/select a province outline on the map/i)).toBeInTheDocument();
+    expect(screen.getByText("Future feature")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /palawan.*future feature/i }));
+
+    expect(screen.getByRole("heading", { name: /^palawan$/i })).toBeInTheDocument();
+    expect(screen.getByText(/does not currently display lung cancer case counts per city or municipality/i)).toBeInTheDocument();
+    expect(screen.getByText(/66 recorded \(lcp 2009–2017\)/i)).toBeInTheDocument();
+  });
+
+  it("opens region statistics with local screening share and future-feature notes", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("air-quality-api.open-meteo.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            latitude: 15.03,
+            longitude: 120.69,
+            current: { pm2_5: 14.1, pm10: 19, nitrogen_dioxide: 18, us_aqi: 55 },
+          }),
+        } as Response;
+      }
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+
+    localStorage.setItem(screeningHistoryKey, JSON.stringify([
+      {
+        id: "FIELD-CL-001",
+        savedAt: "2026-07-24T09:30:00.000Z",
+        data: {
+          fieldReference: "FIELD-CL-001",
+          province: "Region III — Central Luzon",
+          smokingStatus: "Current smoker",
+          previousTuberculosis: "Yes",
+          previousSurveyResponse: "No",
+        },
+      },
+      {
+        id: "FIELD-NCR-001",
+        savedAt: "2026-07-24T09:31:00.000Z",
+        data: {
+          fieldReference: "FIELD-NCR-001",
+          province: "National Capital Region (NCR)",
+          smokingStatus: "Never smoker",
+          previousSurveyResponse: "No",
+        },
+      },
+    ]));
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await screen.findByText(/lung center of the philippines public data/i);
+    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*click to select, double-click to zoom/i }));
+    await user.click(screen.getByRole("button", { name: /^region statistics$/i }));
+
+    expect(screen.getByRole("heading", { name: /region iii.*central luzon/i })).toBeInTheDocument();
+    expect(screen.getByText(/50% of 2 heatmap-eligible profiles/i)).toBeInTheDocument();
+    expect(screen.getByText(/top contributing factors/i)).toBeInTheDocument();
+    expect(screen.getByText(/current or former smoking/i)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /environmental air quality/i })).toBeInTheDocument();
+    expect(await screen.findByText(/14\.1 μg\/m³/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^future feature$/i })).toBeInTheDocument();
+    expect(screen.getByText(/monthly risk and screening trends/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /back to region summary/i }));
+    expect(screen.getByRole("button", { name: /^region statistics$/i })).toBeInTheDocument();
+    fetchMock.mockRestore();
+  });
+
+  it("opens a why-this-risk summary and loads regional environmental context", async () => {
+    localStorage.clear();
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.includes("air-quality-api.open-meteo.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            latitude: 15.03,
+            longitude: 120.69,
+            current: { pm2_5: 17.2, pm10: 23, nitrogen_dioxide: 27, us_aqi: 62 },
+          }),
+        } as Response;
+      }
+      return { ok: false, json: async () => ({}) } as Response;
+    });
+
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("button", { name: /heatmap status/i }));
+    await screen.findByText(/lung center of the philippines public data/i);
+    await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*click to select, double-click to zoom/i }));
+    await user.click(screen.getByRole("button", { name: /why this higher risk level/i }));
+
+    expect(await screen.findByRole("heading", { name: /why this region is marked higher risk/i })).toBeInTheDocument();
+    expect(await screen.findByText(/pm2\.5 at 17\.2/i)).toBeInTheDocument();
+    expect(screen.getByText(/environmental context/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /back to region summary/i }));
+    await user.click(screen.getByRole("button", { name: /^region statistics$/i }));
+    expect(await screen.findByRole("heading", { name: /environmental air quality/i })).toBeInTheDocument();
+    expect(screen.getByText(/17\.2 μg\/m³/i)).toBeInTheDocument();
+    expect(screen.getByText(/vs who guideline/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /why this higher risk level/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /why this higher risk level/i }));
+    expect(await screen.findByRole("button", { name: /back to region statistics/i })).toBeInTheDocument();
+
+    fetchMock.mockRestore();
   });
 
   it("layers public and deduplicated screening data without summing source counts", async () => {
@@ -168,7 +375,7 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByRole("button", { name: /region i.*ilocos region.*0 unique app screening profiles/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /region ii.*cagayan valley.*0 unique app screening profiles/i })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /region iii.*central luzon.*static public baseline.*1 unique app screening profile/i }));
-    expect(screen.getByText("50 baseline")).toBeInTheDocument();
+    expect(screen.getByText(/765 recorded.*lcp 2009–2017/i)).toBeInTheDocument();
     expect(screen.getByText("1 unique app-screened")).toBeInTheDocument();
     expect(screen.getByText(/layered, not summed/i)).toBeInTheDocument();
   });
@@ -183,8 +390,8 @@ describe("TASK-001 consent and demo login", () => {
     await screen.findByLabelText(/demo passcode/i);
     await user.type(screen.getByLabelText(/demo passcode/i), "1234");
     await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
-    await screen.findByRole("button", { name: /start screening/i });
-    await user.click(screen.getByRole("button", { name: /start screening/i }));
+    await screen.findByRole("button", { name: /new screening/i });
+    await user.click(screen.getByRole("button", { name: /new screening/i }));
     await screen.findByLabelText(/field reference/i);
     await user.type(screen.getByLabelText(/field reference/i), "BHW-024-001");
     await user.click(screen.getByRole("button", { name: /save local draft/i }));
@@ -259,6 +466,86 @@ describe("TASK-001 consent and demo login", () => {
     expect(screen.getByLabelText(/previous case of tuberculosis/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/previous case of malignancy/i)).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: /asbestos/i })).toBeInTheDocument();
+  });
+
+  it("captures separate optional vital-sign measurements", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
+    await screen.findByLabelText(/^age$/i);
+    await user.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    const temperature = await screen.findByLabelText(/temperature.*°c/i);
+    const respiratoryRate = screen.getByLabelText(/respiratory rate.*breaths\/min/i);
+    const systolic = screen.getByLabelText(/systolic blood pressure.*mmhg/i);
+    const diastolic = screen.getByLabelText(/diastolic blood pressure.*mmhg/i);
+    const pulseRate = screen.getByLabelText(/pulse rate.*bpm/i);
+    const oxygenSaturation = screen.getByLabelText(/oxygen saturation.*%/i);
+
+    expect(temperature).toHaveAttribute("type", "number");
+    await user.type(temperature, "36.8");
+    await user.click(screen.getByRole("button", { name: /^°f$/i }));
+    expect(await screen.findByLabelText(/temperature.*°f/i)).toHaveValue(98.2);
+    await user.click(screen.getByRole("button", { name: /^°c$/i }));
+    await user.type(respiratoryRate, "16");
+    await user.type(systolic, "120");
+    await user.type(diastolic, "80");
+    await user.type(pulseRate, "76");
+    await user.type(oxygenSaturation, "97");
+    await user.click(screen.getByRole("button", { name: /save local draft/i }));
+
+    const saved = JSON.parse(localStorage.getItem("aeris-screening-draft-v1") ?? "{}") as {
+      data?: Partial<LocalScreeningDraft>;
+    };
+    expect(saved.data).toEqual(expect.objectContaining({
+      temperatureC: "36.8",
+      respiratoryRate: "16",
+      systolicBloodPressure: "120",
+      diastolicBloodPressure: "80",
+      pulseRate: "76",
+      oxygenSaturation: "97",
+    }));
+  });
+
+  it("converts height ft/in and weight lb into metric values for BMI and the calculator", async () => {
+    localStorage.clear();
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: /continue to secure login/i }));
+    await user.type(await screen.findByLabelText(/demo passcode/i), "1234");
+    await user.click(screen.getByRole("button", { name: /enter screening workspace/i }));
+    await user.click(await screen.findByRole("button", { name: /new screening/i }));
+    await screen.findByLabelText(/^height \(cm\)$/i);
+
+    await user.click(screen.getByRole("button", { name: /^ft \/ in$/i }));
+    await user.type(screen.getByLabelText(/^feet$/i), "5");
+    await user.type(screen.getByLabelText(/^inches$/i), "5");
+    await user.click(screen.getByRole("button", { name: /^lb$/i }));
+    const weightInput = screen.getByLabelText(/^weight \(lb\)$/i);
+    await user.clear(weightInput);
+    await user.type(weightInput, "154.3");
+
+    expect(screen.getByLabelText(/bmi/i)).toHaveValue("25.7 kg/m²");
+    expect(screen.getByText(/stored for calculator: 165\.1 cm/i)).toBeInTheDocument();
+    expect(screen.getByText(/stored for calculator: 70 kg/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /save local draft/i }));
+    const saved = JSON.parse(localStorage.getItem("aeris-screening-draft-v1") ?? "{}") as {
+      data?: Partial<LocalScreeningDraft>;
+    };
+    expect(saved.data).toEqual(expect.objectContaining({
+      heightCm: "165.1",
+      weightKg: "70",
+      bmi: "25.7",
+    }));
   });
 
   it("records cigarettes-per-day, years smoked, and conditional years-since-quitting", async () => {

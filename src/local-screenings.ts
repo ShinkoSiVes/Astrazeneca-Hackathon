@@ -38,6 +38,11 @@ export type LocalScreeningDraft = {
   fatigue: string;
   previousSurveyResponse: string;
   vitalSigns: string;
+  temperatureC: string;
+  respiratoryRate: string;
+  systolicBloodPressure: string;
+  diastolicBloodPressure: string;
+  pulseRate: string;
   oxygenSaturation: string;
   chestXrayAvailable: string;
   physicalExamFindings: string;
@@ -103,7 +108,7 @@ export const screeningHistoryKey = "aeris-screening-history-v1";
 export const temporaryRecordKey = "aeris-temporary-ai-record-v1";
 
 export const emptyLocalScreeningDraft: LocalScreeningDraft = {
-  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", educationLevel: "", heightCm: "", weightKg: "", bmi: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", cigarettesPerDay: "", yearsSmoked: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
+  fieldReference: "", age: "", ageRange: "", sexAtBirth: "", educationLevel: "", heightCm: "", weightKg: "", bmi: "", barangay: "", municipality: "", province: "", occupation: "", smokingStatus: "", packFrequency: "", packYears: "", cigarettesPerDay: "", yearsSmoked: "", yearsSinceQuitting: "", householdSmoke: "", occupationalExposure: "", occupationalExposureOther: "", lungHistory: "", previousTuberculosis: "", copd: "", asthma: "", previousMalignancy: "", familyHistory: "", persistentCough: "", breathlessness: "", bloodInSputum: "", chestPain: "", weightLoss: "", weightLossAmount: "", hoarseness: "", fatigue: "", previousSurveyResponse: "", vitalSigns: "", temperatureC: "", respiratoryRate: "", systolicBloodPressure: "", diastolicBloodPressure: "", pulseRate: "", oxygenSaturation: "", chestXrayAvailable: "", physicalExamFindings: "", physicalExamOther: "", clinicianNotes: "",
 };
 
 export const normaliseScreeningDraft = (value: Partial<LocalScreeningDraft> | undefined): LocalScreeningDraft => {

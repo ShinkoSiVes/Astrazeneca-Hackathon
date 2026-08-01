@@ -1,5 +1,34 @@
 # TASK-006 review pack
 
+## TASK-006 revision — Region-to-province drill-down
+
+### User-visible effect
+
+- Activating a region once selects it and changes its cursor to a magnifying glass; activating it again opens a focused province view.
+- The focused view uses the province polygons already bundled for all 18 regions. NCR shows its four source districts, and NIR shows Negros Occidental, Negros Oriental, and Siquijor.
+- A visible **Back to all regions** control and the Escape key return to the national view.
+- App-screening mode shades provinces from eligible local profiles grouped by their saved municipality's province suffix. Public mode uses a neutral unavailable state because the LCP source has no province-level values.
+- Combined mode retains the parent region's public signal as context and adds app-screening hatching without summing the two sources.
+
+### Accessibility
+
+- Region and province shapes remain operable with Enter and Space.
+- Selected regions announce that a second activation opens their provinces.
+- Focus moves to the drill-down back control, and view changes are announced through a polite live status.
+- Reduced-motion preferences suppress the drill-down transition through the existing global motion rule.
+
+### Limitations and follow-up
+
+- The drill-down is province-level, not city-level. The bundled geometry contains ADM2 provinces and NCR districts but no ADM3 city or municipality polygons.
+- Some highly urbanized cities do not map cleanly to a province suffix. City of Puerto Princesa is explicitly associated with Palawan; other unmatched profiles remain unshaded rather than being guessed.
+- Future city-level work requires approved ADM3 geometry, license and provenance review, lazy per-region loading, and a PSGC-code crosswalk. No city boundaries or city-level public registry values are fabricated in this revision.
+
+### Verification
+
+- `npm.cmd test` passed: 10 test files, 57 passed and 4 skipped.
+- Focused map and dashboard coverage passed for two-stage selection, MIMAROPA province counts, NCR districts, NIR province assembly, Escape/back behavior, and source-mode reset.
+- `npm.cmd run build` passed.
+
 ## TASK-006 revision — Real regional boundary model
 
 ### Goal

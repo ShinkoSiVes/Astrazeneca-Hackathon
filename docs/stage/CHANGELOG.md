@@ -1,5 +1,13 @@
 # Stage changelog
 
+## Dedicated vital-sign inputs
+
+- Status: awaiting owner review
+- Replaced the combined vital-sign note with optional direct-entry fields for temperature, respiratory rate, systolic and diastolic blood pressure, pulse rate, and oxygen saturation.
+- Each field displays a fixed clinical unit but does not enforce a hard clinical range, allowing clinicians to record unusual readings without the interface rejecting them.
+- The readings remain local capture fields and do not affect the prototype risk estimate or population aggregation.
+- Legacy combined `vitalSigns` values remain preserved when older local records are loaded.
+
 ## Confirm-clinician workspace mode switch
 
 - Status: behavior pending
